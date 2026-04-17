@@ -1,0 +1,39 @@
+# Build outputs
+**/bin/
+**/obj/
+
+# NuGet
+packages/
+*.nupkg
+*.nugetprop
+project.nuget.cache
+
+# Visual Studio / MSBuild
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+[BBDebugSystem]
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs_vista.db
+*.log
+
+# Temporary files generated during development/testing
+cjxl_help_*.txt
+cjxl_help_*_err.txt
+cjxl_help_*_out.txt
+debug_metadata.csx
+
+# MediaCache
+MediaCache/
+
+# Release / Publish outputs
+**/publish/
+*.pdb
