@@ -15,10 +15,10 @@
         WindowStartupLocation="CenterScreen"
         AllowDrop="True" Drop="Window_Drop" DragOver="Window_DragOver">
     <Window.InputBindings>
-        <InputBinding Gesture="Ctrl+A" Command="{Binding SelectAllCommand}"/>
-        <InputBinding Gesture="Ctrl+C" Command="{Binding ConvertSelectedCommand}"/>
-        <InputBinding Gesture="Delete" Command="{Binding RemoveSelectedCommand}"/>
-        <InputBinding Gesture="Ctrl+D" Command="{Binding OpenFileCommand}"/>
+        <KeyBinding Gesture="Ctrl+A" Command="{Binding SelectAllCommand}"/>
+        <KeyBinding Gesture="Ctrl+C" Command="{Binding ConvertSelectedCommand}"/>
+        <KeyBinding Gesture="Delete" Command="{Binding RemoveSelectedCommand}"/>
+        <KeyBinding Gesture="Ctrl+D" Command="{Binding OpenFileCommand}"/>
     </Window.InputBindings>
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
@@ -134,6 +134,9 @@
                                Command="{Binding CancelCommand}"
                                Appearance="Danger"
                                Visibility="{Binding IsConverting, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                    <ui:Button Content="Open Output Folder"
+                               Command="{Binding OpenOutputFolderCommand}"
+                               Icon="Folder24"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal">

@@ -1,0 +1,134 @@
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using ARWtoJXL.Core.Services;
+using ARWtoJXL.Core.Interfaces;
+using Xunit;
+
+namespace ARWtoJXL.Tests
+{
+    public class ConversionTests : TestBase
+    {
+        private readonly IImageService _imageService;
+
+        public ConversionTests()
+        {
+            _imageService = CreateImageService();
+        }
+
+        [Fact]
+        public async Task GetThumbnailAsync_ValidArw_ReturnsBytes()
+        {
+            var thumbnail = await _imageService.GetThumbnailAsync(TestArwPath);
+            Assert.NotEmpty(thumbnail);
+        }
+
+        [Fact]
+        public async Task GetThumbnailAsync_InvalidFile_ThrowsException()
+        {
+            var invalidPath = "non_existent_file.arw";
+            await Assert.ThrowsAsync<FileNotFoundException>(() => _imageService.GetThumbnailAsync(invalidPath));
+        }
+
+        [Fact]
+        public async Task ConvertArwToJxlAsync_ValidArw_CreatesJxlFile()
+        {
+            var outputPath = GetOutputPath("jxl");
+            await CleanOutputFile(outputPath);
+
+            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 5, CancellationToken.None);
+
+            Assert.True(File.Exists(outputPath));
+        }
+
+        [Theory]
+        [InlineData(0)]
+        [InlineData(50)]
+        [InlineData(70)]
+        [InlineData(90)]
+        [InlineData(100)]
+        public async Task ConvertArwToJxlAsync_VariousQualitySettings_CreatesJxlFile(int quality)
+        {
+            var outputPath = GetOutputPath($"quality{quality}");
+            await CleanOutputFile(outputPath);
+
+            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, quality, CancellationToken.None);
+
+            Assert.True(File.Exists(outputPath));
+            Assert.True(new FileInfo(outputPath).Length > 0);
+        }
+
+        [Fact]
+        public async Task ConvertArwToJxlAsync_Quality100_LosslessMode()
+        {
+            var outputPath = GetOutputPath("lossless");
+            await CleanOutputFile(outputPath);
+
+            double progress = 0;
+            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => progress = p, 100, CancellationToken.None);
+
+            Assert.True(File.Exists(outputPath));
+            Assert.True(new FileInfo(outputPath).Length > 0);
+            Assert.Equal(1.0, progress);
+        }
+
+        [Fact]
+        public async Task ConvertArwToJxlAsync_Quality90_VisuallyLossless()
+        {
+            var outputPath = GetOutputPath("visually_lossless");
+            await CleanOutputFile(outputPath);
+
+            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 90, CancellationToken.None);
+
+            Assert.True(File.Exists(outputPath));
+            Assert.True(new FileInfo(outputPath).Length > 0);
+        }
+
+        [Fact]
+        public async Task ConvertArwToJxlAsync_Quality0_LowestQuality()
+        {
+            var outputPath = GetOutputPath("lowest_quality");
+            await CleanOutputFile(outputPath);
+
+            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 0, CancellationToken.None);
+
+            Assert.True(File.Exists(outputPath));
+            Assert.True(new FileInfo(outputPath).Length > 0);
+        }
+
+        [Fact]
+        public async Task ConvertArwToJxlAsync_ProgressCallback_ReportsSmoothProgress()
+        {
+            var outputPath = GetOutputPath("progress");
+            await CleanOutputFile(outputPath);
+
+            var progressValues = new List<double>();
+            var lockObj = new object();
+            await _imageService.ConvertArwToJxlAsync(
+                TestArwPath,
+                outputPath,
+                p => { lock (lockObj) progressValues.Add(p); },
+                50,
+                CancellationToken.None);
+
+            Assert.True(File.Exists(outputPath));
+            Assert.True(progressValues.Count > 2, $"Expected multiple progress updates, got {progressValues.Count}");
+
+            lock (lockObj)
+            {
+                Assert.True(progressValues.Any(v => v >= 0.05 && v <= 0.15), "Should report progress at metadata stage (~0.1)");
+                Assert.True(progressValues.Any(v => v >= 0.45 && v <= 0.55), "Should report progress at PNG stage (~0.5)");
+                Assert.True(progressValues.Any(v => v >= 0.5 && v < 1.0), "Should report smooth progress during cjxl encoding");
+                Assert.True(progressValues.Any(v => v >= 1.0), "Should report final progress of 1.0");
+
+                for (int i = 1; i < progressValues.Count; i++)
+                {
+                    Assert.True(progressValues[i] >= progressValues[i - 1],
+                        $"Progress should be monotonically increasing: {progressValues[i - 1]} -> {progressValues[i]}");
+                }
+            }
+        }
+    }
+}

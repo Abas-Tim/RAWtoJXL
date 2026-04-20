@@ -27,11 +27,14 @@ ARWtoJXL/
 │   │   ├── IMagickService.cs          # ImageMagick operations interface
 │   │   ├── ICjxlEncoder.cs            # cjxl CLI encoder interface
 │   │   ├── IFileService.cs            # File system operations interface
-│   │   └── IPathResolver.cs           # Path resolution interface
+│   │   ├── IPathResolver.cs           # Path resolution interface
+│   │   └── IExiftoolService.cs        # exiftool operations interface (EXIF extraction, metadata embedding)
 │   └── Services/
 │       ├── ImageProcessingService.cs  # Main service orchestrating conversion pipeline
 │       ├── MagickService.cs           # Magick.NET implementation (thumbnails, PNG conversion)
 │       ├── CjxlEncoderService.cs      # cjxl CLI wrapper implementation
+│       ├── ExiftoolService.cs         # exiftool operations (EXIF extraction, metadata embedding)
+│       ├── ProcessHelper.cs           # Shared process utilities (exiftool path resolution, version check, process execution)
 │       ├── FileService.cs             # File system operations implementation
 │       ├── PathResolverService.cs     # Path resolution implementation
 │       ├── SizeEstimatorService.cs    # PNG→JXL file size estimation heuristic
@@ -49,11 +52,14 @@ ARWtoJXL/
 │   ├── BooleanToValueConverter.cs
 │   ├── ImageStatusToStringConverter.cs
 │   ├── LongToVisibilityConverter.cs   # Long→Visibility for estimated size display
+│   ├── AppStrings.cs                  # Centralized UI string constants
 │   └── Views/                         # Empty directory (reserved for future views)
 └── ARWtoJXL.Tests/         # xUnit test suite
+    ├── TestBase.cs                   # Shared test base class (TestArwPath, helper methods)
+    ├── ConversionTests.cs            # Core conversion tests (quality levels, progress, errors)
+    ├── MetadataPreservationTests.cs  # Metadata transfer/verification tests
     ├── MetadataDebugTests.cs         # Diagnostic test with assertions for metadata preservation
-    ├── ImageProcessingServiceTests.cs # Integration tests for conversion pipeline
-    └── QualityCalculatorTests.cs      # Unit tests for quality calculations
+    └── QualityCalculatorTests.cs     # Unit tests for quality calculations
 ```
 
 ## Architecture Pattern
@@ -91,8 +97,13 @@ public ImageProcessingService(
 - `ExtractThumbnailAsync()`: Resizes image to 300x300, outputs JPEG
 - `ConvertToPngAsync()`: Converts ARW to 16-bit PNG in temp directory
 - `ExtractMetadataProfilesAsync()`: Extracts EXIF, XMP, ICC, IPTC profiles to temp files for cjxl
-  - **ARW files:** Uses exiftool as primary EXIF extractor (Magick.NET cannot reliably read EXIF from Sony ARW files). Much faster (~1s) than the previous Magick.NET fallback chain (~10s).
+  - **ARW files:** Delegates to `IExiftoolService.ExtractExifAsync()` for EXIF extraction (Magick.NET cannot reliably read EXIF from Sony ARW files). Much faster (~1s) than the previous Magick.NET fallback chain (~10s).
   - **Non-ARW files:** Uses Magick.NET profile extraction first, falls back to exiftool for JXL files.
+
+### IExiftoolService / ExiftoolService
+- `ExtractExifAsync(filePath)`: Extracts raw EXIF bytes from ARW/JXL files using exiftool
+- `EmbedMetadataAsync(sourcePath, outputPath, metadata)`: Embeds EXIF, XMP, ICC metadata into JXL using exiftool's `-tagsFromFile` post-processing
+- Uses `ProcessHelper.FindExiftool()` for path resolution
 
 ### ICjxlEncoder / CjxlEncoderService
 - `EncodeAsync(inputPath, originalArwPath, outputPath, quality, metadata, cancellationToken, timeoutSeconds, progress)`: Invokes cjxl.exe with quality-based parameters
@@ -102,7 +113,7 @@ public ImageProcessingService(
 - Uses `QualityCalculator` for distance/effort mapping
 - Handles both lossless (quality≥100) and lossy modes
 - **cjxl progress estimation:** cjxl v0.11.2 does not output percentage progress during encoding. A background task (`ReportProgressAsync`) reports linear progress from 0.0 to 0.98 during cjxl encoding (updated every 100ms), mapped to 0.5→1.0 in the overall pipeline.
-- **Metadata embedding:** cjxl's `-x exif` argument does not reliably embed metadata (v0.11.2). Instead, `EmbedMetadataWithExiftoolAsync()` uses exiftool's `-tagsFromFile` post-processing step to copy metadata from the source ARW to the output JXL after cjxl encoding completes.
+- **Metadata embedding:** Delegates to `IExiftoolService.EmbedMetadataAsync()` for post-encoding metadata embedding via exiftool.
 
 ### IFileService / FileService
 - `DeleteFile()`: Safe file deletion with exception handling
@@ -113,6 +124,13 @@ public ImageProcessingService(
 ### IPathResolver / PathResolverService
 - `ResolveCjxlPath()`: Searches app directory, then executable directory, falls back to PATH
 - `GetTempPath()`: Returns system temp directory
+
+### ProcessHelper (Static Utility)
+Shared process utilities to eliminate duplication across services:
+- `FindExiftool(logPrefix)`: Searches common paths, PATH, and app directory for exiftool.exe
+- `IsExiftoolWorking(exiftoolPath, logPrefix)`: Runs `exiftool -ver` to verify functionality
+- `RunProcessAsync(fileName, arguments)`: Generic async process launcher with stdout/stderr capture
+- `RunProcessBinaryAsync(fileName, arguments)`: Runs process and returns raw binary stdout
 
 ### QualityCalculator (Static Helper)
 Centralized quality calculations to avoid duplication:
@@ -137,15 +155,16 @@ Centralized quality calculations to avoid duplication:
 **Progress tracking:** 0.1 (metadata) → 0.5 (PNG complete) → 0.5→1.0 smooth (cjxl encoding via time-based estimation) → 1.0 (JXL complete)
 
 **Metadata handling:**
-- **EXIF extraction (ARW):** exiftool (`-b -exif:all`) extracts raw EXIF bytes from source ARW (~1s). Non-ARW files use Magick.NET first.
+- **EXIF extraction (ARW):** `IExiftoolService.ExtractExifAsync()` uses exiftool (`-b -exif:all`) to extract raw EXIF bytes from source ARW (~1s). Non-ARW files use Magick.NET first.
 - **XMP/ICC/IPTC:** Extracted via Magick.NET profile lookup (`GetProfile("XMP")`, `GetProfile("ICC ")`, `GetIptcProfile()`).
-- **Metadata embedding:** cjxl's `-x exif` argument does not reliably embed metadata (v0.11.2 known issue). Post-encoding, `EmbedMetadataWithExiftoolAsync()` uses exiftool `-tagsFromFile source.arw -exif:all -overwrite_original output.jxl` to copy metadata from the original ARW to the JXL.
+- **Metadata embedding:** cjxl's `-x exif` argument does not reliably embed metadata (v0.11.2 known issue). Post-encoding, `IExiftoolService.EmbedMetadataAsync()` uses exiftool `-tagsFromFile source.arw -exif:all -overwrite_original output.jxl` to copy metadata from the original ARW to the JXL.
+- **Path resolution:** `ProcessHelper.FindExiftool()` centralizes exiftool.exe discovery (common paths → PATH → app directory).
 - Metadata temp files kept alive during encoding (disposed AFTER `EncodeAsync` completes in finally block).
 - Auto-cleanup via `MetadataProfiles.Dispose()` after encoding completes.
 
 ## UI/UX Flow
 1. User drags .ARW files or folders onto MainWindow, or clicks "Open File" button to browse via OpenFileDialog
-2. `MainViewModel.AddFilesAsync()` filters ARW/JXL, creates `ImageItem` objects, generates thumbnails via `GetThumbnailAsync()`
+2. `MainViewModel.AddFilesAsync()` deduplicates by normalized full path (case-insensitive), filters ARW/JXL, creates `ImageItem` objects, generates thumbnails via `GetThumbnailAsync()`
 3. Items displayed in gallery with 80x60 thumbnails, selection checkboxes, and per-item progress spinners
 4. User selects files, configures settings (quality, subfolder) → clicks "Convert"
 5. `ConvertSelectedAsync()` spawns concurrent tasks (max = CPU core count via SemaphoreSlim)
@@ -161,6 +180,7 @@ Centralized quality calculations to avoid duplication:
 - **Cancel Button:** Enabled during conversion, triggers `CancellationTokenSource.Cancel()`
 - **Settings Window (Dialog):** Separate SettingsWindow with quality slider (0-100, default 90), subfolder checkbox, subfolder name TextBox
 - **Select All/Deselect All Button:** Toggles selection state, text bound to `IsAllSelected`
+- **Open Output Folder Button:** Opens the output directory in File Explorer. Enabled after conversion completes (via `CanExecute` on `OpenOutputFolderCommand`). Uses `Process.Start` with `UseShellExecute = true`.
 
 ## Selection Logic
 - `IsAllSelected`: True when `Images.All(i => i.IsSelected)`
@@ -214,17 +234,21 @@ Failed     # Conversion error (ErrorMessage populated)
 
 ## Testing
 - **QualityCalculatorTests**: 12 unit tests for quality→distance/effort mappings
+- **TestBase**: Shared base class with `TestArwPath` (resolved from assembly location), `CreateImageService()`, `CleanOutputFile()`, `FindExiftoolForTests()`
 - **MetadataDebugTests**: Diagnostic test with assertions for full metadata preservation verification
   - Extracts metadata from ARW, converts to JXL, verifies 15+ EXIF tags preserved via exiftool
   - Uses exiftool `-s -n -Make -Model ...` format for tag-specific reading
   - Assertions: minimum 5 matched tags, no missing tags, output has metadata
-- **ImageProcessingServiceTests**: Integration tests with real ARW files
+- **ConversionTests**: Integration tests with real ARW files (split from ImageProcessingServiceTests)
   - Thumbnail extraction
   - Conversion at various quality levels (0, 50, 70, 90, 100)
   - Lossless mode verification
-  - Metadata transfer verification (EXIF, ICC presence and non-empty verification)
-  - Error handling for invalid files
   - Progress callback verification (smooth updates, monotonic increase, final 1.0)
+- **MetadataPreservationTests**: Metadata-specific tests (split from ImageProcessingServiceTests)
+  - EXIF transfer verification
+  - ICC profile preservation
+  - HasAny property verification
+  - Metadata at different quality levels (90, 100)
 
 ## Build/Deploy
 - `build.ps1` (in `ARWtoJXL/`): checks cjxl.exe, downloads exiftool if missing, copies both to publish dir, then `dotnet restore` + `dotnet publish`

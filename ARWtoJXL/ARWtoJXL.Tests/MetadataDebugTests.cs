@@ -10,10 +10,8 @@ using Xunit;
 
 namespace ARWtoJXL.Tests
 {
-    public class MetadataDebugTests
+    public class MetadataDebugTests : TestBase
     {
-        private const string TestArwPath = @"C:\Users\timur\Desktop\Playgroung\ARWtoJPEGXL\ARWtoJXL\ARWtoJXL.Tests\bin\Debug\net8.0-windows\test1.ARW";
-
         [Fact]
         public async Task Debug_FullExtractionAndConversion()
         {
@@ -24,7 +22,6 @@ namespace ARWtoJXL.Tests
             var sizeEstimator = new SizeEstimatorService();
             var imageService = new ImageProcessingService(magickService, cjxlEncoder, fileService, pathResolver, sizeEstimator);
 
-            // Step 1: Extract metadata via MagickService
             var metadata = await magickService.ExtractMetadataProfilesAsync(TestArwPath);
             Console.WriteLine($"=== Extraction Result ===");
             Console.WriteLine($"HasAny: {metadata.HasAny}");
@@ -44,7 +41,6 @@ namespace ARWtoJXL.Tests
                 Console.WriteLine($"EXIF temp file: {exifBytes.Length} bytes");
             }
 
-            // Step 2: Read input metadata with exiftool for verification
             var inputMetadata = ReadMetadataWithExiftool(TestArwPath);
             Console.WriteLine($"\n=== Input Metadata (exiftool) ===");
             foreach (var kvp in inputMetadata)
@@ -52,9 +48,8 @@ namespace ARWtoJXL.Tests
                 Console.WriteLine($"  {kvp.Key}: {kvp.Value}");
             }
 
-            // Step 3: Convert
-            var outputPath = Path.Combine(Path.GetDirectoryName(TestArwPath)!, "test1_metadata_verify.jxl");
-            if (File.Exists(outputPath)) File.Delete(outputPath);
+            var outputPath = GetOutputPath("metadata_verify");
+            await CleanOutputFile(outputPath);
 
             await imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 90, System.Threading.CancellationToken.None);
 
@@ -62,7 +57,6 @@ namespace ARWtoJXL.Tests
             Console.WriteLine($"JXL exists: {File.Exists(outputPath)}");
             Console.WriteLine($"JXL size: {new FileInfo(outputPath).Length} bytes");
 
-            // Step 4: Check output metadata via MagickService
             var outputMetadata = await magickService.ExtractMetadataProfilesAsync(outputPath);
             Console.WriteLine($"\n=== Output Metadata (MagickService) ===");
             Console.WriteLine($"HasAny: {outputMetadata.HasAny}");
@@ -71,7 +65,6 @@ namespace ARWtoJXL.Tests
             Console.WriteLine($"IccPath: {outputMetadata.IccPath ?? "null"}");
             Console.WriteLine($"IptcPath: {outputMetadata.IptcPath ?? "null"}");
 
-            // Step 5: Read output metadata with exiftool for verification
             var outputMetadataExiftool = ReadMetadataWithExiftool(outputPath);
             Console.WriteLine($"\n=== Output Metadata (exiftool) ===");
             foreach (var kvp in outputMetadataExiftool)
@@ -79,7 +72,6 @@ namespace ARWtoJXL.Tests
                 Console.WriteLine($"  {kvp.Key}: {kvp.Value}");
             }
 
-            // Step 6: Verify metadata preservation using exiftool
             Console.WriteLine($"\n=== Metadata Preservation Verification ===");
             var preservedTags = new[]
             {
@@ -121,7 +113,6 @@ namespace ARWtoJXL.Tests
                 Console.WriteLine($"  Tags in input but not in output: {string.Join(", ", missingTags)}");
             }
 
-            // Step 7: Check raw profiles in output using reflection
             try
             {
                 using var outImg = new MagickImage(outputPath);
@@ -148,15 +139,11 @@ namespace ARWtoJXL.Tests
                 Console.WriteLine($"Could not read raw profiles: {ex.Message}");
             }
 
-            // Assertions
             Assert.True(File.Exists(outputPath), "JXL output file should exist");
-
             Assert.True(matchedTags.Count >= 5,
                 $"Expected at least 5 matched tags, got {matchedTags.Count}. Missing: {string.Join(", ", missingTags)}");
-
             Assert.True(missingTags.Count == 0,
                 $"Tags missing from output: {string.Join(", ", missingTags)}");
-
             Assert.True(outputMetadataExiftool.Count > 0,
                 "Output JXL should have metadata tags");
         }
@@ -219,72 +206,7 @@ namespace ARWtoJXL.Tests
 
         private static string? FindExiftool()
         {
-            // Check common installation locations first (prefer portable/install versions)
-            var commonPaths = new[]
-            {
-                @"C:\Program Files\exiftool.exe",
-                @"C:\Program Files (x86)\exiftool.exe",
-                @"F:\Downloads\exiftoolgui516\exiftoolgui\exiftool.exe",
-                @"C:\Users\Public\exiftool.exe"
-            };
-
-            foreach (var path in commonPaths)
-            {
-                if (File.Exists(path) && IsExiftoolWorking(path)) return path;
-            }
-
-            // Fallback to PATH
-            var pathEnv = Environment.GetEnvironmentVariable("PATH") ?? "";
-            foreach (var dir in pathEnv.Split(';'))
-            {
-                var candidate = Path.Combine(dir, "exiftool.exe");
-                if (File.Exists(candidate) && IsExiftoolWorking(candidate)) return candidate;
-            }
-
-            // Check application directory last (may be non-portable version requiring Perl)
-            var appDir = AppDomain.CurrentDomain.BaseDirectory;
-            if (!string.IsNullOrEmpty(appDir))
-            {
-                var local = Path.Combine(appDir, "exiftool.exe");
-                if (File.Exists(local) && IsExiftoolWorking(local)) return local;
-            }
-
-            return null;
-        }
-
-        private static bool IsExiftoolWorking(string exiftoolPath)
-        {
-            try
-            {
-                var startInfo = new ProcessStartInfo
-                {
-                    FileName = exiftoolPath,
-                    Arguments = "-ver",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    CreateNoWindow = true
-                };
-
-                using var process = Process.Start(startInfo);
-                if (process == null) return false;
-
-                var output = process.StandardOutput.ReadToEnd();
-                var error = process.StandardError.ReadToEnd();
-                process.WaitForExit();
-
-                if (process.ExitCode != 0)
-                {
-                    Console.WriteLine($"[Test] exiftool version check failed: exit={process.ExitCode}, stderr='{error?.Trim()}'");
-                    return false;
-                }
-
-                return !string.IsNullOrWhiteSpace(output) && output[0] >= '0' && output[0] <= '9';
-            }
-            catch
-            {
-                return false;
-            }
+            return ProcessHelper.FindExiftool("Test");
         }
     }
 }

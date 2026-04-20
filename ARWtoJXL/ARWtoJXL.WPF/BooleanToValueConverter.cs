@@ -12,14 +12,9 @@ namespace ARWtoJXL.WPF
             bool boolValue = value is bool b && b;
             string? converterParam = parameter as string;
 
-            if (converterParam == "Invert")
+            if (converterParam == "Invert" || converterParam == "InvertContent")
             {
-                return boolValue ? "Deselect All" : "Select All";
-            }
-
-            if (converterParam == "InvertContent")
-            {
-                return boolValue ? "Deselect All" : "Select All";
+                return boolValue ? AppStrings.DeselectAll : AppStrings.SelectAll;
             }
 
             if (converterParam == "DefaultIfZero")

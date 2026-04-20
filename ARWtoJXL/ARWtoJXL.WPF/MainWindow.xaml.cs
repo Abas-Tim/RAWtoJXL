@@ -18,9 +18,10 @@ namespace ARWtoJXL.WPF
         public MainWindow()
         {
             InitializeComponent();
-            var magickService = new MagickService();
+            var exiftoolService = new ExiftoolService();
+            var magickService = new MagickService(exiftoolService);
             var pathResolver = new PathResolverService();
-            var cjxlEncoder = new CjxlEncoderService(pathResolver);
+            var cjxlEncoder = new CjxlEncoderService(pathResolver, exiftoolService);
             var fileService = new FileService();
             var sizeEstimator = new SizeEstimatorService();
             var imageService = new ImageProcessingService(magickService, cjxlEncoder, fileService, pathResolver, sizeEstimator);
@@ -42,7 +43,7 @@ namespace ARWtoJXL.WPF
                 if (files != null)
                 {
                     var viewModel = (MainViewModel)DataContext!;
-                    
+
                     var allFiles = new List<string>();
                     foreach (var path in files)
                     {

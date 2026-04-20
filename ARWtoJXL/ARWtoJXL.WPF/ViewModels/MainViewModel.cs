@@ -2,6 +2,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -18,26 +19,28 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace ARWtoJXL.WPF.ViewModels
 {
-      public partial class MainViewModel : ObservableObject
-        {
-            private readonly IImageService _imageService;
-            private readonly ObservableCollection<ImageItem> _selectedImages = new();
-            private CancellationTokenSource? _cancellationTokenSource;
+    public partial class MainViewModel : ObservableObject
+    {
+        private readonly IImageService _imageService;
+        private readonly ObservableCollection<ImageItem> _selectedImages = new();
+        private readonly HashSet<string> _addedFilePaths = new(StringComparer.OrdinalIgnoreCase);
+        private CancellationTokenSource? _cancellationTokenSource;
 
-            [ObservableProperty]
-            private ObservableCollection<ImageItem> _images = new();
+        [ObservableProperty]
+        private ObservableCollection<ImageItem> _images = new();
 
-       private RelayCommand _convertSelectedCommand;
+        private RelayCommand _convertSelectedCommand;
         private RelayCommand _removeSelectedCommand;
         private RelayCommand _selectAllCommand;
         private RelayCommand _cancelCommand;
         private RelayCommand _openFileCommand;
-
-            [ObservableProperty]
-            private bool _isCancelRequested;
+        private RelayCommand _openOutputFolderCommand;
 
         [ObservableProperty]
-        private string _statusMessage = "Ready";
+        private bool _isCancelRequested;
+
+        [ObservableProperty]
+        private string _statusMessage = AppStrings.Ready;
 
         [ObservableProperty]
         private bool _isConverting;
@@ -46,10 +49,13 @@ namespace ARWtoJXL.WPF.ViewModels
         private string _outputPath = string.Empty;
 
         [ObservableProperty]
-        private string _subfolderName = "jxl_output";
+        private string _subfolderName = AppStrings.SubfolderNameDefault;
 
         [ObservableProperty]
         private bool _isAllSelected;
+
+        [ObservableProperty]
+        private string _outputDirectory = string.Empty;
 
         [ObservableProperty]
         private bool _useSubfolder = true;
@@ -81,11 +87,16 @@ namespace ARWtoJXL.WPF.ViewModels
             _selectAllCommand = new RelayCommand(ToggleSelectAll, CanExecuteSelectAll);
             _cancelCommand = new RelayCommand(CancelConversion, CanExecuteCancel);
             _openFileCommand = new RelayCommand(OpenFile, CanExecuteSelectAll);
+            _openOutputFolderCommand = new RelayCommand(OpenOutputFolder, CanExecuteOpenOutputFolder);
             PropertyChanging += (s, e) =>
             {
                 if (e.PropertyName == nameof(IsCancelRequested))
                 {
                     _cancelCommand.NotifyCanExecuteChanged();
+                }
+                else if (e.PropertyName == nameof(IsConverting))
+                {
+                    _openOutputFolderCommand.NotifyCanExecuteChanged();
                 }
             };
         }
@@ -95,42 +106,44 @@ namespace ARWtoJXL.WPF.ViewModels
         public ICommand SelectAllCommand => _selectAllCommand;
         public ICommand CancelCommand => _cancelCommand;
         public ICommand OpenFileCommand => _openFileCommand;
+        public ICommand OpenOutputFolderCommand => _openOutputFolderCommand;
 
-        private bool CanExecuteCancel()
-        {
-            return IsCancelRequested;
-        }
+        private bool CanExecuteCancel() => IsCancelRequested;
 
-        private bool CanExecuteConvertSelected()
-        {
-            return !IsConverting && _selectedImages.Any(i => i.Status == ImageStatus.Ready || i.Status == ImageStatus.Converted || i.Status == ImageStatus.Failed);
-        }
+        private bool CanExecuteConvertSelected() =>
+            !IsConverting && _selectedImages.Any(i => i.Status == ImageStatus.Ready || i.Status == ImageStatus.Converted || i.Status == ImageStatus.Failed);
 
-        private bool CanExecuteRemoveSelected()
-        {
-            return !IsConverting && IsAnySelected;
-        }
+        private bool CanExecuteRemoveSelected() => !IsConverting && IsAnySelected;
 
-        private bool CanExecuteSelectAll()
+        private bool CanExecuteSelectAll() => !IsConverting;
+
+        private bool CanExecuteOpenOutputFolder() =>
+            !IsConverting && !string.IsNullOrEmpty(OutputDirectory) && Directory.Exists(OutputDirectory);
+
+        private void OpenOutputFolder()
         {
-            return !IsConverting;
+            if (!string.IsNullOrEmpty(OutputDirectory) && Directory.Exists(OutputDirectory))
+            {
+                try
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = OutputDirectory,
+                        UseShellExecute = true
+                    });
+                }
+                catch
+                {
+                    StatusMessage = AppStrings.FailedToOpenOutputFolder;
+                }
+            }
         }
 
         private void ToggleSelectAll()
         {
-            if (IsAllSelected)
+            foreach (var item in Images)
             {
-                foreach (var item in Images)
-                {
-                    item.IsSelected = false;
-                }
-            }
-            else
-            {
-                foreach (var item in Images)
-                {
-                    item.IsSelected = true;
-                }
+                item.IsSelected = !IsAllSelected;
             }
         }
 
@@ -138,9 +151,9 @@ namespace ARWtoJXL.WPF.ViewModels
         {
             var dialog = new Microsoft.Win32.OpenFileDialog
             {
-                Filter = "Sony RAW Files|*.ARW|JPEG XL Files|*.JXL|All Files|*.*",
+                Filter = AppStrings.OpenFileDialogFilter,
                 Multiselect = true,
-                Title = "Open Image Files"
+                Title = AppStrings.OpenFileDialogTitle
             };
 
             if (dialog.ShowDialog() == true)
@@ -149,7 +162,7 @@ namespace ARWtoJXL.WPF.ViewModels
             }
         }
 
-       private async Task ConvertSelectedAsync()
+        private async Task ConvertSelectedAsync()
         {
             var readySelected = _selectedImages.Where(i => i.Status == ImageStatus.Ready || i.Status == ImageStatus.Converted || i.Status == ImageStatus.Failed).ToList();
             if (!readySelected.Any()) return;
@@ -158,13 +171,10 @@ namespace ARWtoJXL.WPF.ViewModels
             _completedCountField = 0;
             CompletedCount = 0;
             TotalCount = readySelected.Count;
-            StatusMessage = $"Converting 0 of {readySelected.Count}...";
+            StatusMessage = $"{AppStrings.ConvertingProgress}{0}{AppStrings.OfSuffix}{readySelected.Count}...";
             IsConverting = true;
             IsCancelRequested = true;
-            _convertSelectedCommand.NotifyCanExecuteChanged();
-            _removeSelectedCommand.NotifyCanExecuteChanged();
-            _selectAllCommand.NotifyCanExecuteChanged();
-            _cancelCommand.NotifyCanExecuteChanged();
+            RefreshAllCommands();
 
             int maxConcurrency = Environment.ProcessorCount;
             using var semaphore = new SemaphoreSlim(maxConcurrency);
@@ -183,30 +193,27 @@ namespace ARWtoJXL.WPF.ViewModels
                     string outputPath = GetOutputPath(item.FilePath);
 
                     try
-                     {
-                         await _imageService.ConvertArwToJxlAsync(
-                             item.FilePath,
-                             outputPath,
-                             _ => { },
-                             QualityPreset,
-                             _cancellationTokenSource.Token);
+                    {
+                        await _imageService.ConvertArwToJxlAsync(
+                            item.FilePath,
+                            outputPath,
+                            _ => { },
+                            QualityPreset,
+                            _cancellationTokenSource.Token);
 
-                        await App.Current.Dispatcher.InvokeAsync(() =>
-                        {
-                            item.Status = ImageStatus.Converted;
-                        });
+                        await OnUiAsync(() => item.Status = ImageStatus.Converted);
                     }
                     catch (OperationCanceledException)
                     {
-                        await App.Current.Dispatcher.InvokeAsync(() =>
+                        await OnUiAsync(() =>
                         {
                             item.Status = ImageStatus.Pending;
-                            item.ErrorMessage = "Cancelled";
+                            item.ErrorMessage = AppStrings.Cancelled;
                         });
                     }
                     catch (Exception ex)
                     {
-                        await App.Current.Dispatcher.InvokeAsync(() =>
+                        await OnUiAsync(() =>
                         {
                             item.Status = ImageStatus.Failed;
                             item.ErrorMessage = ex.Message;
@@ -222,22 +229,31 @@ namespace ARWtoJXL.WPF.ViewModels
 
             await Task.WhenAll(tasks);
 
+            string lastOutputDir = string.Empty;
+            if (readySelected.Any())
+            {
+                lastOutputDir = Path.GetDirectoryName(GetOutputPath(readySelected.First().FilePath))!;
+            }
+
+            await OnUiAsync(() =>
+            {
+                OutputDirectory = lastOutputDir;
+                _openOutputFolderCommand.NotifyCanExecuteChanged();
+            });
+
             IsConverting = false;
             IsCancelRequested = false;
             _cancellationTokenSource = null;
-            StatusMessage = "Conversion complete.";
+            StatusMessage = AppStrings.ConversionComplete;
             CompletedCount = 0;
             TotalCount = 0;
-            _convertSelectedCommand.NotifyCanExecuteChanged();
-            _removeSelectedCommand.NotifyCanExecuteChanged();
-            _selectAllCommand.NotifyCanExecuteChanged();
-            _cancelCommand.NotifyCanExecuteChanged();
+            RefreshAllCommands();
         }
 
         private void CancelConversion()
         {
             _cancellationTokenSource?.Cancel();
-            StatusMessage = "Cancelling...";
+            StatusMessage = AppStrings.Cancelling;
         }
 
         private int _completedCountField;
@@ -246,7 +262,7 @@ namespace ARWtoJXL.WPF.ViewModels
         {
             int completed = Interlocked.Increment(ref _completedCountField);
             CompletedCount = completed;
-            StatusMessage = $"Converting {completed} of {total}...";
+            StatusMessage = $"{AppStrings.ConvertingProgress}{completed}{AppStrings.OfSuffix}{total}...";
         }
 
         private void RemoveSelected()
@@ -259,10 +275,8 @@ namespace ARWtoJXL.WPF.ViewModels
             }
             _selectedImages.Clear();
             UpdateSelectionState();
-            StatusMessage = $"Removed {itemsToRemove.Count} item(s).";
-            _convertSelectedCommand.NotifyCanExecuteChanged();
-            _removeSelectedCommand.NotifyCanExecuteChanged();
-            _selectAllCommand.NotifyCanExecuteChanged();
+            StatusMessage = $"{AppStrings.ItemsRemoved}{itemsToRemove.Count}{AppStrings.ItemsSuffix}";
+            RefreshViewCommands();
         }
 
         private void Item_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -284,13 +298,18 @@ namespace ARWtoJXL.WPF.ViewModels
                     {
                         _selectedImages.Remove(item);
                     }
-                    
+
                     UpdateSelectionState();
-                    _convertSelectedCommand.NotifyCanExecuteChanged();
-                    _removeSelectedCommand.NotifyCanExecuteChanged();
-                    _selectAllCommand.NotifyCanExecuteChanged();
+                    RefreshViewCommands();
                 }
             }
+        }
+
+        private void RefreshViewCommands()
+        {
+            _convertSelectedCommand.NotifyCanExecuteChanged();
+            _removeSelectedCommand.NotifyCanExecuteChanged();
+            _selectAllCommand.NotifyCanExecuteChanged();
         }
 
         private void UpdateSelectionState()
@@ -306,7 +325,16 @@ namespace ARWtoJXL.WPF.ViewModels
 
         public async Task AddFilesAsync(IEnumerable<string> filePaths)
         {
-            var loadTasks = filePaths.Select(async path =>
+            var normalizedPaths = filePaths.Select(p => Path.GetFullPath(p)).Distinct().ToList();
+            var newPaths = normalizedPaths.Where(p => !_addedFilePaths.Contains(p)).ToList();
+            int skipped = normalizedPaths.Count - newPaths.Count;
+
+            foreach (var p in newPaths)
+            {
+                _addedFilePaths.Add(p);
+            }
+
+            var loadTasks = newPaths.Select(async path =>
             {
                 if (string.IsNullOrEmpty(path) || !File.Exists(path)) return;
 
@@ -334,7 +362,7 @@ namespace ARWtoJXL.WPF.ViewModels
                 }
                 catch (Exception ex)
                 {
-                    item.ErrorMessage = $"Thumbnail failed: {ex.Message}";
+                    item.ErrorMessage = $"{AppStrings.ThumbnailFailedPrefix}{ex.Message}";
                 }
 
                 try
@@ -351,10 +379,9 @@ namespace ARWtoJXL.WPF.ViewModels
                 }
                 catch
                 {
-                    // Silently ignore estimation failures
                 }
 
-                await App.Current.Dispatcher.InvokeAsync(() =>
+                await OnUiAsync(() =>
                 {
                     Images.Add(item);
                     item.PropertyChanged += Item_PropertyChanged;
@@ -363,11 +390,12 @@ namespace ARWtoJXL.WPF.ViewModels
 
             await Task.WhenAll(loadTasks);
 
-            StatusMessage = $"Files loaded. {Images.Count} item(s).";
+            string msg = skipped > 0
+                ? $"{AppStrings.FilesLoaded}{Images.Count}{AppStrings.ItemsSingular}{AppStrings.OfSuffix}{skipped}{AppStrings.DuplicatesSkipped}"
+                : $"{AppStrings.FilesLoaded}{Images.Count}{AppStrings.ItemsSingular}";
+            StatusMessage = msg;
             UpdateSelectionState();
-            _convertSelectedCommand.NotifyCanExecuteChanged();
-            _removeSelectedCommand.NotifyCanExecuteChanged();
-            _selectAllCommand.NotifyCanExecuteChanged();
+            RefreshViewCommands();
         }
 
         private string GetOutputPath(string inputPath)
@@ -375,6 +403,19 @@ namespace ARWtoJXL.WPF.ViewModels
             string directory = UseSubfolder ? Path.Combine(Path.GetDirectoryName(inputPath)!, SubfolderName) : Path.GetDirectoryName(inputPath)!;
             Directory.CreateDirectory(directory);
             return Path.Combine(directory, Path.GetFileNameWithoutExtension(inputPath) + ".jxl");
+        }
+
+        private async Task OnUiAsync(Action action)
+        {
+            await App.Current.Dispatcher.InvokeAsync(action);
+        }
+
+        private void RefreshAllCommands()
+        {
+            _convertSelectedCommand.NotifyCanExecuteChanged();
+            _removeSelectedCommand.NotifyCanExecuteChanged();
+            _selectAllCommand.NotifyCanExecuteChanged();
+            _cancelCommand.NotifyCanExecuteChanged();
         }
     }
 }
