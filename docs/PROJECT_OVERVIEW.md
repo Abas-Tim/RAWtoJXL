@@ -55,11 +55,13 @@ ARWtoJXL/
 │   ├── AppStrings.cs                  # Centralized UI string constants
 │   └── Views/                         # Empty directory (reserved for future views)
 └── ARWtoJXL.Tests/         # xUnit test suite
-    ├── TestBase.cs                   # Shared test base class (TestArwPath, helper methods)
-    ├── ConversionTests.cs            # Core conversion tests (quality levels, progress, errors)
-    ├── MetadataPreservationTests.cs  # Metadata transfer/verification tests
-    ├── MetadataDebugTests.cs         # Diagnostic test with assertions for metadata preservation
-    └── QualityCalculatorTests.cs     # Unit tests for quality calculations
+    ├── Startup.cs                    # DI service configuration (Microsoft.Extensions.DependencyInjection)
+    ├── ConversionTests.cs            # Core conversion tests (inherits Startup, resolves IImageService)
+    ├── MetadataPreservationTests.cs  # Metadata transfer tests (inherits Startup, resolves IMagickService, IImageService)
+    ├── MetadataDebugTests.cs         # Diagnostic test with assertions for metadata preservation (inherits Startup)
+    ├── QualityCalculatorTests.cs     # Unit tests for quality calculations (no DI)
+    ├── SizeEstimatorServiceTests.cs  # Unit tests for size estimation (direct instantiation)
+    └── Services/                     # Empty directory (reserved for future service tests)
 ```
 
 ## Architecture Pattern
@@ -233,18 +235,22 @@ Failed     # Conversion error (ErrorMessage populated)
 
 
 ## Testing
-- **QualityCalculatorTests**: 12 unit tests for quality→distance/effort mappings
-- **TestBase**: Shared base class with `TestArwPath` (resolved from assembly location), `CreateImageService()`, `CleanOutputFile()`, `FindExiftoolForTests()`
-- **MetadataDebugTests**: Diagnostic test with assertions for full metadata preservation verification
+- **QualityCalculatorTests**: 12 unit tests for quality→distance/effort mappings (no DI needed)
+- **SizeEstimatorServiceTests**: 10 unit tests for size estimation heuristics (direct instantiation)
+- **Startup**: Central DI configuration class — registers all services via `Microsoft.Extensions.DependencyInjection`. Tests inherit from `Startup` and resolve services from `ServiceProvider`. Provides `CreateScope()` for test isolation.
+- **MetadataDebugTests**: Diagnostic test with assertions for full metadata preservation verification (inherits `Startup`)
+  - Resolves services from `ServiceProvider`
   - Extracts metadata from ARW, converts to JXL, verifies 15+ EXIF tags preserved via exiftool
   - Uses exiftool `-s -n -Make -Model ...` format for tag-specific reading
   - Assertions: minimum 5 matched tags, no missing tags, output has metadata
-- **ConversionTests**: Integration tests with real ARW files (split from ImageProcessingServiceTests)
+- **ConversionTests**: Integration tests with real ARW files (inherits `Startup`)
+  - Resolves `IImageService` from `ServiceProvider`
   - Thumbnail extraction
   - Conversion at various quality levels (0, 50, 70, 90, 100)
   - Lossless mode verification
   - Progress callback verification (smooth updates, monotonic increase, final 1.0)
-- **MetadataPreservationTests**: Metadata-specific tests (split from ImageProcessingServiceTests)
+- **MetadataPreservationTests**: Metadata-specific tests (inherits `Startup`)
+  - Resolves `IMagickService` and `IImageService` from `ServiceProvider`
   - EXIF transfer verification
   - ICC profile preservation
   - HasAny property verification

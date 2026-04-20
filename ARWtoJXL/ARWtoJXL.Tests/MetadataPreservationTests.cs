@@ -3,20 +3,20 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ARWtoJXL.Core.Interfaces;
-using ARWtoJXL.Core.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace ARWtoJXL.Tests
 {
-    public class MetadataPreservationTests : TestBase
+    public class MetadataPreservationTests : Startup
     {
-        private readonly MagickService _magickService;
+        private readonly IMagickService _magickService;
         private readonly IImageService _imageService;
 
         public MetadataPreservationTests()
         {
-            _magickService = new MagickService();
-            _imageService = CreateImageService();
+            _magickService = Services.GetRequiredService<IMagickService>();
+            _imageService = Services.GetRequiredService<IImageService>();
         }
 
         [Fact]

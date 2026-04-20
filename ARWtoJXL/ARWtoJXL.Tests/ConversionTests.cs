@@ -3,19 +3,19 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using ARWtoJXL.Core.Services;
 using ARWtoJXL.Core.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace ARWtoJXL.Tests
 {
-    public class ConversionTests : TestBase
+    public class ConversionTests : Startup
     {
         private readonly IImageService _imageService;
 
         public ConversionTests()
         {
-            _imageService = CreateImageService();
+            _imageService = Services.GetRequiredService<IImageService>();
         }
 
         [Fact]

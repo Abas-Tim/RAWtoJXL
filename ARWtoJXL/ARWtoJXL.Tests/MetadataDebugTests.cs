@@ -5,22 +5,20 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using ImageMagick;
+using ARWtoJXL.Core.Interfaces;
 using ARWtoJXL.Core.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace ARWtoJXL.Tests
 {
-    public class MetadataDebugTests : TestBase
+    public class MetadataDebugTests : Startup
     {
         [Fact]
         public async Task Debug_FullExtractionAndConversion()
         {
-            var magickService = new MagickService();
-            var pathResolver = new PathResolverService();
-            var cjxlEncoder = new CjxlEncoderService(pathResolver);
-            var fileService = new FileService();
-            var sizeEstimator = new SizeEstimatorService();
-            var imageService = new ImageProcessingService(magickService, cjxlEncoder, fileService, pathResolver, sizeEstimator);
+            var magickService = Services.GetRequiredService<IMagickService>();
+            var imageService = Services.GetRequiredService<IImageService>();
 
             var metadata = await magickService.ExtractMetadataProfilesAsync(TestArwPath);
             Console.WriteLine($"=== Extraction Result ===");
