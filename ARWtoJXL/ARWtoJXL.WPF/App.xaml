@@ -1,9 +1,9 @@
-﻿<Application x:Class="ARWtoJXL.WPF.App"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:ARWtoJXL.WPF"
-             StartupUri="MainWindow.xaml">
+<Application x:Class="ARWtoJXL.WPF.App"
+              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+              xmlns:local="clr-namespace:ARWtoJXL.WPF"
+              Startup="App_OnStartup">
     <Application.Resources>
-         
-    </Application.Resources>
+          
+      </Application.Resources>
 </Application>

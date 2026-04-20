@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using ARWtoJXL.Core.Models;
@@ -19,6 +20,7 @@ namespace ARWtoJXL.Core.Interfaces
         /// <param name="metadata">Optional metadata profiles to embed.</param>
         /// <param name="cancellationToken">Token to cancel the operation.</param>
         /// <param name="timeoutSeconds">Optional timeout in seconds (default: 300).</param>
+        /// <param name="progress">Optional progress callback (0.0 to 1.0).</param>
         Task EncodeAsync(
             string inputPath,
             string originalArwPath,
@@ -26,6 +28,7 @@ namespace ARWtoJXL.Core.Interfaces
             int quality,
             MetadataProfiles? metadata = null,
             CancellationToken cancellationToken = default,
-            int timeoutSeconds = 300);
+            int timeoutSeconds = 300,
+            Action<double>? progress = null);
     }
 }

@@ -3,7 +3,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Collections.Generic;
+using Wpf.Ui.Controls;
 using ARWtoJXL.WPF.ViewModels;
+using ARWtoJXL.Core.Interfaces;
 using ARWtoJXL.Core.Services;
 using ARWtoJXL.WPF.Models;
 
@@ -11,15 +13,25 @@ namespace ARWtoJXL.WPF
 {
     public partial class MainWindow : Window
     {
-       public MainWindow()
+        private SettingsWindow? _settingsWindow;
+
+        public MainWindow()
         {
             InitializeComponent();
             var magickService = new MagickService();
             var pathResolver = new PathResolverService();
             var cjxlEncoder = new CjxlEncoderService(pathResolver);
             var fileService = new FileService();
-            var imageService = new ImageProcessingService(magickService, cjxlEncoder, fileService, pathResolver);
-            DataContext = new MainViewModel(imageService);
+            var sizeEstimator = new SizeEstimatorService();
+            var imageService = new ImageProcessingService(magickService, cjxlEncoder, fileService, pathResolver, sizeEstimator);
+            var viewModel = new MainViewModel(imageService);
+
+            var saved = SettingsService.Load();
+            viewModel.UseSubfolder = saved.UseSubfolder;
+            viewModel.SubfolderName = saved.SubfolderName;
+            viewModel.QualityPreset = saved.QualityPreset;
+
+            DataContext = viewModel;
         }
 
         private void Window_Drop(object sender, DragEventArgs e)
@@ -54,6 +66,33 @@ namespace ARWtoJXL.WPF
         {
             e.Effects = DragDropEffects.Copy;
             e.Handled = true;
+        }
+
+        private void SettingsButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_settingsWindow == null || !_settingsWindow.IsVisible)
+            {
+                _settingsWindow = new SettingsWindow
+                {
+                    Owner = this
+                };
+
+                var viewModel = (MainViewModel)DataContext!;
+                _settingsWindow.Settings.UseSubfolder = viewModel.UseSubfolder;
+                _settingsWindow.Settings.SubfolderName = viewModel.SubfolderName;
+                _settingsWindow.Settings.QualityPreset = viewModel.QualityPreset;
+                _settingsWindow.Closed += (s, args) =>
+                {
+                    viewModel.ApplySettings(_settingsWindow!.Settings);
+                    _settingsWindow = null;
+                };
+
+                _settingsWindow.ShowDialog();
+            }
+            else
+            {
+                _settingsWindow.Activate();
+            }
         }
     }
 }

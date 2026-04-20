@@ -8,22 +8,22 @@ Windows desktop app (.NET 8 WPF) that converts Sony RAW (.ARW) camera files to J
 Root-level files tracked in git:
 - `.gitignore` — excludes build outputs, IDE artifacts, temp/debug files
 - `ARWtoJXL.slnx` — solution matrix
-- `build.ps1` — build script (restore, test, publish)
-- `cjxl.exe` — JPEG XL encoder binary v0.11.2 (bundled)
 - `docs/PROJECT_OVERVIEW.md` — this file
-- `ARWtoJXL/` — source projects
+- `ARWtoJXL/` — source projects (includes build.ps1, cjxl.exe, exiftool.exe)
 
 ## Project Structure
 ```
 ARWtoJXL/
+├── build.ps1                          # Build script (restore, download deps, publish)
+├── cjxl.exe                           # JPEG XL encoder v0.11.2
+├── exiftool.exe                       # Metadata tool v13.56
 ├── ARWtoJXL.Core/          # Business logic layer (clean architecture)
 │   ├── Models/
-  │   │   ├── ConversionOptions.cs       # Configuration for conversion settings
-   │   │   ├── ConversionResult.cs        # Result wrapper for conversion operations
+
    │   │   ├── QualityCalculator.cs       # Static helper for quality→distance/effort mapping
    │   │   └── MetadataProfiles.cs        # Metadata container (EXIF, XMP, ICC, IPTC profiles)
 │   ├── Interfaces/
-│   │   ├── IImageService.cs           # Primary service interface (enums: ImageStatus, OutputFormat)
+│   │   ├── IImageService.cs           # Primary service interface (enum: ImageStatus)
 │   │   ├── IMagickService.cs          # ImageMagick operations interface
 │   │   ├── ICjxlEncoder.cs            # cjxl CLI encoder interface
 │   │   ├── IFileService.cs            # File system operations interface
@@ -33,18 +33,23 @@ ARWtoJXL/
 │       ├── MagickService.cs           # Magick.NET implementation (thumbnails, PNG conversion)
 │       ├── CjxlEncoderService.cs      # cjxl CLI wrapper implementation
 │       ├── FileService.cs             # File system operations implementation
-│       └── PathResolverService.cs     # Path resolution implementation
+│       ├── PathResolverService.cs     # Path resolution implementation
+│       ├── SizeEstimatorService.cs    # PNG→JXL file size estimation heuristic
+│       └── Logger.cs                  # Static file logger (app temp dir)
 ├── ARWtoJXL.WPF/           # Presentation layer
 │   ├── Models/
 │   │   └── ImageItem.cs               # ViewModel data model (INotifyPropertyChanged)
 │   ├── ViewModels/
-│   │   └── MainViewModel.cs           # MVVM viewmodel (CommunityToolkit.Mvvm)
-│   ├── Converters/                    # WPF value converters
-│   │   ├── BooleanToBrushConverter.cs
-│   │   ├── BooleanToTextConverter.cs
-│   │   ├── BooleanToValueConverter.cs
-│   │   └── ImageStatusToStringConverter.cs
-│   └── MainWindow.xaml(.cs)           # Drag-drop gallery UI with DI wiring
+│   │   ├── MainViewModel.cs           # MVVM viewmodel (CommunityToolkit.Mvvm)
+│   │   └── SettingsViewModel.cs       # Settings dialog viewmodel
+│   ├── MainWindow.xaml(.cs)           # Drag-drop gallery UI with DI wiring
+│   ├── SettingsWindow.xaml(.cs)       # Settings dialog window
+│   ├── BooleanToBrushConverter.cs     # WPF value converters
+│   ├── BooleanToTextConverter.cs
+│   ├── BooleanToValueConverter.cs
+│   ├── ImageStatusToStringConverter.cs
+│   ├── LongToVisibilityConverter.cs   # Long→Visibility for estimated size display
+│   └── Views/                         # Empty directory (reserved for future views)
 └── ARWtoJXL.Tests/         # xUnit test suite
     ├── MetadataDebugTests.cs         # Diagnostic test with assertions for metadata preservation
     ├── ImageProcessingServiceTests.cs # Integration tests for conversion pipeline
@@ -78,7 +83,8 @@ public ImageProcessingService(
     IMagickService magickService,
     ICjxlEncoder cjxlEncoder,
     IFileService fileService,
-    IPathResolver pathResolver)
+    IPathResolver pathResolver,
+    ISizeEstimator sizeEstimator)
 ```
 
 ### IMagickService / MagickService
@@ -89,11 +95,13 @@ public ImageProcessingService(
   - **Non-ARW files:** Uses Magick.NET profile extraction first, falls back to exiftool for JXL files.
 
 ### ICjxlEncoder / CjxlEncoderService
-- `EncodeAsync(inputPath, originalArwPath, outputPath, quality, metadata, cancellationToken)`: Invokes cjxl.exe with quality-based parameters
+- `EncodeAsync(inputPath, originalArwPath, outputPath, quality, metadata, cancellationToken, timeoutSeconds, progress)`: Invokes cjxl.exe with quality-based parameters
   - `inputPath`: Path to the PNG input (from Magick.NET conversion)
   - `originalArwPath`: Path to the original ARW file (used for exiftool metadata embedding)
+  - `progress`: Optional `Action<double>` callback (0.0→1.0 relative to cjxl stage only)
 - Uses `QualityCalculator` for distance/effort mapping
 - Handles both lossless (quality≥100) and lossy modes
+- **cjxl progress estimation:** cjxl v0.11.2 does not output percentage progress during encoding. A background task (`ReportProgressAsync`) reports linear progress from 0.0 to 0.98 during cjxl encoding (updated every 100ms), mapped to 0.5→1.0 in the overall pipeline.
 - **Metadata embedding:** cjxl's `-x exif` argument does not reliably embed metadata (v0.11.2). Instead, `EmbedMetadataWithExiftoolAsync()` uses exiftool's `-tagsFromFile` post-processing step to copy metadata from the source ARW to the output JXL after cjxl encoding completes.
 
 ### IFileService / FileService
@@ -126,7 +134,7 @@ Centralized quality calculations to avoid duplication:
 - Lossy: `--distance={0.1-25.0} --effort={5-9} --num_threads={CPU} --container=1 --progressive_dc=1`
 - Metadata: `-x exif={path}`, `-x xmp={path}`, `-x icc_pathname={path}`, `-x jumbf={path}` (when available)
 
-**Progress tracking:** 0.1 (start) → 0.5 (PNG complete) → 1.0 (JXL complete)
+**Progress tracking:** 0.1 (metadata) → 0.5 (PNG complete) → 0.5→1.0 smooth (cjxl encoding via time-based estimation) → 1.0 (JXL complete)
 
 **Metadata handling:**
 - **EXIF extraction (ARW):** exiftool (`-b -exif:all`) extracts raw EXIF bytes from source ARW (~1s). Non-ARW files use Magick.NET first.
@@ -136,7 +144,7 @@ Centralized quality calculations to avoid duplication:
 - Auto-cleanup via `MetadataProfiles.Dispose()` after encoding completes.
 
 ## UI/UX Flow
-1. User drags .ARW files or folders onto MainWindow
+1. User drags .ARW files or folders onto MainWindow, or clicks "Open File" button to browse via OpenFileDialog
 2. `MainViewModel.AddFilesAsync()` filters ARW/JXL, creates `ImageItem` objects, generates thumbnails via `GetThumbnailAsync()`
 3. Items displayed in gallery with 80x60 thumbnails, selection checkboxes, and per-item progress spinners
 4. User selects files, configures settings (quality, subfolder) → clicks "Convert"
@@ -146,11 +154,12 @@ Centralized quality calculations to avoid duplication:
 8. Output saved to same directory or subfolder (configurable via `UseSubfolder` + `SubfolderName`)
 
 ## UI Components
+- **Open File Button:** Opens OpenFileDialog with ARW/JXL filter, calls `AddFilesAsync()` with selected files
 - **Gallery (ListBox):** Displays ImageItem objects with thumbnail previews, checkboxes, status indicators
 - **Per-Item Spinner:** Indeterminate ProgressBar visible when `Status == ImageStatus.Converting`
 - **Global ProgressBar:** Shows overall progress (CompletedCount/TotalCount), hidden when `IsConverting == false`
 - **Cancel Button:** Enabled during conversion, triggers `CancellationTokenSource.Cancel()`
-- **Settings Panel (Expander):** Quality slider (0-100, default 90) and subfolder options
+- **Settings Window (Dialog):** Separate SettingsWindow with quality slider (0-100, default 90), subfolder checkbox, subfolder name TextBox
 - **Select All/Deselect All Button:** Toggles selection state, text bound to `IsAllSelected`
 
 ## Selection Logic
@@ -158,6 +167,25 @@ Centralized quality calculations to avoid duplication:
 - `IsAnySelected`: True when `_selectedImages.Any()`
 - `UpdateSelectionState()`: Recalculates selection state on every `IsSelected` change
 - `RemoveSelected()`: Removes selected items and resets selection state
+
+## Keyboard Shortcuts
+
+Defined in `MainWindow.xaml` via `Window.InputBindings`:
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+A` | Select All |
+| `Ctrl+C` | Convert Selected |
+| `Delete` | Remove Selected |
+| `Ctrl+D` | Open File Dialog |
+
+## Settings (SettingsViewModel + SettingsWindow)
+
+`SettingsWindow` is a separate dialog window (not an Expander in MainWindow):
+- **SettingsViewModel**: `UseSubfolder` (bool, default true), `SubfolderName` (string, default "jxl_output"), `QualityPreset` (int, default 90)
+- **SettingsWindow.xaml**: CheckBox for subfolder, TextBox for subfolder name, Slider for quality (0-100)
+- Settings applied via `MainViewModel.ApplySettings(SettingsViewModel)` on window close
+- `MainViewModel` exposes `UseSubfolder`, `SubfolderName`, `QualityPreset` properties synced from SettingsWindow
 
 ## Concurrency Model
 - `SemaphoreSlim(maxConcurrency = Environment.ProcessorCount)` limits parallel conversions
@@ -183,10 +211,6 @@ Converted  # Successfully converted to JXL
 Failed     # Conversion error (ErrorMessage populated)
 ```
 
-### OutputFormat
-```
-Jxl  # Native JPEG-XL format
-```
 
 ## Testing
 - **QualityCalculatorTests**: 12 unit tests for quality→distance/effort mappings
@@ -200,10 +224,12 @@ Jxl  # Native JPEG-XL format
   - Lossless mode verification
   - Metadata transfer verification (EXIF, ICC presence and non-empty verification)
   - Error handling for invalid files
+  - Progress callback verification (smooth updates, monotonic increase, final 1.0)
 
 ## Build/Deploy
-- Single-file publish: `dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true`
-- cjxl.exe copied to output via `<None Include="..\cjxl.exe" CopyToOutputDirectory="PreserveNewest" />`
+- `build.ps1` (in `ARWtoJXL/`): checks cjxl.exe, downloads exiftool if missing, copies both to publish dir, then `dotnet restore` + `dotnet publish`
+- Single-file publish: `dotnet publish -c Release -r win-x64 --self-contained true -p:DebugType=None -p:DebugSymbols=false`
+- cjxl.exe + exiftool.exe copied to output via `<None Include="..\*.exe" CopyToOutputDirectory="PreserveNewest" />`
 - Tests: `dotnet test ARWtoJXL.Tests.csproj`
 
 ## Git Ignore Policy

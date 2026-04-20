@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
+using ARWtoJXL.Core.Interfaces;
 using ARWtoJXL.Core.Services;
 
 namespace ARWtoJXL.WPF

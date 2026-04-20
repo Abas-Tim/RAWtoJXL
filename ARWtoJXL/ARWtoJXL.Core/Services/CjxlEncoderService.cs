@@ -45,7 +45,8 @@ namespace ARWtoJXL.Core.Services
             int quality,
             MetadataProfiles? metadata = null,
             CancellationToken cancellationToken = default,
-            int timeoutSeconds = DefaultTimeoutSeconds)
+            int timeoutSeconds = DefaultTimeoutSeconds,
+            Action<double>? progress = null)
         {
             // Validate input parameters
             ValidateInputParameters(inputPath, outputPath, quality);
@@ -69,7 +70,7 @@ namespace ARWtoJXL.Core.Services
             var args = BuildEncodingArguments(quality, metadata, inputPath, outputPath);
 
             // Execute the encoding process
-            await ExecuteEncodingProcessAsync(cjxlPath, args, cancellationToken, timeoutSeconds);
+            await ExecuteEncodingProcessAsync(cjxlPath, args, cancellationToken, timeoutSeconds, progress);
 
             // Verify output file was created
             VerifyOutputFile(outputPath);
@@ -238,7 +239,8 @@ namespace ARWtoJXL.Core.Services
             string cjxlPath,
             List<string> args,
             CancellationToken cancellationToken,
-            int timeoutSeconds)
+            int timeoutSeconds,
+            Action<double>? progress)
         {
             var argumentsString = string.Join(" ", args.Select(EscapeArgument));
             
@@ -276,6 +278,11 @@ namespace ARWtoJXL.Core.Services
             });
 
             process.Start();
+            var startTime = DateTime.UtcNow;
+            var maxTime = TimeSpan.FromSeconds(timeoutSeconds);
+
+            // Progress reporter task - runs in background to update progress based on elapsed time
+            var progressTask = ReportProgressAsync(process, startTime, maxTime, progress, cancellationToken);
 
             // Read output asynchronously
             var readOutputTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
@@ -318,6 +325,28 @@ namespace ARWtoJXL.Core.Services
                 throw new CjxlEncodingException(
                     $"cjxl encoding failed with exit code {process.ExitCode}: {errorMessage}",
                     process.ExitCode);
+            }
+        }
+
+        /// <summary>
+        /// Reports progress during cjxl encoding using time-based estimation.
+        /// cjxl v0.11.2 does not output percentage progress, so we estimate based on elapsed time.
+        /// </summary>
+        private static async Task ReportProgressAsync(
+            Process process,
+            DateTime startTime,
+            TimeSpan maxTime,
+            Action<double>? progress,
+            CancellationToken cancellationToken)
+        {
+            if (progress == null) return;
+
+            while (!process.HasExited && !cancellationToken.IsCancellationRequested)
+            {
+                await Task.Delay(100, cancellationToken);
+                var elapsed = DateTime.UtcNow - startTime;
+                var fraction = Math.Min(elapsed.TotalSeconds / maxTime.TotalSeconds, 0.98);
+                progress?.Invoke(fraction);
             }
         }
 

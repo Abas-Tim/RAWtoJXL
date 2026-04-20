@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ARWtoJXL.Core.Services;
@@ -19,8 +21,9 @@ namespace ARWtoJXL.Tests
             var pathResolver = new PathResolverService();
             var cjxlEncoder = new CjxlEncoderService(pathResolver);
             var fileService = new FileService();
+            var sizeEstimator = new SizeEstimatorService();
             
-            _imageService = new ImageProcessingService(magickService, cjxlEncoder, fileService, pathResolver);
+            _imageService = new ImageProcessingService(magickService, cjxlEncoder, fileService, pathResolver, sizeEstimator);
         }
 
         [Fact]
@@ -36,7 +39,7 @@ namespace ARWtoJXL.Tests
             var outputPath = Path.Combine(Path.GetDirectoryName(TestArwPath)!, "test1.jxl");
             if (File.Exists(outputPath)) File.Delete(outputPath);
 
-            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 5, OutputFormat.Jxl, CancellationToken.None);
+            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 5, CancellationToken.None);
 
             Assert.True(File.Exists(outputPath));
         }
@@ -59,7 +62,7 @@ namespace ARWtoJXL.Tests
             var outputPath = Path.Combine(Path.GetDirectoryName(TestArwPath)!, $"test1_quality{quality}.jxl");
             if (File.Exists(outputPath)) File.Delete(outputPath);
 
-            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, quality, OutputFormat.Jxl, CancellationToken.None);
+            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, quality, CancellationToken.None);
 
             Assert.True(File.Exists(outputPath));
             Assert.True(new FileInfo(outputPath).Length > 0);
@@ -72,7 +75,7 @@ namespace ARWtoJXL.Tests
             if (File.Exists(outputPath)) File.Delete(outputPath);
 
             double progress = 0;
-            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => progress = p, 100, OutputFormat.Jxl, CancellationToken.None);
+            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => progress = p, 100, CancellationToken.None);
 
             Assert.True(File.Exists(outputPath));
             Assert.True(new FileInfo(outputPath).Length > 0);
@@ -85,7 +88,7 @@ namespace ARWtoJXL.Tests
             var outputPath = Path.Combine(Path.GetDirectoryName(TestArwPath)!, "test1_visually_lossless.jxl");
             if (File.Exists(outputPath)) File.Delete(outputPath);
 
-            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 90, OutputFormat.Jxl, CancellationToken.None);
+            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 90, CancellationToken.None);
 
             Assert.True(File.Exists(outputPath));
             Assert.True(new FileInfo(outputPath).Length > 0);
@@ -97,7 +100,7 @@ namespace ARWtoJXL.Tests
             var outputPath = Path.Combine(Path.GetDirectoryName(TestArwPath)!, "test1_lowest_quality.jxl");
             if (File.Exists(outputPath)) File.Delete(outputPath);
 
-            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 0, OutputFormat.Jxl, CancellationToken.None);
+            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 0, CancellationToken.None);
 
             Assert.True(File.Exists(outputPath));
             Assert.True(new FileInfo(outputPath).Length > 0);
@@ -116,7 +119,7 @@ namespace ARWtoJXL.Tests
             var outputPath = Path.Combine(Path.GetDirectoryName(TestArwPath)!, "test1_metadata_transfer.jxl");
             if (File.Exists(outputPath)) File.Delete(outputPath);
 
-            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 90, OutputFormat.Jxl, CancellationToken.None);
+            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 90, CancellationToken.None);
 
             Assert.True(File.Exists(outputPath));
 
@@ -140,7 +143,7 @@ namespace ARWtoJXL.Tests
             var outputPath = Path.Combine(Path.GetDirectoryName(TestArwPath)!, "test1_icc_preserved.jxl");
             if (File.Exists(outputPath)) File.Delete(outputPath);
 
-            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 90, OutputFormat.Jxl, CancellationToken.None);
+            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 90, CancellationToken.None);
 
             Assert.True(File.Exists(outputPath));
 
@@ -170,7 +173,7 @@ namespace ARWtoJXL.Tests
             var outputPath = Path.Combine(Path.GetDirectoryName(TestArwPath)!, "test1_hasany_verify.jxl");
             if (File.Exists(outputPath)) File.Delete(outputPath);
 
-            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 90, OutputFormat.Jxl, CancellationToken.None);
+            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 90, CancellationToken.None);
 
             Assert.True(File.Exists(outputPath));
 
@@ -191,7 +194,7 @@ namespace ARWtoJXL.Tests
             var outputPath = Path.Combine(Path.GetDirectoryName(TestArwPath)!, "test1_exif_verify.jxl");
             if (File.Exists(outputPath)) File.Delete(outputPath);
 
-            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 90, OutputFormat.Jxl, CancellationToken.None);
+            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 90, CancellationToken.None);
 
             Assert.True(File.Exists(outputPath));
 
@@ -216,7 +219,7 @@ namespace ARWtoJXL.Tests
             var outputPath = Path.Combine(Path.GetDirectoryName(TestArwPath)!, "test1_icc_verify.jxl");
             if (File.Exists(outputPath)) File.Delete(outputPath);
 
-            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 90, OutputFormat.Jxl, CancellationToken.None);
+            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 90, CancellationToken.None);
 
             Assert.True(File.Exists(outputPath));
 
@@ -248,7 +251,7 @@ namespace ARWtoJXL.Tests
             var outputPath = Path.Combine(Path.GetDirectoryName(TestArwPath)!, $"test1_metadata_q{quality}.jxl");
             if (File.Exists(outputPath)) File.Delete(outputPath);
 
-            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, quality, OutputFormat.Jxl, CancellationToken.None);
+            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, quality, CancellationToken.None);
 
             Assert.True(File.Exists(outputPath));
 
@@ -272,6 +275,39 @@ namespace ARWtoJXL.Tests
 
                 var outputExifBytes = File.ReadAllBytes(outputMetadata.ExifPath!);
                 Assert.True(outputExifBytes.Length > 0, "Output EXIF should not be empty");
+            }
+        }
+
+        [Fact]
+        public async Task ConvertArwToJxlAsync_ProgressCallback_ReportsSmoothProgress()
+        {
+            var outputPath = Path.Combine(Path.GetDirectoryName(TestArwPath)!, "test1_progress.jxl");
+            if (File.Exists(outputPath)) File.Delete(outputPath);
+
+            var progressValues = new List<double>();
+            var lockObj = new object();
+            await _imageService.ConvertArwToJxlAsync(
+                TestArwPath,
+                outputPath,
+                p => { lock (lockObj) progressValues.Add(p); },
+                50,
+                CancellationToken.None);
+
+            Assert.True(File.Exists(outputPath));
+            Assert.True(progressValues.Count > 2, $"Expected multiple progress updates, got {progressValues.Count}");
+
+            lock (lockObj)
+            {
+                Assert.True(progressValues.Any(v => v >= 0.05 && v <= 0.15), "Should report progress at metadata stage (~0.1)");
+                Assert.True(progressValues.Any(v => v >= 0.45 && v <= 0.55), "Should report progress at PNG stage (~0.5)");
+                Assert.True(progressValues.Any(v => v >= 0.5 && v < 1.0), "Should report smooth progress during cjxl encoding");
+                Assert.True(progressValues.Any(v => v >= 1.0), "Should report final progress of 1.0");
+
+                for (int i = 1; i < progressValues.Count; i++)
+                {
+                    Assert.True(progressValues[i] >= progressValues[i - 1],
+                        $"Progress should be monotonically increasing: {progressValues[i - 1]} -> {progressValues[i]}");
+                }
             }
         }
     }

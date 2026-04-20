@@ -15,16 +15,17 @@ namespace ARWtoJXL.Tests
         private const string TestArwPath = @"C:\Users\timur\Desktop\Playgroung\ARWtoJPEGXL\ARWtoJXL\ARWtoJXL.Tests\bin\Debug\net8.0-windows\test1.ARW";
 
         [Fact]
-        public void Debug_FullExtractionAndConversion()
+        public async Task Debug_FullExtractionAndConversion()
         {
             var magickService = new MagickService();
             var pathResolver = new PathResolverService();
             var cjxlEncoder = new CjxlEncoderService(pathResolver);
             var fileService = new FileService();
-            var imageService = new ImageProcessingService(magickService, cjxlEncoder, fileService, pathResolver);
+            var sizeEstimator = new SizeEstimatorService();
+            var imageService = new ImageProcessingService(magickService, cjxlEncoder, fileService, pathResolver, sizeEstimator);
 
             // Step 1: Extract metadata via MagickService
-            var metadata = magickService.ExtractMetadataProfilesAsync(TestArwPath).Result;
+            var metadata = await magickService.ExtractMetadataProfilesAsync(TestArwPath);
             Console.WriteLine($"=== Extraction Result ===");
             Console.WriteLine($"HasAny: {metadata.HasAny}");
             Console.WriteLine($"ExifPath: {metadata.ExifPath ?? "null"}");
@@ -55,14 +56,14 @@ namespace ARWtoJXL.Tests
             var outputPath = Path.Combine(Path.GetDirectoryName(TestArwPath)!, "test1_metadata_verify.jxl");
             if (File.Exists(outputPath)) File.Delete(outputPath);
 
-            imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 90, Core.Services.OutputFormat.Jxl, System.Threading.CancellationToken.None).Wait();
+            await imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 90, System.Threading.CancellationToken.None);
 
             Console.WriteLine($"\n=== Output File ===");
             Console.WriteLine($"JXL exists: {File.Exists(outputPath)}");
             Console.WriteLine($"JXL size: {new FileInfo(outputPath).Length} bytes");
 
             // Step 4: Check output metadata via MagickService
-            var outputMetadata = magickService.ExtractMetadataProfilesAsync(outputPath).Result;
+            var outputMetadata = await magickService.ExtractMetadataProfilesAsync(outputPath);
             Console.WriteLine($"\n=== Output Metadata (MagickService) ===");
             Console.WriteLine($"HasAny: {outputMetadata.HasAny}");
             Console.WriteLine($"ExifPath: {outputMetadata.ExifPath ?? "null"}");

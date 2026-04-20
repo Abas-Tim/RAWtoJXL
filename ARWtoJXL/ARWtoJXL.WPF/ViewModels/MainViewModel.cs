@@ -10,6 +10,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
 using System.Windows.Media.Imaging;
+using ARWtoJXL.Core.Interfaces;
 using ARWtoJXL.Core.Services;
 using ARWtoJXL.WPF.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -26,10 +27,11 @@ namespace ARWtoJXL.WPF.ViewModels
             [ObservableProperty]
             private ObservableCollection<ImageItem> _images = new();
 
-            private RelayCommand _convertSelectedCommand;
-            private RelayCommand _removeSelectedCommand;
-            private RelayCommand _selectAllCommand;
-            private RelayCommand _cancelCommand;
+       private RelayCommand _convertSelectedCommand;
+        private RelayCommand _removeSelectedCommand;
+        private RelayCommand _selectAllCommand;
+        private RelayCommand _cancelCommand;
+        private RelayCommand _openFileCommand;
 
             [ObservableProperty]
             private bool _isCancelRequested;
@@ -55,10 +57,12 @@ namespace ARWtoJXL.WPF.ViewModels
         [ObservableProperty]
         private int _qualityPreset = 90;
 
-        [ObservableProperty]
-        private OutputFormat _outputFormat = OutputFormat.Jxl;
-
-        public List<OutputFormat> OutputFormats { get; } = new() { OutputFormat.Jxl };
+        public void ApplySettings(SettingsViewModel settings)
+        {
+            UseSubfolder = settings.UseSubfolder;
+            SubfolderName = settings.SubfolderName;
+            QualityPreset = settings.QualityPreset;
+        }
 
         [ObservableProperty]
         private bool _isAnySelected;
@@ -76,6 +80,7 @@ namespace ARWtoJXL.WPF.ViewModels
             _removeSelectedCommand = new RelayCommand(RemoveSelected, CanExecuteRemoveSelected);
             _selectAllCommand = new RelayCommand(ToggleSelectAll, CanExecuteSelectAll);
             _cancelCommand = new RelayCommand(CancelConversion, CanExecuteCancel);
+            _openFileCommand = new RelayCommand(OpenFile, CanExecuteSelectAll);
             PropertyChanging += (s, e) =>
             {
                 if (e.PropertyName == nameof(IsCancelRequested))
@@ -89,6 +94,7 @@ namespace ARWtoJXL.WPF.ViewModels
         public ICommand RemoveSelectedCommand => _removeSelectedCommand;
         public ICommand SelectAllCommand => _selectAllCommand;
         public ICommand CancelCommand => _cancelCommand;
+        public ICommand OpenFileCommand => _openFileCommand;
 
         private bool CanExecuteCancel()
         {
@@ -125,6 +131,21 @@ namespace ARWtoJXL.WPF.ViewModels
                 {
                     item.IsSelected = true;
                 }
+            }
+        }
+
+        private async void OpenFile()
+        {
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Filter = "Sony RAW Files|*.ARW|JPEG XL Files|*.JXL|All Files|*.*",
+                Multiselect = true,
+                Title = "Open Image Files"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                await AddFilesAsync(dialog.FileNames);
             }
         }
 
@@ -168,7 +189,6 @@ namespace ARWtoJXL.WPF.ViewModels
                              outputPath,
                              _ => { },
                              QualityPreset,
-                             OutputFormat,
                              _cancellationTokenSource.Token);
 
                         await App.Current.Dispatcher.InvokeAsync(() =>
@@ -315,6 +335,23 @@ namespace ARWtoJXL.WPF.ViewModels
                 catch (Exception ex)
                 {
                     item.ErrorMessage = $"Thumbnail failed: {ex.Message}";
+                }
+
+                try
+                {
+                    if (extension == ".arw")
+                    {
+                        item.EstimatedSize = await _imageService.EstimateSizeAsync(path, QualityPreset);
+                    }
+                    else
+                    {
+                        var fileInfo = new FileInfo(path);
+                        item.EstimatedSize = fileInfo.Length;
+                    }
+                }
+                catch
+                {
+                    // Silently ignore estimation failures
                 }
 
                 await App.Current.Dispatcher.InvokeAsync(() =>

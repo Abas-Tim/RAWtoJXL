@@ -18,6 +18,12 @@ namespace ARWtoJXL.Core.Services
             return File.Exists(filePath);
         }
 
+        public long GetFileSize(string filePath)
+        {
+            var info = new FileInfo(filePath);
+            return info.Exists ? info.Length : 0L;
+        }
+
         public string CombinePaths(string path1, string path2)
         {
             return Path.Combine(path1, path2);
