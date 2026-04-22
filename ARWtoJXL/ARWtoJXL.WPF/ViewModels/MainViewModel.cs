@@ -365,22 +365,6 @@ namespace ARWtoJXL.WPF.ViewModels
                     item.ErrorMessage = $"{AppStrings.ThumbnailFailedPrefix}{ex.Message}";
                 }
 
-                try
-                {
-                    if (extension == ".arw")
-                    {
-                        item.EstimatedSize = await _imageService.EstimateSizeAsync(path, QualityPreset);
-                    }
-                    else
-                    {
-                        var fileInfo = new FileInfo(path);
-                        item.EstimatedSize = fileInfo.Length;
-                    }
-                }
-                catch
-                {
-                }
-
                 await OnUiAsync(() =>
                 {
                     Images.Add(item);

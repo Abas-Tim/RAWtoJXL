@@ -204,7 +204,23 @@ namespace ARWtoJXL.Tests
 
         private static string? FindExiftool()
         {
-            return ProcessHelper.FindExiftool("Test");
+            var paths = new[]
+            {
+                @"C:\Program Files\exiftool.exe",
+                @"C:\Program Files (x86)\exiftool.exe",
+                @"C:\Users\Public\exiftool.exe"
+            };
+            foreach (var p in paths)
+            {
+                if (File.Exists(p)) return p;
+            }
+            var appDir = AppDomain.CurrentDomain.BaseDirectory;
+            if (!string.IsNullOrEmpty(appDir))
+            {
+                var local = Path.Combine(appDir, "exiftool.exe");
+                if (File.Exists(local)) return local;
+            }
+            return null;
         }
     }
 }

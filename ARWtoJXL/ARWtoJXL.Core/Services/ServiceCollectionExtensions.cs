@@ -13,7 +13,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IFileService, FileService>();
         services.AddSingleton<IPathResolver, PathResolverService>();
         services.AddSingleton<IExiftoolService, ExiftoolService>();
-        services.AddSingleton<ISizeEstimator, SizeEstimatorService>();
         services.AddSingleton<IMagickService, MagickService>();
         services.AddSingleton<ICjxlEncoder, CjxlEncoderService>();
         services.AddSingleton<IImageService, ImageProcessingService>();

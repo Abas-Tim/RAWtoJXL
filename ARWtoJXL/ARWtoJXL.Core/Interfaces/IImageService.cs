@@ -32,12 +32,5 @@ namespace ARWtoJXL.Core.Interfaces
         /// <param name="cancellationToken">Token to cancel the operation.</param>
         Task ConvertArwToJxlAsync(string inputPath, string outputPath, Action<double> progress, int quality, CancellationToken cancellationToken = default);
 
-        /// <summary>
-        /// Estimates the JXL output file size for an ARW file.
-        /// </summary>
-        /// <param name="arwPath">Path to the source ARW file.</param>
-        /// <param name="quality">Quality preset (0-100).</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        Task<long> EstimateSizeAsync(string arwPath, int quality, CancellationToken cancellationToken = default);
-    }
+         }
 }

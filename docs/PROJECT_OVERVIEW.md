@@ -39,8 +39,7 @@ ARWtoJXL/
 │       ├── SystemProcessRunner.cs     # IProcessRunner implementation (exiftool path resolution, version check, process execution)
 │       ├── FileService.cs             # File system operations implementation
 │       ├── PathResolverService.cs     # Path resolution implementation
-│       ├── SizeEstimatorService.cs    # PNG→JXL file size estimation heuristic
-│       ├── FileLogger.cs              # ILogger implementation (file-based logger)
+      ├── FileLogger.cs              # ILogger implementation (file-based logger)
 │       └── ServiceCollectionExtensions.cs # IServiceCollection extension for AddCoreServices()
 ├── ARWtoJXL.WPF/           # Presentation layer
 │   ├── Models/
@@ -53,22 +52,20 @@ ARWtoJXL/
 │   ├── BooleanToBrushConverter.cs     # WPF value converters
 │   ├── BooleanToTextConverter.cs
 │   ├── BooleanToValueConverter.cs
-│   ├── ImageStatusToStringConverter.cs
-│   ├── LongToVisibilityConverter.cs   # Long→Visibility for estimated size display
-│   ├── AppStrings.cs                  # Centralized UI string constants
+  ├── ImageStatusToStringConverter.cs
+    │   ├── AppStrings.cs                  # Centralized UI string constants
 │   └── Views/                         # Empty directory (reserved for future views)
 └── ARWtoJXL.Tests/         # xUnit test suite
     ├── Startup.cs                    # DI service configuration (Microsoft.Extensions.DependencyInjection)
     ├── ConversionTests.cs            # Core conversion tests (inherits Startup, resolves IImageService)
     ├── MetadataPreservationTests.cs  # Metadata transfer tests (inherits Startup, resolves IMagickService, IImageService)
     ├── MetadataDebugTests.cs         # Diagnostic test with assertions for metadata preservation (inherits Startup)
-    ├── QualityCalculatorTests.cs     # Unit tests for quality calculations (no DI)
-    ├── SizeEstimatorServiceTests.cs  # Unit tests for size estimation (direct instantiation)
+  ├── QualityCalculatorTests.cs     # Unit tests for quality calculations (no DI)
     └── Services/                     # Empty directory (reserved for future service tests)
 ```
 
 ## Architecture Pattern
-**Dependency Injection (DI)** - All services depend on abstractions (interfaces), not concrete implementations. Registered via `ServiceCollectionExtensions.AddCoreServices()` which configures all 7 services as singletons. This enables:
+**Dependency Injection (DI)** - All services depend on abstractions (interfaces), not concrete implementations. Registered via `ServiceCollectionExtensions.AddCoreServices()` which configures all 6 services as singletons. This enables:
 - Unit testing with mocks
 - Swappable implementations
 - Clear separation of concerns
@@ -81,7 +78,6 @@ IProcessRunner → SystemProcessRunner (depends on ILogger)
 IFileService → FileService (no deps)
 IPathResolver → PathResolverService (no deps)
 IExiftoolService → ExiftoolService (depends on IProcessRunner, ILogger)
-ISizeEstimator → SizeEstimatorService (no deps)
 IMagickService → MagickService (depends on IExiftoolService, ILogger)
 ICjxlEncoder → CjxlEncoderService (depends on IPathResolver, IExiftoolService, ILogger)
 IImageService → ImageProcessingService (depends on all above + ILogger)
@@ -108,16 +104,16 @@ public ImageProcessingService(
     ICjxlEncoder cjxlEncoder,
     IFileService fileService,
     IPathResolver pathResolver,
-    ISizeEstimator sizeEstimator,
     ILogger logger)
 ```
 
-### IMagickService / MagickService
+  ### IMagickService / MagickService
 - `ExtractThumbnailAsync()`: Resizes image to 300x300, outputs JPEG
 - `ConvertToPngAsync()`: Converts ARW to 16-bit PNG in temp directory
-- `ExtractMetadataProfilesAsync()`: Extracts EXIF, XMP, ICC, IPTC profiles to temp files for cjxl
-  - **ARW files:** Delegates to `IExiftoolService.ExtractExifAsync()` for EXIF extraction (Magick.NET cannot reliably read EXIF from Sony ARW files). Much faster (~1s) than the previous Magick.NET fallback chain (~10s).
-  - **Non-ARW files:** Uses Magick.NET profile extraction first, falls back to exiftool for JXL files.
+- `ExtractMetadataProfilesAsync()`: Extracts EXIF, XMP, ICC, IPTC profiles to temp files for cjxl — fully async, no sync-over-async blocking
+  - **ARW files:** Awaits `IExiftoolService.ExtractExifAsync()` for EXIF extraction (Magick.NET cannot reliably read EXIF from Sony ARW files). Much faster (~1s) than the previous Magick.NET fallback chain (~10s).
+  - **Non-ARW files:** Offloads Magick.NET profile extraction to `Task.Run` (CPU-bound), then awaits exiftool fallback for JXL files.
+  - **Helper:** `ExtractProfilesFromImageAsync()` runs Magick.NET profile extraction on a thread-pool thread via `Task.Run`.
 - **Constructor:** `MagickService(IExiftoolService exiftoolService, ILogger logger)` — both required (non-nullable)
 
 ### IExiftoolService / ExiftoolService
@@ -187,7 +183,7 @@ Centralized quality calculations to avoid duplication:
 - **EXIF extraction (ARW):** `IExiftoolService.ExtractExifAsync()` uses exiftool (`-b -exif:all`) to extract raw EXIF bytes from source ARW (~1s). Non-ARW files use Magick.NET first.
 - **XMP/ICC/IPTC:** Extracted via Magick.NET profile lookup (`GetProfile("XMP")`, `GetProfile("ICC ")`, `GetIptcProfile()`).
 - **Metadata embedding:** cjxl's `-x exif` argument does not reliably embed metadata (v0.11.2 known issue). Post-encoding, `IExiftoolService.EmbedMetadataAsync()` uses exiftool `-tagsFromFile source.arw -exif:all -overwrite_original output.jxl` to copy metadata from the original ARW to the JXL.
-- **Path resolution:** `ProcessHelper.FindExiftool()` centralizes exiftool.exe discovery (common paths → PATH → app directory).
+- **Path resolution:** `IProcessRunner.FindExiftool()` centralizes exiftool.exe discovery (common paths → PATH → app directory).
 - Metadata temp files kept alive during encoding (disposed AFTER `EncodeAsync` completes in finally block).
 - Auto-cleanup via `MetadataProfiles.Dispose()` after encoding completes.
 
@@ -266,7 +262,6 @@ Failed     # Conversion error (ErrorMessage populated)
 
 ## Testing
 - **QualityCalculatorTests**: 12 unit tests for quality→distance/effort mappings (no DI needed)
-- **SizeEstimatorServiceTests**: 10 unit tests for size estimation heuristics (direct instantiation)
 - **Startup**: Central DI configuration — calls `services.AddCoreServices()` from `ARWtoJXL.Core`. Tests inherit from `Startup` and resolve services from `ServiceProvider`. Provides `CreateScope()` for test isolation.
 - **MetadataDebugTests**: Diagnostic test with assertions for full metadata preservation verification (inherits `Startup`)
   - Resolves services from `ServiceProvider`

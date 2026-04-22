@@ -12,7 +12,6 @@ namespace ARWtoJXL.WPF.Models
         private System.Windows.Media.Imaging.BitmapImage? _thumbnail;
         private string? _errorMessage;
         private bool _isSelected;
-        private long _estimatedSize;
 
         public string FilePath { get => _filePath; set { _filePath = value; OnPropertyChanged(nameof(FilePath)); } }
         public string FileName { get => _fileName; set { _fileName = value; OnPropertyChanged(nameof(FileName)); } }
@@ -20,7 +19,6 @@ namespace ARWtoJXL.WPF.Models
         public System.Windows.Media.Imaging.BitmapImage? Thumbnail { get => _thumbnail; set { _thumbnail = value; OnPropertyChanged(nameof(Thumbnail)); } }
         public string? ErrorMessage { get => _errorMessage; set { _errorMessage = value; OnPropertyChanged(nameof(ErrorMessage)); } }
         public bool IsSelected { get => _isSelected; set { _isSelected = value; OnPropertyChanged(nameof(IsSelected)); } }
-        public long EstimatedSize { get => _estimatedSize; set { _estimatedSize = value; OnPropertyChanged(nameof(EstimatedSize)); } }
 
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));

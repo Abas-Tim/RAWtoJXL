@@ -87,104 +87,112 @@ public class MagickService : IMagickService
 
     public async Task<MetadataProfiles> ExtractMetadataProfilesAsync(string filePath, CancellationToken cancellationToken = default)
     {
+        var profiles = new MetadataProfiles();
+        var ext = Path.GetExtension(filePath).ToLowerInvariant();
+
+        try
+        {
+            if (ext == ".arw")
+            {
+                var exifPath = await _exiftoolService.ExtractExifAsync(filePath, cancellationToken);
+                if (!string.IsNullOrEmpty(exifPath))
+                {
+                    profiles.ExifPath = exifPath;
+                    _logger.Write($"[MagickService] EXIF from exiftool: {profiles.ExifPath}");
+                }
+            }
+            else
+            {
+                profiles = await ExtractProfilesFromImageAsync(filePath, profiles, cancellationToken);
+            }
+
+            if (string.IsNullOrEmpty(profiles.ExifPath) && ext != ".arw")
+            {
+                _logger.Write("[MagickService] Magick.NET EXIF failed, trying exiftool fallback...");
+                var exiftoolPath = await _exiftoolService.ExtractExifAsync(filePath, cancellationToken);
+                if (!string.IsNullOrEmpty(exiftoolPath))
+                {
+                    profiles.ExifPath = exiftoolPath;
+                    _logger.Write($"[MagickService] EXIF from exiftool: {profiles.ExifPath}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Write($"[MagickService] Metadata extraction error: {ex.Message}");
+        }
+
+        _logger.Write($"[MagickService] Final metadata: Exif={profiles.ExifPath ?? "none"}, Xmp={profiles.XmpPath ?? "none"}, Icc={profiles.IccPath ?? "none"}, Iptc={profiles.IptcPath ?? "none"}");
+
+        return profiles;
+    }
+
+    private async Task<MetadataProfiles> ExtractProfilesFromImageAsync(string filePath, MetadataProfiles profiles, CancellationToken cancellationToken)
+    {
         return await Task.Run(() =>
         {
             using var image = new MagickImage(filePath);
-            var profiles = new MetadataProfiles();
 
-            try
+            object? exifProfile = image.GetExifProfile();
+            _logger.Write($"[MagickService] GetExifProfile: {(exifProfile == null ? "null" : "found")}");
+            if (exifProfile == null)
             {
-                var ext = Path.GetExtension(filePath).ToLowerInvariant();
-                if (ext == ".arw")
+                exifProfile = image.GetProfile("EXIF");
+                _logger.Write($"[MagickService] GetProfile('EXIF'): {(exifProfile == null ? "null" : "found")}");
+            }
+            if (exifProfile != null)
+            {
+                var bytes = GetProfileBytes(exifProfile);
+                _logger.Write($"[MagickService] EXIF bytes: {(bytes == null ? "null" : $"{bytes.Length} bytes")}");
+                if (bytes != null && bytes.Length > 0)
                 {
-                    var exifPath = _exiftoolService.ExtractExifAsync(filePath, cancellationToken).GetAwaiter().GetResult();
-                    if (!string.IsNullOrEmpty(exifPath))
-                    {
-                        profiles.ExifPath = exifPath;
-                        _logger.Write($"[MagickService] EXIF from exiftool: {profiles.ExifPath}");
-                    }
-                }
-                else
-                {
-                    object? exifProfile = image.GetExifProfile();
-                    _logger.Write($"[MagickService] GetExifProfile: {(exifProfile == null ? "null" : "found")}");
-                    if (exifProfile == null)
-                    {
-                        exifProfile = image.GetProfile("EXIF");
-                        _logger.Write($"[MagickService] GetProfile('EXIF'): {(exifProfile == null ? "null" : "found")}");
-                    }
-                    if (exifProfile != null)
-                    {
-                        var bytes = GetProfileBytes(exifProfile);
-                        _logger.Write($"[MagickService] EXIF bytes: {(bytes == null ? "null" : $"{bytes.Length} bytes")}");
-                        if (bytes != null && bytes.Length > 0)
-                        {
-                            profiles.ExifPath = SaveBytesToTemp(bytes, "exif");
-                            _logger.Write($"[MagickService] EXIF temp file: {profiles.ExifPath}");
-                        }
-                    }
-                }
-
-                var xmpProfile = image.GetProfile("XMP");
-                _logger.Write($"[MagickService] XMP profile: {(xmpProfile == null ? "null" : "found")}");
-                if (xmpProfile != null)
-                {
-                    var bytes = GetProfileBytes(xmpProfile);
-                    _logger.Write($"[MagickService] XMP bytes: {(bytes == null ? "null" : $"{bytes.Length} bytes")}");
-                    if (bytes != null && bytes.Length > 0)
-                    {
-                        profiles.XmpPath = SaveBytesToTemp(bytes, "xmp");
-                        _logger.Write($"[MagickService] XMP temp file: {profiles.XmpPath}");
-                    }
-                }
-
-                var iccProfile = image.GetProfile("ICC ");
-                _logger.Write($"[MagickService] ICC profile: {(iccProfile == null ? "null" : "found")}");
-                if (iccProfile != null)
-                {
-                    var bytes = GetProfileBytes(iccProfile);
-                    _logger.Write($"[MagickService] ICC bytes: {(bytes == null ? "null" : $"{bytes.Length} bytes")}");
-                    if (bytes != null && bytes.Length > 0)
-                    {
-                        profiles.IccPath = SaveBytesToTemp(bytes, "icc");
-                        _logger.Write($"[MagickService] ICC temp file: {profiles.IccPath}");
-                    }
-                }
-
-                object? iptcProfile = image.GetIptcProfile();
-                _logger.Write($"[MagickService] IPTC profile: {(iptcProfile == null ? "null" : "found")}");
-                if (iptcProfile == null)
-                {
-                    iptcProfile = image.GetProfile("IPTC");
-                }
-                if (iptcProfile != null)
-                {
-                    var bytes = GetProfileBytes(iptcProfile);
-                    _logger.Write($"[MagickService] IPTC bytes: {(bytes == null ? "null" : $"{bytes.Length} bytes")}");
-                    if (bytes != null && bytes.Length > 0)
-                    {
-                        profiles.IptcPath = SaveBytesToTemp(bytes, "jbf");
-                        _logger.Write($"[MagickService] IPTC temp file: {profiles.IptcPath}");
-                    }
-                }
-
-                if (string.IsNullOrEmpty(profiles.ExifPath) && Path.GetExtension(filePath).ToLowerInvariant() == ".jxl")
-                {
-                    _logger.Write("[MagickService] Magick.NET EXIF failed for JXL, trying exiftool fallback...");
-                    var exiftoolPath = _exiftoolService.ExtractExifAsync(filePath, cancellationToken).GetAwaiter().GetResult();
-                    if (!string.IsNullOrEmpty(exiftoolPath))
-                    {
-                        profiles.ExifPath = exiftoolPath;
-                        _logger.Write($"[MagickService] EXIF from exiftool: {profiles.ExifPath}");
-                    }
+                    profiles.ExifPath = SaveBytesToTemp(bytes, "exif");
+                    _logger.Write($"[MagickService] EXIF temp file: {profiles.ExifPath}");
                 }
             }
-            catch (Exception ex)
+
+            var xmpProfile = image.GetProfile("XMP");
+            _logger.Write($"[MagickService] XMP profile: {(xmpProfile == null ? "null" : "found")}");
+            if (xmpProfile != null)
             {
-                _logger.Write($"[MagickService] Metadata extraction error: {ex.Message}");
+                var bytes = GetProfileBytes(xmpProfile);
+                _logger.Write($"[MagickService] XMP bytes: {(bytes == null ? "null" : $"{bytes.Length} bytes")}");
+                if (bytes != null && bytes.Length > 0)
+                {
+                    profiles.XmpPath = SaveBytesToTemp(bytes, "xmp");
+                    _logger.Write($"[MagickService] XMP temp file: {profiles.XmpPath}");
+                }
             }
 
-            _logger.Write($"[MagickService] Final metadata: Exif={profiles.ExifPath ?? "none"}, Xmp={profiles.XmpPath ?? "none"}, Icc={profiles.IccPath ?? "none"}, Iptc={profiles.IptcPath ?? "none"}");
+            var iccProfile = image.GetProfile("ICC ");
+            _logger.Write($"[MagickService] ICC profile: {(iccProfile == null ? "null" : "found")}");
+            if (iccProfile != null)
+            {
+                var bytes = GetProfileBytes(iccProfile);
+                _logger.Write($"[MagickService] ICC bytes: {(bytes == null ? "null" : $"{bytes.Length} bytes")}");
+                if (bytes != null && bytes.Length > 0)
+                {
+                    profiles.IccPath = SaveBytesToTemp(bytes, "icc");
+                    _logger.Write($"[MagickService] ICC temp file: {profiles.IccPath}");
+                }
+            }
+
+            object? iptcProfile = image.GetIptcProfile();
+            _logger.Write($"[MagickService] IPTC profile: {(iptcProfile == null ? "null" : "found")}");
+            if (iptcProfile == null)
+            {
+                iptcProfile = image.GetProfile("IPTC");
+            }
+            if (iptcProfile != null)
+            {
+                var bytes = GetProfileBytes(iptcProfile);
+                _logger.Write($"[MagickService] IPTC bytes: {(bytes == null ? "null" : $"{bytes.Length} bytes")}");
+                if (bytes != null && bytes.Length > 0)
+                {
+                    profiles.IptcPath = SaveBytesToTemp(bytes, "jbf");
+                    _logger.Write($"[MagickService] IPTC temp file: {profiles.IptcPath}");
+                }
+            }
 
             return profiles;
         }, cancellationToken);

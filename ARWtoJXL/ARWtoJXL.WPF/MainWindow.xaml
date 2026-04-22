@@ -26,7 +26,6 @@
         <local:BooleanToBrushConverter x:Key="BooleanToBrushConverter"/>
         <local:BooleanToTextConverter x:Key="BooleanToTextConverter"/>
         <local:BooleanToValueConverter x:Key="BooleanToValueConverter"/>
-        <local:LongToVisibilityConverter x:Key="LongToVisibilityConverter"/>
 
         <Style TargetType="ListBox">
             <Setter Property="BorderThickness" Value="1"/>
@@ -65,15 +64,10 @@
                            VerticalAlignment="Top"/>
 
                     <StackPanel Grid.Column="2" VerticalAlignment="Top">
-                        <TextBlock Text="{Binding FileName}"
-                                   FontSize="13"
-                                   FontWeight="SemiBold"
-                                   TextTrimming="CharacterEllipsis"/>
-                        <TextBlock Text="{Binding EstimatedSize, StringFormat={}{0:N0} bytes est.}"
-                                   FontSize="10"
-                                   Foreground="{DynamicResource Wpf.Ui.Brush.Text.Secondary}"
-                                   Margin="0,2,0,0"
-                                   Visibility="{Binding EstimatedSize, Converter={StaticResource LongToVisibilityConverter}}"/>
+                      <TextBlock Text="{Binding FileName}"
+                                    FontSize="13"
+                                    FontWeight="SemiBold"
+                                    TextTrimming="CharacterEllipsis"/>
                         <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
                             <ProgressBar Width="160"
                                          Height="4"

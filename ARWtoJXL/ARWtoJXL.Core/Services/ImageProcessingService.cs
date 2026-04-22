@@ -13,7 +13,6 @@ public class ImageProcessingService : IImageService
     private readonly ICjxlEncoder _cjxlEncoder;
     private readonly IFileService _fileService;
     private readonly IPathResolver _pathResolver;
-    private readonly ISizeEstimator _sizeEstimator;
     private readonly ILogger _logger;
 
     public ImageProcessingService(
@@ -21,14 +20,12 @@ public class ImageProcessingService : IImageService
         ICjxlEncoder cjxlEncoder,
         IFileService fileService,
         IPathResolver pathResolver,
-        ISizeEstimator sizeEstimator,
         ILogger logger)
     {
         _magickService = magickService ?? throw new ArgumentNullException(nameof(magickService));
         _cjxlEncoder = cjxlEncoder ?? throw new ArgumentNullException(nameof(cjxlEncoder));
         _fileService = fileService ?? throw new ArgumentNullException(nameof(fileService));
         _pathResolver = pathResolver ?? throw new ArgumentNullException(nameof(pathResolver));
-        _sizeEstimator = sizeEstimator ?? throw new ArgumentNullException(nameof(sizeEstimator));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -86,30 +83,6 @@ public class ImageProcessingService : IImageService
         finally
         {
             metadata?.Dispose();
-            _fileService.DeleteFile(tempPngPath);
-        }
-    }
-
-    public async Task<long> EstimateSizeAsync(string arwPath, int quality, CancellationToken cancellationToken = default)
-    {
-        string tempPngPath = _fileService.GetTempFileName();
-
-        try
-        {
-            await _magickService.ConvertToPngAsync(arwPath, tempPngPath, cancellationToken);
-
-            if (!_fileService.FileExists(tempPngPath))
-                return 0;
-
-            long pngSize = _fileService.GetFileSize(tempPngPath);
-            return _sizeEstimator.Estimate(pngSize, quality);
-        }
-        catch (Exception)
-        {
-            return 0;
-        }
-        finally
-        {
             _fileService.DeleteFile(tempPngPath);
         }
     }
