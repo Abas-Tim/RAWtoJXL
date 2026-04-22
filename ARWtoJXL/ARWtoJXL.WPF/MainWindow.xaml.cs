@@ -3,10 +3,11 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Collections.Generic;
+using Microsoft.Extensions.DependencyInjection;
 using Wpf.Ui.Controls;
 using ARWtoJXL.WPF.ViewModels;
 using ARWtoJXL.Core.Interfaces;
-using ARWtoJXL.Core.Services;
+using ARWtoJXL.Core;
 using ARWtoJXL.WPF.Models;
 
 namespace ARWtoJXL.WPF
@@ -14,18 +15,18 @@ namespace ARWtoJXL.WPF
     public partial class MainWindow : Window
     {
         private SettingsWindow? _settingsWindow;
+        private readonly IImageService _imageService;
 
         public MainWindow()
         {
             InitializeComponent();
-            var exiftoolService = new ExiftoolService();
-            var magickService = new MagickService(exiftoolService);
-            var pathResolver = new PathResolverService();
-            var cjxlEncoder = new CjxlEncoderService(pathResolver, exiftoolService);
-            var fileService = new FileService();
-            var sizeEstimator = new SizeEstimatorService();
-            var imageService = new ImageProcessingService(magickService, cjxlEncoder, fileService, pathResolver, sizeEstimator);
-            var viewModel = new MainViewModel(imageService);
+
+            var serviceCollection = new ServiceCollection();
+            serviceCollection.AddCoreServices();
+            var serviceProvider = serviceCollection.BuildServiceProvider();
+
+            _imageService = serviceProvider.GetRequiredService<IImageService>();
+            var viewModel = new MainViewModel(_imageService);
 
             var saved = SettingsService.Load();
             viewModel.UseSubfolder = saved.UseSubfolder;

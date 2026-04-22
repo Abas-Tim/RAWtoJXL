@@ -1,6 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
+using ARWtoJXL.Core;
 using ARWtoJXL.Core.Interfaces;
-using ARWtoJXL.Core.Services;
 
 namespace ARWtoJXL.Tests;
 
@@ -36,24 +36,7 @@ public class Startup
 
     protected virtual void ConfigureServices(IServiceCollection services)
     {
-        services.AddSingleton<IPathResolver, PathResolverService>();
-        services.AddSingleton<IFileService, FileService>();
-        services.AddSingleton<ISizeEstimator, SizeEstimatorService>();
-        services.AddSingleton<IMagickService, MagickService>();
-        services.AddSingleton<ICjxlEncoder>(sp =>
-        {
-            var pathResolver = sp.GetRequiredService<IPathResolver>();
-            return new CjxlEncoderService(pathResolver);
-        });
-        services.AddSingleton<IImageService>(sp =>
-        {
-            var magickService = sp.GetRequiredService<IMagickService>();
-            var cjxlEncoder = sp.GetRequiredService<ICjxlEncoder>();
-            var fileService = sp.GetRequiredService<IFileService>();
-            var pathResolver = sp.GetRequiredService<IPathResolver>();
-            var sizeEstimator = sp.GetRequiredService<ISizeEstimator>();
-            return new ImageProcessingService(magickService, cjxlEncoder, fileService, pathResolver, sizeEstimator);
-        });
+        services.AddCoreServices();
     }
 
     protected static string GetOutputPath(string suffix)

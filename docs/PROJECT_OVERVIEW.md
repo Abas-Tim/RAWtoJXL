@@ -6,17 +6,17 @@ Windows desktop app (.NET 8 WPF) that converts Sony RAW (.ARW) camera files to J
 ## Repository Layout
 
 Root-level files tracked in git:
-- `.gitignore` — excludes build outputs, IDE artifacts, temp/debug files
+- `.gitignore` — excludes build outputs, IDE artifacts, temp/debug files, bundled binaries
 - `ARWtoJXL.slnx` — solution matrix
+- `THIRD-PARTY-NOTICES.md` — license notices for all dependencies
 - `docs/PROJECT_OVERVIEW.md` — this file
-- `ARWtoJXL/` — source projects (includes build.ps1, cjxl.exe, exiftool.exe)
+- `ARWtoJXL/` — source projects (includes build.ps1)
 
 ## Project Structure
 ```
 ARWtoJXL/
 ├── build.ps1                          # Build script (restore, download deps, publish)
-├── cjxl.exe                           # JPEG XL encoder v0.11.2
-├── exiftool.exe                       # Metadata tool v13.56
+# Note: cjxl.exe and exiftool.exe are downloaded at build time by build.ps1, not committed to git
 ├── ARWtoJXL.Core/          # Business logic layer (clean architecture)
 │   ├── Models/
 
@@ -28,17 +28,20 @@ ARWtoJXL/
 │   │   ├── ICjxlEncoder.cs            # cjxl CLI encoder interface
 │   │   ├── IFileService.cs            # File system operations interface
 │   │   ├── IPathResolver.cs           # Path resolution interface
-│   │   └── IExiftoolService.cs        # exiftool operations interface (EXIF extraction, metadata embedding)
+│   │   ├── IExiftoolService.cs        # exiftool operations interface (EXIF extraction, metadata embedding)
+│   │   ├── ILogger.cs                 # Logging interface (replaces static Logger)
+│   │   └── IProcessRunner.cs          # Process execution interface (replaces static ProcessHelper)
 │   └── Services/
 │       ├── ImageProcessingService.cs  # Main service orchestrating conversion pipeline
 │       ├── MagickService.cs           # Magick.NET implementation (thumbnails, PNG conversion)
 │       ├── CjxlEncoderService.cs      # cjxl CLI wrapper implementation
 │       ├── ExiftoolService.cs         # exiftool operations (EXIF extraction, metadata embedding)
-│       ├── ProcessHelper.cs           # Shared process utilities (exiftool path resolution, version check, process execution)
+│       ├── SystemProcessRunner.cs     # IProcessRunner implementation (exiftool path resolution, version check, process execution)
 │       ├── FileService.cs             # File system operations implementation
 │       ├── PathResolverService.cs     # Path resolution implementation
 │       ├── SizeEstimatorService.cs    # PNG→JXL file size estimation heuristic
-│       └── Logger.cs                  # Static file logger (app temp dir)
+│       ├── FileLogger.cs              # ILogger implementation (file-based logger)
+│       └── ServiceCollectionExtensions.cs # IServiceCollection extension for AddCoreServices()
 ├── ARWtoJXL.WPF/           # Presentation layer
 │   ├── Models/
 │   │   └── ImageItem.cs               # ViewModel data model (INotifyPropertyChanged)
@@ -65,11 +68,24 @@ ARWtoJXL/
 ```
 
 ## Architecture Pattern
-**Dependency Injection (DI)** - Services depend on abstractions (interfaces), not concrete implementations. This enables:
+**Dependency Injection (DI)** - All services depend on abstractions (interfaces), not concrete implementations. Registered via `ServiceCollectionExtensions.AddCoreServices()` which configures all 7 services as singletons. This enables:
 - Unit testing with mocks
 - Swappable implementations
 - Clear separation of concerns
 - Reduced code duplication through single-responsibility services
+
+**DI Registration Order** (resolved via `ServiceProvider`):
+```
+ILogger → FileLogger (singleton)
+IProcessRunner → SystemProcessRunner (depends on ILogger)
+IFileService → FileService (no deps)
+IPathResolver → PathResolverService (no deps)
+IExiftoolService → ExiftoolService (depends on IProcessRunner, ILogger)
+ISizeEstimator → SizeEstimatorService (no deps)
+IMagickService → MagickService (depends on IExiftoolService, ILogger)
+ICjxlEncoder → CjxlEncoderService (depends on IPathResolver, IExiftoolService, ILogger)
+IImageService → ImageProcessingService (depends on all above + ILogger)
+```
 
 ## Services & Responsibilities
 
@@ -92,7 +108,8 @@ public ImageProcessingService(
     ICjxlEncoder cjxlEncoder,
     IFileService fileService,
     IPathResolver pathResolver,
-    ISizeEstimator sizeEstimator)
+    ISizeEstimator sizeEstimator,
+    ILogger logger)
 ```
 
 ### IMagickService / MagickService
@@ -101,11 +118,13 @@ public ImageProcessingService(
 - `ExtractMetadataProfilesAsync()`: Extracts EXIF, XMP, ICC, IPTC profiles to temp files for cjxl
   - **ARW files:** Delegates to `IExiftoolService.ExtractExifAsync()` for EXIF extraction (Magick.NET cannot reliably read EXIF from Sony ARW files). Much faster (~1s) than the previous Magick.NET fallback chain (~10s).
   - **Non-ARW files:** Uses Magick.NET profile extraction first, falls back to exiftool for JXL files.
+- **Constructor:** `MagickService(IExiftoolService exiftoolService, ILogger logger)` — both required (non-nullable)
 
 ### IExiftoolService / ExiftoolService
 - `ExtractExifAsync(filePath)`: Extracts raw EXIF bytes from ARW/JXL files using exiftool
 - `EmbedMetadataAsync(sourcePath, outputPath, metadata)`: Embeds EXIF, XMP, ICC metadata into JXL using exiftool's `-tagsFromFile` post-processing
-- Uses `ProcessHelper.FindExiftool()` for path resolution
+- Uses `IProcessRunner.FindExiftool()` for path resolution
+- **Constructor:** `ExiftoolService(IProcessRunner processRunner, ILogger logger)`
 
 ### ICjxlEncoder / CjxlEncoderService
 - `EncodeAsync(inputPath, originalArwPath, outputPath, quality, metadata, cancellationToken, timeoutSeconds, progress)`: Invokes cjxl.exe with quality-based parameters
@@ -116,6 +135,7 @@ public ImageProcessingService(
 - Handles both lossless (quality≥100) and lossy modes
 - **cjxl progress estimation:** cjxl v0.11.2 does not output percentage progress during encoding. A background task (`ReportProgressAsync`) reports linear progress from 0.0 to 0.98 during cjxl encoding (updated every 100ms), mapped to 0.5→1.0 in the overall pipeline.
 - **Metadata embedding:** Delegates to `IExiftoolService.EmbedMetadataAsync()` for post-encoding metadata embedding via exiftool.
+- **Constructor:** `CjxlEncoderService(IPathResolver pathResolver, IExiftoolService exiftoolService, ILogger logger)` — all required (non-nullable)
 
 ### IFileService / FileService
 - `DeleteFile()`: Safe file deletion with exception handling
@@ -127,12 +147,19 @@ public ImageProcessingService(
 - `ResolveCjxlPath()`: Searches app directory, then executable directory, falls back to PATH
 - `GetTempPath()`: Returns system temp directory
 
-### ProcessHelper (Static Utility)
-Shared process utilities to eliminate duplication across services:
+### IProcessRunner / SystemProcessRunner
+Interface + implementation for process execution (replaces static `ProcessHelper`):
 - `FindExiftool(logPrefix)`: Searches common paths, PATH, and app directory for exiftool.exe
 - `IsExiftoolWorking(exiftoolPath, logPrefix)`: Runs `exiftool -ver` to verify functionality
 - `RunProcessAsync(fileName, arguments)`: Generic async process launcher with stdout/stderr capture
 - `RunProcessBinaryAsync(fileName, arguments)`: Runs process and returns raw binary stdout
+- Injected into `ExiftoolService` for testability
+
+### ILogger / FileLogger
+Interface + implementation for logging (replaces static `Logger`):
+- `Write(string message)`: Appends timestamped message to temp file (`%TEMP%\ARWtoJXL.log`)
+- `Clear()`: Deletes the log file
+- Injected into all services that need logging for testability
 
 ### QualityCalculator (Static Helper)
 Centralized quality calculations to avoid duplication:
@@ -166,13 +193,14 @@ Centralized quality calculations to avoid duplication:
 
 ## UI/UX Flow
 1. User drags .ARW files or folders onto MainWindow, or clicks "Open File" button to browse via OpenFileDialog
-2. `MainViewModel.AddFilesAsync()` deduplicates by normalized full path (case-insensitive), filters ARW/JXL, creates `ImageItem` objects, generates thumbnails via `GetThumbnailAsync()`
-3. Items displayed in gallery with 80x60 thumbnails, selection checkboxes, and per-item progress spinners
-4. User selects files, configures settings (quality, subfolder) → clicks "Convert"
-5. `ConvertSelectedAsync()` spawns concurrent tasks (max = CPU core count via SemaphoreSlim)
-6. Each conversion: Ready → Converting → Converted/Failed (or Pending if cancelled)
-7. User can click "Cancel" to abort ongoing conversions
-8. Output saved to same directory or subfolder (configurable via `UseSubfolder` + `SubfolderName`)
+2. `MainWindow` constructor creates `ServiceCollection`, calls `AddCoreServices()`, builds `ServiceProvider`, resolves `IImageService`
+3. `MainViewModel.AddFilesAsync()` deduplicates by normalized full path (case-insensitive), filters ARW/JXL, creates `ImageItem` objects, generates thumbnails via `GetThumbnailAsync()`
+4. Items displayed in gallery with 80x60 thumbnails, selection checkboxes, and per-item progress spinners
+5. User selects files, configures settings (quality, subfolder) → clicks "Convert"
+6. `ConvertSelectedAsync()` spawns concurrent tasks (max = CPU core count via SemaphoreSlim)
+7. Each conversion: Ready → Converting → Converted/Failed (or Pending if cancelled)
+8. User can click "Cancel" to abort ongoing conversions
+9. Output saved to same directory or subfolder (configurable via `UseSubfolder` + `SubfolderName`)
 
 ## UI Components
 - **Open File Button:** Opens OpenFileDialog with ARW/JXL filter, calls `AddFilesAsync()` with selected files
@@ -217,10 +245,12 @@ Defined in `MainWindow.xaml` via `Window.InputBindings`:
 - `OperationCanceledException` caught to mark items as Pending with "Cancelled" error
 
 ## Key Dependencies
-- **Magick.NET-Q16-AnyCPU** (14.11.1): RAW image decoding, thumbnail extraction
-- **CommunityToolkit.Mvvm** (8.4.2): `[ObservableProperty]`, `[RelayCommand]` source generators
-- **cjxl.exe** (bundled): JPEG-XL encoder from libjxl
-- **xUnit + Moq**: Unit testing framework
+- **Magick.NET-Q16-AnyCPU** (14.11.1): RAW image decoding, thumbnail extraction (Apache-2.0)
+- **CommunityToolkit.Mvvm** (8.4.2): `[ObservableProperty]`, `[RelayCommand]` source generators (MIT)
+- **WPF-UI**: Modern Fluent UI controls for WPF (MIT)
+- **cjxl.exe** (downloaded at build): JPEG-XL encoder from libjxl (BSD-3-Clause)
+- **exiftool.exe** (downloaded at build): Metadata extraction/embedding (GPL-3.0)
+- **xUnit + Moq** (test): Unit testing framework (Apache-2.0 / BSD-3-Clause)
 
 ## Enums
 
@@ -237,7 +267,7 @@ Failed     # Conversion error (ErrorMessage populated)
 ## Testing
 - **QualityCalculatorTests**: 12 unit tests for quality→distance/effort mappings (no DI needed)
 - **SizeEstimatorServiceTests**: 10 unit tests for size estimation heuristics (direct instantiation)
-- **Startup**: Central DI configuration class — registers all services via `Microsoft.Extensions.DependencyInjection`. Tests inherit from `Startup` and resolve services from `ServiceProvider`. Provides `CreateScope()` for test isolation.
+- **Startup**: Central DI configuration — calls `services.AddCoreServices()` from `ARWtoJXL.Core`. Tests inherit from `Startup` and resolve services from `ServiceProvider`. Provides `CreateScope()` for test isolation.
 - **MetadataDebugTests**: Diagnostic test with assertions for full metadata preservation verification (inherits `Startup`)
   - Resolves services from `ServiceProvider`
   - Extracts metadata from ARW, converts to JXL, verifies 15+ EXIF tags preserved via exiftool
@@ -272,3 +302,9 @@ Excluded via root `.gitignore`:
 - `MediaCache/` — ImageMagick cache directory
 - `*.pdb` — debug symbol files
 - `cjxl_help_*.txt`, `debug_metadata.csx` — temporary debugging files
+- `cjxl.exe` — bundled binary (downloaded at build time)
+
+## License Compliance
+- `THIRD-PARTY-NOTICES.md` contains license texts for all dependencies
+- **GPL-3.0**: exiftool.exe is GPL-3.0; bundled in repo with license notice in THIRD-PARTY-NOTICES.md
+- Consider adding a `LICENSE` file for the project's own code (e.g., MIT or Apache-2.0)

@@ -34,6 +34,9 @@ debug_metadata.csx
 # MediaCache
 MediaCache/
 
+# Bundled binaries — downloaded at build time by build.ps1
+cjxl.exe
+
 # Release / Publish outputs
 **/publish/
 *.pdb

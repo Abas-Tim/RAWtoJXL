@@ -1,3 +1,16 @@
+## Agent Guidelines
+
+- Be concise. Use short sentences. Skip filler words. Do not skip name of objects or packages or methods.
+- No preamble, no summaries, no "here is..." phrases.
+- Prefer bullet points over paragraphs.
+- If unsure, ask one focused question instead of guessing.
+- Don't rely on knowledge from within the model(yourself). Unless absolutely sure use web search if available and try to find more precise info from web.
+- Do not use absolute paths. Use relative and make adapters for paths of different OSs
+- **Before reading source files, check `docs/PROJECT_OVERVIEW.md` for context on architecture, services, pipeline, enums, and file locations.**
+- **For project details (architecture, services, pipeline, enums, etc.), refer to `docs/PROJECT_OVERVIEW.md`.**
+- **Write code with no duplication. Design with DI in mind — depend on interfaces, not concrete implementations.**
+- **After any source code changes, update `docs/PROJECT_OVERVIEW.md` to reflect the new state.**
+
 # ARWtoJPEGXL
 
 High-performance Windows desktop app for converting Sony RAW (.ARW) to JPEG-XL (.JXL). .NET 8, WPF, MVVM.
@@ -20,17 +33,7 @@ ARWtoJPEGXL/
     └── ARWtoJXL.WPF/                      # WPF UI
 ```
 
-## Agent Guidelines
 
-- Be concise. Use short sentences. Skip filler words.
-- No preamble, no summaries, no "here is..." phrases.
-- Code changes: show only the diff or minimal context.
-- Prefer bullet points over paragraphs.
-- If unsure, ask one focused question instead of guessing.
-- **Before reading source files, check `docs/PROJECT_OVERVIEW.md` for context on architecture, services, pipeline, enums, and file locations.**
-- **For project details (architecture, services, pipeline, enums, etc.), refer to `docs/PROJECT_OVERVIEW.md`.**
-- **Write code with no duplication. Design with DI in mind — depend on interfaces, not concrete implementations.**
-- **After any source code changes, update `docs/PROJECT_OVERVIEW.md` to reflect the new state.**
 
 ## Git Ignore Policy
 

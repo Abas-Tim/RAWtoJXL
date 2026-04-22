@@ -8,11 +8,12 @@
 
   <ItemGroup>
     <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.11.1" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.1" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\cjxl.exe" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\exiftool.exe" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\cjxl.exe" Condition="Exists('..\cjxl.exe')" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\exiftool.exe" Condition="Exists('..\exiftool.exe')" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

@@ -23,7 +23,7 @@
   <ItemGroup>
     <ProjectReference Include="..\ARWtoJXL.Core\ARWtoJXL.Core.csproj" />
     <ProjectReference Include="..\ARWtoJXL.WPF\ARWtoJXL.WPF.csproj" />
-    <None Include="..\cjxl.exe" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\cjxl.exe" Condition="Exists('..\cjxl.exe')" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

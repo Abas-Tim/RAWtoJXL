@@ -10,8 +10,8 @@ $configuration = "Release"
 $cjxlVersion = "0.11.2"
 $cjxlUrl = "https://github.com/libjxl/libjxl/releases/download/v$cjxlVersion/jxl-x64-windows-static.zip"
 $cjxlPath = Join-Path $scriptDir "cjxl.exe"
-$exiftoolVersion = "13.56"
-$exiftoolUrl = "https://sourceforge.net/projects/exiftool/files/exiftool-13.56_64.zip/download"
+$exiftoolVersion = "13.57"
+$exiftoolUrl = "https://sourceforge.net/projects/exiftool/files/exiftool-$exiftoolVersion_64.zip/download"
 $exiftoolPath = Join-Path $scriptDir "exiftool.exe"
 $publishDir = Join-Path $scriptDir "ARWtoJXL.WPF\bin\$configuration\net8.0-windows\$runtime\publish"
 
@@ -29,19 +29,35 @@ Write-Host "Checking exiftool.exe..." -ForegroundColor Cyan
 if (-not (Test-Path $exiftoolPath)) {
     Write-Host "Downloading exiftool.exe v$exiftoolVersion..." -ForegroundColor Cyan
     $tempZip = Join-Path $env:TEMP "exiftool.zip"
+    $downloadSuccess = $false
     try {
-        Invoke-WebRequest -Uri $exiftoolUrl -OutFile $tempZip -UseBasicParsing
-        Expand-Archive -Path $tempZip -DestinationPath $scriptDir -Force
-        $extracted = Get-ChildItem $scriptDir -Filter "exiftool(-k).exe" -Recurse | Select-Object -First 1
-        if ($extracted) {
-            Copy-Item $extracted.FullName $exiftoolPath -Force
-            Remove-Item $extracted.FullName -Force -ErrorAction SilentlyContinue
+        curl.exe -L -s `
+            -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36" `
+            -H "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" `
+            -H "Accept-Language: en-US,en;q=0.9" `
+            -o $tempZip $exiftoolUrl
+        $bytes = [System.IO.File]::ReadAllBytes($tempZip)
+        if ($bytes[0] -eq 80 -and $bytes[1] -eq 75) {
+            Expand-Archive -Path $tempZip -DestinationPath $scriptDir -Force
+            $extracted = Get-ChildItem $scriptDir -Filter "exiftool(-k).exe" -Recurse | Select-Object -First 1
+            if ($extracted) {
+                Copy-Item $extracted.FullName $exiftoolPath -Force
+                Remove-Item $extracted.FullName -Force -ErrorAction SilentlyContinue
+                $downloadSuccess = $true
+            }
         }
         Remove-Item $tempZip -Force -ErrorAction SilentlyContinue
         Remove-Item (Join-Path $scriptDir "exiftool_files") -Recurse -Force -ErrorAction SilentlyContinue
-        Write-Host "exiftool.exe downloaded successfully." -ForegroundColor Green
+        if ($downloadSuccess) {
+            Write-Host "exiftool.exe downloaded successfully." -ForegroundColor Green
+        } else {
+            throw "Downloaded file is not a valid ZIP archive."
+        }
     } catch {
         Write-Host "Warning: Failed to download exiftool.exe: $_" -ForegroundColor Yellow
+        Write-Host "Please download manually from: https://exiftool.org/" -ForegroundColor Yellow
+        Write-Host "Extract exiftool(-k).exe and exiftool_files folder to: $scriptDir" -ForegroundColor Yellow
+        Write-Host "Rename exiftool(-k).exe to exiftool.exe" -ForegroundColor Yellow
     }
 } else {
     Write-Host "exiftool.exe found at $exiftoolPath" -ForegroundColor Cyan
