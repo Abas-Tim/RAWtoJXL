@@ -40,3 +40,6 @@ cjxl.exe
 # Release / Publish outputs
 **/publish/
 *.pdb
+
+# Agent instructions
+AGENTS.md
