@@ -1,26 +1,26 @@
-using System.ComponentModel;
 using ARWtoJXL.Core.Interfaces;
-using ARWtoJXL.Core.Services;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace ARWtoJXL.WPF.ViewModels
 {
-    public class ImageItemViewModel : INotifyPropertyChanged
+    public partial class ImageItemViewModel : ObservableObject
     {
+        [ObservableProperty]
         private string _filePath = string.Empty;
+
+        [ObservableProperty]
         private string _fileName = string.Empty;
+
+        [ObservableProperty]
         private ImageStatus _status;
+
+        [ObservableProperty]
         private System.Windows.Media.Imaging.BitmapImage? _thumbnail;
+
+        [ObservableProperty]
         private string? _errorMessage;
+
+        [ObservableProperty]
         private bool _isSelected;
-
-        public string FilePath { get => _filePath; set { _filePath = value; OnPropertyChanged(nameof(FilePath)); } }
-        public string FileName { get => _fileName; set { _fileName = value; OnPropertyChanged(nameof(FileName)); } }
-        public ImageStatus Status { get => _status; set { _status = value; OnPropertyChanged(nameof(Status)); } }
-        public System.Windows.Media.Imaging.BitmapImage? Thumbnail { get => _thumbnail; set { _thumbnail = value; OnPropertyChanged(nameof(Thumbnail)); } }
-        public string? ErrorMessage { get => _errorMessage; set { _errorMessage = value; OnPropertyChanged(nameof(ErrorMessage)); } }
-        public bool IsSelected { get => _isSelected; set { _isSelected = value; OnPropertyChanged(nameof(IsSelected)); } }
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-        protected void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }

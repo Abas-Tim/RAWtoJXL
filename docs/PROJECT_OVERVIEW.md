@@ -43,18 +43,19 @@ ARWtoJXL/
       ├── FileLogger.cs              # ILogger implementation (file-based logger)
 │       └── ServiceCollectionExtensions.cs # IServiceCollection extension for AddCoreServices()
 ├── ARWtoJXL.WPF/           # Presentation layer
-│   ├── ViewModels/
-│   │   ├── ImageItemViewModel.cs      # WPF view model for image items (INotifyPropertyChanged, BitmapImage thumbnail)
-│   │   ├── MainViewModel.cs           # MVVM viewmodel (CommunityToolkit.Mvvm)
-│   │   └── SettingsViewModel.cs       # Settings dialog viewmodel
-│   ├── MainWindow.xaml(.cs)           # Drag-drop gallery UI with DI wiring
-│   ├── SettingsWindow.xaml(.cs)       # Settings dialog window
-│   ├── BooleanToBrushConverter.cs     # WPF value converters
-│   ├── BooleanToTextConverter.cs
-│   ├── BooleanToValueConverter.cs
-  ├── ImageStatusToStringConverter.cs
+   │   ├── ViewModels/
+    │   │   ├── ImageItemViewModel.cs      # WPF view model for image items ([ObservableProperty], BitmapImage thumbnail)
+    │   │   ├── MainViewModel.cs           # MVVM viewmodel ([ObservableProperty], [RelayCommand], auto-saves settings)
+    │   │   └── SettingsViewModel.cs       # Settings dialog viewmodel ([ObservableProperty], [RelayCommand], SubfolderName validation)
+    │   ├── MainWindow.xaml(.cs)           # Drag-drop gallery UI with DI wiring
+    │   ├── SettingsWindow.xaml(.cs)       # Settings dialog window
+    │   ├── BooleanToBrushConverter.cs     # WPF value converters
+    │   ├── BooleanToTextConverter.cs
+    │   ├── BooleanToValueConverter.cs
+    │   ├── ImageStatusToStringConverter.cs
+    │   ├── StringToVisibilityConverter.cs  # null/empty string → Collapsed, otherwise Visible
     │   ├── AppStrings.cs                  # Centralized UI string constants
-│   └── Views/                         # Empty directory (reserved for future views)
+    │   └── Views/                         # Empty directory (reserved for future views)
 └── ARWtoJXL.Tests/         # xUnit test suite
     ├── Startup.cs                    # DI service configuration (Microsoft.Extensions.DependencyInjection)
     ├── ConversionTests.cs            # Core conversion tests (inherits Startup, resolves IImageService)
@@ -232,6 +233,8 @@ Defined in `MainWindow.xaml` via `Window.InputBindings`:
 - **SettingsWindow.xaml**: CheckBox for subfolder, TextBox for subfolder name, Slider for quality (0-100)
 - Settings applied via `MainViewModel.ApplySettings(SettingsViewModel)` on window close
 - `MainViewModel` exposes `UseSubfolder`, `SubfolderName`, `QualityPreset` properties synced from SettingsWindow
+- **Settings persistence**: `MainViewModel` auto-saves settings to `SettingsService` (JSON in `%APPDATA%\ARWtoJXL\settings.json`) whenever `UseSubfolder`, `SubfolderName`, or `QualityPreset` changes
+- **SubfolderName validation**: `SettingsViewModel` validates against invalid path characters, leading/trailing whitespace, length > 255, reserved Windows names (CON, PRN, AUX, etc.), and `.`/`..`
 
 ## File Lock Handling
 

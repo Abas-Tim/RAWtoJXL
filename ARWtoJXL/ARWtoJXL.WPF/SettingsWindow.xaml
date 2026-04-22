@@ -1,12 +1,14 @@
 <Window x:Class="ARWtoJXL.WPF.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:ARWtoJXL.WPF"
         xmlns:vm="clr-namespace:ARWtoJXL.WPF.ViewModels"
         Title="Settings"
-        Height="200" Width="380"
+        Height="220" Width="380"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize">
     <Window.Resources>
+        <local:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
         <Style TargetType="TextBlock">
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="FontSize" Value="12"/>
@@ -56,6 +58,11 @@
                 <TextBox Grid.Column="1"
                          Text="{Binding SubfolderName}"/>
             </Grid>
+            <TextBlock Text="{Binding SubfolderNameValidationResult}"
+                       Foreground="Red"
+                       FontSize="11"
+                       Margin="0,2,0,0"
+                       Visibility="{Binding SubfolderNameValidationResult, Converter={StaticResource StringToVisibilityConverter}}"/>
 
             <!-- Quality row: label + value on left, slider on right -->
             <Grid Margin="0,4">

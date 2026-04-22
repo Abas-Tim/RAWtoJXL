@@ -8,7 +8,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Input;
 using System.Windows.Threading;
 using System.Windows.Media.Imaging;
 using ARWtoJXL.Core.Interfaces;
@@ -28,15 +27,13 @@ namespace ARWtoJXL.WPF.ViewModels
         [ObservableProperty]
         private ObservableCollection<ImageItemViewModel> _images = new();
 
-        private RelayCommand _convertSelectedCommand;
-        private RelayCommand _removeSelectedCommand;
-        private RelayCommand _selectAllCommand;
-        private RelayCommand _cancelCommand;
-        private RelayCommand _openFileCommand;
-        private RelayCommand _openOutputFolderCommand;
-
         [ObservableProperty]
         private bool _isCancelRequested;
+
+        partial void OnIsCancelRequestedChanged(bool value)
+        {
+            CancelCommand.NotifyCanExecuteChanged();
+        }
 
         [ObservableProperty]
         private string _statusMessage = AppStrings.Ready;
@@ -44,11 +41,24 @@ namespace ARWtoJXL.WPF.ViewModels
         [ObservableProperty]
         private bool _isConverting;
 
+        partial void OnIsConvertingChanged(bool value)
+        {
+            ConvertSelectedCommand.NotifyCanExecuteChanged();
+            RemoveSelectedCommand.NotifyCanExecuteChanged();
+            SelectAllCommand.NotifyCanExecuteChanged();
+            OpenOutputFolderCommand.NotifyCanExecuteChanged();
+        }
+
         [ObservableProperty]
         private string _outputPath = string.Empty;
 
         [ObservableProperty]
         private string _subfolderName = AppStrings.SubfolderNameDefault;
+
+        partial void OnSubfolderNameChanged(string value)
+        {
+            SaveSettings();
+        }
 
         [ObservableProperty]
         private bool _isAllSelected;
@@ -56,11 +66,26 @@ namespace ARWtoJXL.WPF.ViewModels
         [ObservableProperty]
         private string _outputDirectory = string.Empty;
 
+        partial void OnOutputDirectoryChanged(string value)
+        {
+            OpenOutputFolderCommand.NotifyCanExecuteChanged();
+        }
+
         [ObservableProperty]
         private bool _useSubfolder = true;
 
+        partial void OnUseSubfolderChanged(bool value)
+        {
+            SaveSettings();
+        }
+
         [ObservableProperty]
         private int _qualityPreset = 90;
+
+        partial void OnQualityPresetChanged(int value)
+        {
+            SaveSettings();
+        }
 
         public void ApplySettings(SettingsViewModel settings)
         {
@@ -81,86 +106,9 @@ namespace ARWtoJXL.WPF.ViewModels
         public MainViewModel(IImageService imageService)
         {
             _imageService = imageService;
-            _convertSelectedCommand = new RelayCommand(async () => await ConvertSelectedAsync(), CanExecuteConvertSelected);
-            _removeSelectedCommand = new RelayCommand(RemoveSelected, CanExecuteRemoveSelected);
-            _selectAllCommand = new RelayCommand(ToggleSelectAll, CanExecuteSelectAll);
-            _cancelCommand = new RelayCommand(CancelConversion, CanExecuteCancel);
-            _openFileCommand = new RelayCommand(OpenFile, CanExecuteSelectAll);
-            _openOutputFolderCommand = new RelayCommand(OpenOutputFolder, CanExecuteOpenOutputFolder);
-            PropertyChanging += (s, e) =>
-            {
-                if (e.PropertyName == nameof(IsCancelRequested))
-                {
-                    _cancelCommand.NotifyCanExecuteChanged();
-                }
-                else if (e.PropertyName == nameof(IsConverting))
-                {
-                    _openOutputFolderCommand.NotifyCanExecuteChanged();
-                }
-            };
         }
 
-        public ICommand ConvertSelectedCommand => _convertSelectedCommand;
-        public ICommand RemoveSelectedCommand => _removeSelectedCommand;
-        public ICommand SelectAllCommand => _selectAllCommand;
-        public ICommand CancelCommand => _cancelCommand;
-        public ICommand OpenFileCommand => _openFileCommand;
-        public ICommand OpenOutputFolderCommand => _openOutputFolderCommand;
-
-        private bool CanExecuteCancel() => IsCancelRequested;
-
-        private bool CanExecuteConvertSelected() =>
-            !IsConverting && _selectedImages.Any(i => i.Status == ImageStatus.Ready || i.Status == ImageStatus.Converted || i.Status == ImageStatus.Failed);
-
-        private bool CanExecuteRemoveSelected() => !IsConverting && IsAnySelected;
-
-        private bool CanExecuteSelectAll() => !IsConverting;
-
-        private bool CanExecuteOpenOutputFolder() =>
-            !IsConverting && !string.IsNullOrEmpty(OutputDirectory) && Directory.Exists(OutputDirectory);
-
-        private void OpenOutputFolder()
-        {
-            if (!string.IsNullOrEmpty(OutputDirectory) && Directory.Exists(OutputDirectory))
-            {
-                try
-                {
-                    Process.Start(new ProcessStartInfo
-                    {
-                        FileName = OutputDirectory,
-                        UseShellExecute = true
-                    });
-                }
-                catch
-                {
-                    StatusMessage = AppStrings.FailedToOpenOutputFolder;
-                }
-            }
-        }
-
-        private void ToggleSelectAll()
-        {
-            foreach (var item in Images)
-            {
-                item.IsSelected = !IsAllSelected;
-            }
-        }
-
-        private async void OpenFile()
-        {
-            var dialog = new Microsoft.Win32.OpenFileDialog
-            {
-                Filter = AppStrings.OpenFileDialogFilter,
-                Multiselect = true,
-                Title = AppStrings.OpenFileDialogTitle
-            };
-
-            if (dialog.ShowDialog() == true)
-            {
-                await AddFilesAsync(dialog.FileNames);
-            }
-        }
-
+        [RelayCommand(CanExecute = nameof(CanExecuteConvertSelected))]
         private async Task ConvertSelectedAsync()
         {
             var readySelected = _selectedImages.Where(i => i.Status == ImageStatus.Ready || i.Status == ImageStatus.Converted || i.Status == ImageStatus.Failed).ToList();
@@ -237,7 +185,6 @@ namespace ARWtoJXL.WPF.ViewModels
             await OnUiAsync(() =>
             {
                 OutputDirectory = lastOutputDir;
-                _openOutputFolderCommand.NotifyCanExecuteChanged();
             });
 
             IsConverting = false;
@@ -249,21 +196,10 @@ namespace ARWtoJXL.WPF.ViewModels
             RefreshAllCommands();
         }
 
-        private void CancelConversion()
-        {
-            _cancellationTokenSource?.Cancel();
-            StatusMessage = AppStrings.Cancelling;
-        }
+        private bool CanExecuteConvertSelected() =>
+            !IsConverting && _selectedImages.Any(i => i.Status == ImageStatus.Ready || i.Status == ImageStatus.Converted || i.Status == ImageStatus.Failed);
 
-        private int _completedCountField;
-
-        private void UpdateProgress(int total)
-        {
-            int completed = Interlocked.Increment(ref _completedCountField);
-            CompletedCount = completed;
-            StatusMessage = $"{AppStrings.ConvertingProgress}{completed}{AppStrings.OfSuffix}{total}...";
-        }
-
+        [RelayCommand(CanExecute = nameof(CanExecuteRemoveSelected))]
         private void RemoveSelected()
         {
             var itemsToRemove = _selectedImages.ToList();
@@ -278,11 +214,81 @@ namespace ARWtoJXL.WPF.ViewModels
             RefreshViewCommands();
         }
 
+        private bool CanExecuteRemoveSelected() => !IsConverting && IsAnySelected;
+
+        [RelayCommand(CanExecute = nameof(CanExecuteSelectAll))]
+        private void SelectAll()
+        {
+            foreach (var item in Images)
+            {
+                item.IsSelected = !IsAllSelected;
+            }
+        }
+
+        private bool CanExecuteSelectAll() => !IsConverting;
+
+        [RelayCommand(CanExecute = nameof(CanExecuteCancel))]
+        private void Cancel()
+        {
+            _cancellationTokenSource?.Cancel();
+            StatusMessage = AppStrings.Cancelling;
+        }
+
+        private bool CanExecuteCancel() => IsCancelRequested;
+
+        [RelayCommand(CanExecute = nameof(CanExecuteSelectAll))]
+        private async Task OpenFile()
+        {
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Filter = AppStrings.OpenFileDialogFilter,
+                Multiselect = true,
+                Title = AppStrings.OpenFileDialogTitle
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                await AddFilesAsync(dialog.FileNames);
+            }
+        }
+
+        [RelayCommand(CanExecute = nameof(CanExecuteOpenOutputFolder))]
+        private void OpenOutputFolder()
+        {
+            if (!string.IsNullOrEmpty(OutputDirectory) && Directory.Exists(OutputDirectory))
+            {
+                try
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = OutputDirectory,
+                        UseShellExecute = true
+                    });
+                }
+                catch
+                {
+                    StatusMessage = AppStrings.FailedToOpenOutputFolder;
+                }
+            }
+        }
+
+        private bool CanExecuteOpenOutputFolder() =>
+            !IsConverting && !string.IsNullOrEmpty(OutputDirectory) && Directory.Exists(OutputDirectory);
+
+        private int _completedCountField;
+
+        private void UpdateProgress(int total)
+        {
+            int completed = Interlocked.Increment(ref _completedCountField);
+            CompletedCount = completed;
+            StatusMessage = $"{AppStrings.ConvertingProgress}{completed}{AppStrings.OfSuffix}{total}...";
+        }
+
         private void Item_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(ImageItemViewModel.Status))
             {
-                _convertSelectedCommand.NotifyCanExecuteChanged();
+                ConvertSelectedCommand.NotifyCanExecuteChanged();
             }
             else if (e.PropertyName == nameof(ImageItemViewModel.IsSelected))
             {
@@ -306,9 +312,18 @@ namespace ARWtoJXL.WPF.ViewModels
 
         private void RefreshViewCommands()
         {
-            _convertSelectedCommand.NotifyCanExecuteChanged();
-            _removeSelectedCommand.NotifyCanExecuteChanged();
-            _selectAllCommand.NotifyCanExecuteChanged();
+            ConvertSelectedCommand.NotifyCanExecuteChanged();
+            RemoveSelectedCommand.NotifyCanExecuteChanged();
+            SelectAllCommand.NotifyCanExecuteChanged();
+        }
+
+        private void RefreshAllCommands()
+        {
+            ConvertSelectedCommand.NotifyCanExecuteChanged();
+            RemoveSelectedCommand.NotifyCanExecuteChanged();
+            SelectAllCommand.NotifyCanExecuteChanged();
+            CancelCommand.NotifyCanExecuteChanged();
+            OpenOutputFolderCommand.NotifyCanExecuteChanged();
         }
 
         private void UpdateSelectionState()
@@ -393,12 +408,14 @@ namespace ARWtoJXL.WPF.ViewModels
             await App.Current.Dispatcher.InvokeAsync(action);
         }
 
-        private void RefreshAllCommands()
+        private void SaveSettings()
         {
-            _convertSelectedCommand.NotifyCanExecuteChanged();
-            _removeSelectedCommand.NotifyCanExecuteChanged();
-            _selectAllCommand.NotifyCanExecuteChanged();
-            _cancelCommand.NotifyCanExecuteChanged();
+            SettingsService.Save(new AppSettings
+            {
+                UseSubfolder = UseSubfolder,
+                SubfolderName = SubfolderName,
+                QualityPreset = QualityPreset
+            });
         }
     }
 }
