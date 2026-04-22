@@ -2,9 +2,9 @@ using System.ComponentModel;
 using ARWtoJXL.Core.Interfaces;
 using ARWtoJXL.Core.Services;
 
-namespace ARWtoJXL.WPF.Models
+namespace ARWtoJXL.WPF.ViewModels
 {
-    public class ImageItem : INotifyPropertyChanged
+    public class ImageItemViewModel : INotifyPropertyChanged
     {
         private string _filePath = string.Empty;
         private string _fileName = string.Empty;

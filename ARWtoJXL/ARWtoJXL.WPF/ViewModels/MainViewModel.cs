@@ -13,7 +13,6 @@ using System.Windows.Threading;
 using System.Windows.Media.Imaging;
 using ARWtoJXL.Core.Interfaces;
 using ARWtoJXL.Core.Services;
-using ARWtoJXL.WPF.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -22,12 +21,12 @@ namespace ARWtoJXL.WPF.ViewModels
     public partial class MainViewModel : ObservableObject
     {
         private readonly IImageService _imageService;
-        private readonly ObservableCollection<ImageItem> _selectedImages = new();
+        private readonly ObservableCollection<ImageItemViewModel> _selectedImages = new();
         private readonly HashSet<string> _addedFilePaths = new(StringComparer.OrdinalIgnoreCase);
         private CancellationTokenSource? _cancellationTokenSource;
 
         [ObservableProperty]
-        private ObservableCollection<ImageItem> _images = new();
+        private ObservableCollection<ImageItemViewModel> _images = new();
 
         private RelayCommand _convertSelectedCommand;
         private RelayCommand _removeSelectedCommand;
@@ -281,13 +280,13 @@ namespace ARWtoJXL.WPF.ViewModels
 
         private void Item_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(ImageItem.Status))
+            if (e.PropertyName == nameof(ImageItemViewModel.Status))
             {
                 _convertSelectedCommand.NotifyCanExecuteChanged();
             }
-            else if (e.PropertyName == nameof(ImageItem.IsSelected))
+            else if (e.PropertyName == nameof(ImageItemViewModel.IsSelected))
             {
-                if (sender is ImageItem item)
+                if (sender is ImageItemViewModel item)
                 {
                     if (item.IsSelected)
                     {
@@ -341,7 +340,7 @@ namespace ARWtoJXL.WPF.ViewModels
                 var extension = Path.GetExtension(path).ToLower();
                 if (extension != ".arw" && extension != ".jxl") return;
 
-                var item = new ImageItem
+                var item = new ImageItemViewModel
                 {
                     FilePath = path,
                     FileName = Path.GetFileName(path),

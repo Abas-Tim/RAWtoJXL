@@ -13,7 +13,6 @@ public class SystemProcessRunner : IProcessRunner
     [
         @"C:\Program Files\exiftool.exe",
         @"C:\Program Files (x86)\exiftool.exe",
-        @"F:\Downloads\exiftoolgui516\exiftoolgui\exiftool.exe",
         @"C:\Users\Public\exiftool.exe"
     ];
 

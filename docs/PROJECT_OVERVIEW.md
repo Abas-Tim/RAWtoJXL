@@ -20,8 +20,9 @@ ARWtoJXL/
 ├── ARWtoJXL.Core/          # Business logic layer (clean architecture)
 │   ├── Models/
 
-   │   │   ├── QualityCalculator.cs       # Static helper for quality→distance/effort mapping
-   │   │   └── MetadataProfiles.cs        # Metadata container (EXIF, XMP, ICC, IPTC profiles)
+    │   │   ├── FileLockedException.cs     # Custom exception for file-lock errors (IOException wrapper)
+    │   │   ├── QualityCalculator.cs       # Static helper for quality→distance/effort mapping
+    │   │   └── MetadataProfiles.cs        # Metadata container (EXIF, XMP, ICC, IPTC profiles)
 │   ├── Interfaces/
 │   │   ├── IImageService.cs           # Primary service interface (enum: ImageStatus)
 │   │   ├── IMagickService.cs          # ImageMagick operations interface
@@ -42,9 +43,8 @@ ARWtoJXL/
       ├── FileLogger.cs              # ILogger implementation (file-based logger)
 │       └── ServiceCollectionExtensions.cs # IServiceCollection extension for AddCoreServices()
 ├── ARWtoJXL.WPF/           # Presentation layer
-│   ├── Models/
-│   │   └── ImageItem.cs               # ViewModel data model (INotifyPropertyChanged)
 │   ├── ViewModels/
+│   │   ├── ImageItemViewModel.cs      # WPF view model for image items (INotifyPropertyChanged, BitmapImage thumbnail)
 │   │   ├── MainViewModel.cs           # MVVM viewmodel (CommunityToolkit.Mvvm)
 │   │   └── SettingsViewModel.cs       # Settings dialog viewmodel
 │   ├── MainWindow.xaml(.cs)           # Drag-drop gallery UI with DI wiring
@@ -190,7 +190,7 @@ Centralized quality calculations to avoid duplication:
 ## UI/UX Flow
 1. User drags .ARW files or folders onto MainWindow, or clicks "Open File" button to browse via OpenFileDialog
 2. `MainWindow` constructor creates `ServiceCollection`, calls `AddCoreServices()`, builds `ServiceProvider`, resolves `IImageService`
-3. `MainViewModel.AddFilesAsync()` deduplicates by normalized full path (case-insensitive), filters ARW/JXL, creates `ImageItem` objects, generates thumbnails via `GetThumbnailAsync()`
+3. `MainViewModel.AddFilesAsync()` deduplicates by normalized full path (case-insensitive), filters ARW/JXL, creates `ImageItemViewModel` objects, generates thumbnails via `GetThumbnailAsync()`
 4. Items displayed in gallery with 80x60 thumbnails, selection checkboxes, and per-item progress spinners
 5. User selects files, configures settings (quality, subfolder) → clicks "Convert"
 6. `ConvertSelectedAsync()` spawns concurrent tasks (max = CPU core count via SemaphoreSlim)
@@ -200,7 +200,7 @@ Centralized quality calculations to avoid duplication:
 
 ## UI Components
 - **Open File Button:** Opens OpenFileDialog with ARW/JXL filter, calls `AddFilesAsync()` with selected files
-- **Gallery (ListBox):** Displays ImageItem objects with thumbnail previews, checkboxes, status indicators
+- **Gallery (ListBox):** Displays ImageItemViewModel objects with thumbnail previews, checkboxes, status indicators
 - **Per-Item Spinner:** Indeterminate ProgressBar visible when `Status == ImageStatus.Converting`
 - **Global ProgressBar:** Shows overall progress (CompletedCount/TotalCount), hidden when `IsConverting == false`
 - **Cancel Button:** Enabled during conversion, triggers `CancellationTokenSource.Cancel()`
@@ -232,6 +232,16 @@ Defined in `MainWindow.xaml` via `Window.InputBindings`:
 - **SettingsWindow.xaml**: CheckBox for subfolder, TextBox for subfolder name, Slider for quality (0-100)
 - Settings applied via `MainViewModel.ApplySettings(SettingsViewModel)` on window close
 - `MainViewModel` exposes `UseSubfolder`, `SubfolderName`, `QualityPreset` properties synced from SettingsWindow
+
+## File Lock Handling
+
+When an ARW file is locked by another application (Adobe Bridge, Lightroom, etc.), file access throws `IOException` with HResult 32 on Windows. The app catches these and provides clear error messages:
+
+- **FileLockedException** (`ARWtoJXL.Core.Models`): Custom exception extending `IOException` with user-friendly message identifying the locked file and suggesting closing it in the other app
+- **Detection**: `FileLockedException.IsFileLocked()` checks HResult 32, inner IOException, and message patterns ("process cannot access the file", "being used by another process")
+- **MagickService**: Catches IOException in `ExtractThumbnailAsync`, `ConvertToPngAsync`, and `ExtractProfilesFromImageAsync`, rethrows as `FileLockedException`
+- **ExiftoolService**: Checks stderr for file-lock indicators in `EmbedMetadataAsync` (ex: "cannot open", "permission denied")
+- **UI**: Error displayed in `ImageItemViewModel.ErrorMessage`, shown as "Failed" status with the clear message
 
 ## Concurrency Model
 - `SemaphoreSlim(maxConcurrency = Environment.ProcessorCount)` limits parallel conversions

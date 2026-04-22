@@ -18,6 +18,7 @@ namespace ARWtoJXL.WPF
         public const string OpenFileDialogTitle = "Open Image Files";
         public const string OpenFileDialogFilter = "Sony RAW Files|*.ARW|JPEG XL Files|*.JXL|All Files|*.*";
         public const string ThumbnailFailedPrefix = "Thumbnail failed: ";
+        public const string FileLockedPrefix = "File locked: ";
         public const string FilesLoaded = "Files loaded.";
         public const string ItemsSingular = "item(s)";
         public const string ItemsRemoved = "Removed ";

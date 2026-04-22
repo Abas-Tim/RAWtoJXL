@@ -4,7 +4,6 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:ARWtoJXL.WPF.ViewModels"
-        xmlns:models="clr-namespace:ARWtoJXL.WPF.Models"
         xmlns:local="clr-namespace:ARWtoJXL.WPF"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         mc:Ignorable="d"
@@ -36,7 +35,7 @@
             <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
         </Style>
 
-        <DataTemplate DataType="{x:Type models:ImageItem}">
+        <DataTemplate DataType="{x:Type vm:ImageItemViewModel}">
             <Border Background="{DynamicResource Wpf.Ui.Brush.Background.Brush}"
                     BorderBrush="{DynamicResource Wpf.Ui.Brush.Control.Default}"
                     BorderThickness="1"

@@ -8,8 +8,6 @@ using Wpf.Ui.Controls;
 using ARWtoJXL.WPF.ViewModels;
 using ARWtoJXL.Core.Interfaces;
 using ARWtoJXL.Core;
-using ARWtoJXL.WPF.Models;
-
 namespace ARWtoJXL.WPF
 {
     public partial class MainWindow : Window

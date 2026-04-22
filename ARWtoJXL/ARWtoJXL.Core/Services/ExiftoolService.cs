@@ -92,6 +92,28 @@ public class ExiftoolService : IExiftoolService
             cancellationToken);
 
         _logger.Write($"[ExiftoolService] exiftool metadata embedding exit={exitCode}, stdout='{stdout?.Trim()}', stderr='{stderr?.Trim()}'");
+
+        if (exitCode != 0 && !string.IsNullOrEmpty(stderr))
+        {
+            if (IsFileLockError(stderr, sourcePath))
+            {
+                throw new FileLockedException(sourcePath);
+            }
+        }
+    }
+
+    private static bool IsFileLockError(string stderr, string filePath)
+    {
+        var fileName = Path.GetFileName(filePath);
+        if (stderr.Contains(fileName, StringComparison.OrdinalIgnoreCase) &&
+            (stderr.Contains("cannot open", StringComparison.OrdinalIgnoreCase) ||
+             stderr.Contains("permission denied", StringComparison.OrdinalIgnoreCase) ||
+             stderr.Contains("process cannot access", StringComparison.OrdinalIgnoreCase) ||
+             stderr.Contains("unable to open", StringComparison.OrdinalIgnoreCase)))
+        {
+            return true;
+        }
+        return false;
     }
 
     private string? SaveBytesToTemp(byte[] data, string extension)
