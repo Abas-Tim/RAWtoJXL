@@ -11,6 +11,7 @@ ARWtoJXL.Tests/
 ├── MetadataPreservationTests.cs  # Metadata transfer tests (inherits Startup, resolves IMagickService, IImageService)
 ├── MetadataDebugTests.cs         # Diagnostic test with assertions for metadata preservation (inherits Startup)
 ├── QualityCalculatorTests.cs     # Unit tests for quality calculations (no DI)
+├── SmokeTests.cs                 # FlaUI-based UI smoke tests (launches WPF app, verifies main window elements)
 └── Services/                     # Empty directory (reserved for future service tests)
 ```
 
@@ -46,8 +47,21 @@ Diagnostic test with assertions for full metadata preservation verification (inh
 - Uses exiftool `-s -n -Make -Model ...` format for tag-specific reading
 - Assertions: minimum 5 matched tags, no missing tags, output has metadata
 
+### SmokeTests
+FlaUI-based UI smoke tests (no DI, implements `IDisposable` for cleanup):
+- Launches `ARWtoJXL.WPF.exe` as a separate process
+- Connects via FlaUI UIA3 automation to the main window
+- Verifies window title is "ARW to JXL Converter"
+- Verifies toolbar buttons exist: Open File, Select All, Convert, Remove, Settings
+- Verifies gallery ListBox (file list) is present
+- Verifies progress bar is present
+- Cleans up application process on test disposal
+- Tagged with `[Trait("category", "smoke")]` — run with `dotnet test --filter "category=smoke"`
+
 ## Key Dependencies
 
 - **xUnit**: Unit testing framework (Apache-2.0)
 - **Moq**: Mocking framework (BSD-3-Clause)
+- **FlaUI.Core** + **FlaUI.UIA3** (4.0.0): Windows UI automation for smoke tests (MIT)
 - Depends on `ARWtoJXL.Core` for services under test
+- Depends on `ARWtoJXL.WPF` for smoke test target application

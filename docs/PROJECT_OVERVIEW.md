@@ -45,6 +45,7 @@ Each project maintains its own documentation with detailed information on archit
 - Single-file publish: `dotnet publish -c Release -r win-x64 --self-contained true -p:DebugType=None -p:DebugSymbols=false`
 - cjxl.exe + exiftool.exe copied to output via `<None Include="..\*.exe" CopyToOutputDirectory="PreserveNewest" />`
 - Tests: `dotnet test ARWtoJXL.Tests.csproj`
+- Smoke tests: `dotnet test ARWtoJXL.Tests.csproj --filter "category=smoke"`
 
 ## Git Ignore Policy
 
