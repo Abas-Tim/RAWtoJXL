@@ -7,6 +7,36 @@ using ARWtoJXL.Core.Interfaces;
 
 namespace ARWtoJXL.WPF
 {
+    public class ConversionPreset
+    {
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("quality")]
+        public int Quality { get; set; } = 90;
+
+        [JsonPropertyName("outputFormat")]
+        public OutputFormat OutputFormat { get; set; } = OutputFormat.Jxl;
+
+        [JsonPropertyName("conflictResolution")]
+        public ConflictResolution ConflictResolution { get; set; } = ConflictResolution.Overwrite;
+
+        [JsonPropertyName("useSubfolder")]
+        public bool UseSubfolder { get; set; } = true;
+
+        [JsonPropertyName("subfolderName")]
+        public string SubfolderName { get; set; } = "jxl_output";
+
+        [JsonPropertyName("useCustomOutputDirectory")]
+        public bool UseCustomOutputDirectory { get; set; } = false;
+
+        [JsonPropertyName("customOutputDirectory")]
+        public string CustomOutputDirectory { get; set; } = string.Empty;
+
+        [JsonPropertyName("confirmOverwrite")]
+        public bool ConfirmOverwrite { get; set; } = true;
+    }
+
     public class AppSettings
     {
         [JsonPropertyName("useSubfolder")]
@@ -32,6 +62,15 @@ namespace ARWtoJXL.WPF
 
         [JsonPropertyName("confirmOverwrite")]
         public bool ConfirmOverwrite { get; set; } = true;
+
+        [JsonPropertyName("useCustomOutputDirectory")]
+        public bool UseCustomOutputDirectory { get; set; } = false;
+
+        [JsonPropertyName("customOutputDirectory")]
+        public string CustomOutputDirectory { get; set; } = string.Empty;
+
+        [JsonPropertyName("presets")]
+        public List<ConversionPreset> Presets { get; set; } = new List<ConversionPreset>();
     }
 
     public static class SettingsService

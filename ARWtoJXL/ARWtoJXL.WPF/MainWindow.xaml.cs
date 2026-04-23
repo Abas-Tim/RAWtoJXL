@@ -34,7 +34,9 @@ namespace ARWtoJXL.WPF
             viewModel.SearchRecursive = saved.SearchRecursive;
             viewModel.OutputFormat = saved.OutputFormat;
             viewModel.ConflictResolution = saved.ConflictResolution;
-                viewModel.ConfirmOverwrite = saved.ConfirmOverwrite;
+            viewModel.ConfirmOverwrite = saved.ConfirmOverwrite;
+            viewModel.UseCustomOutputDirectory = saved.UseCustomOutputDirectory;
+            viewModel.CustomOutputDirectory = saved.CustomOutputDirectory;
 
             DataContext = viewModel;
         }
@@ -93,6 +95,8 @@ namespace ARWtoJXL.WPF
                 _settingsWindow.Settings.OutputFormat = viewModel.OutputFormat;
                 _settingsWindow.Settings.ConflictResolution = viewModel.ConflictResolution;
                 _settingsWindow.Settings.ConfirmOverwrite = viewModel.ConfirmOverwrite;
+                _settingsWindow.Settings.UseCustomOutputDirectory = viewModel.UseCustomOutputDirectory;
+                _settingsWindow.Settings.CustomOutputDirectory = viewModel.CustomOutputDirectory;
                 _settingsWindow.Closed += (s, args) =>
                 {
                     viewModel.ApplySettings(_settingsWindow!.Settings);
@@ -118,7 +122,32 @@ namespace ARWtoJXL.WPF
 
         private void QualityTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
-            e.Handled = !IsNumeric(e.Text);
+            if (sender is System.Windows.Controls.TextBox tb)
+            {
+                string currentText = tb.Text;
+                int selectionStart = tb.CaretIndex;
+                string remaining = currentText.Substring(selectionStart);
+                string proposed = currentText.Substring(0, selectionStart) + e.Text + remaining;
+                if (!IsNumeric(e.Text))
+                {
+                    e.Handled = true;
+                    return;
+                }
+                if (proposed.Length > 3)
+                {
+                    e.Handled = true;
+                    return;
+                }
+                if (int.TryParse(proposed, out int value) && value > 100)
+                {
+                    e.Handled = true;
+                    return;
+                }
+            }
+            else
+            {
+                e.Handled = !IsNumeric(e.Text);
+            }
         }
 
         private static bool IsNumeric(string value)

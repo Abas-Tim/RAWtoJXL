@@ -2,7 +2,7 @@
 
 ## Summary
 
-Windows desktop app (.NET 8 WPF) that converts Sony RAW (.ARW) camera files to JPEG-XL (.JXL), JPEG (.JPG), or PNG (.PNG) formats. Uses a multi-stage pipeline: Magick.NET for RAW decoding and metadata extraction + cjxl CLI for JXL encoding with metadata preservation. Features include recursive folder search, conversion history, per-file quality override, and file conflict resolution.
+Windows desktop app (.NET 8 WPF) that converts Sony RAW (.ARW) camera files to JPEG-XL (.JXL), JPEG (.JPG), or PNG (.PNG) formats. Uses a multi-stage pipeline: Magick.NET for RAW decoding and metadata extraction + cjxl CLI for JXL encoding with metadata preservation. Features include recursive folder search, conversion history, per-file quality override, file conflict resolution, custom output directory picker, named conversion presets, and per-file compression ratio display.
 
 ## Repository Layout
 

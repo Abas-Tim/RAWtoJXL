@@ -11,6 +11,7 @@ namespace ARWtoJXL.WPF
         {
             InitializeComponent();
             Settings = new SettingsViewModel();
+            Settings.RequestClose += (s, e) => this.Close();
             DataContext = Settings;
         }
     }

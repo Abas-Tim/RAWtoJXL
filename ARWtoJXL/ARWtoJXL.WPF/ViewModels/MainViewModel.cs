@@ -11,6 +11,7 @@ using System.Windows;
 using System.Windows.Threading;
 using System.Windows.Media.Imaging;
 using ARWtoJXL.Core.Interfaces;
+using ARWtoJXL.Core.Models;
 using ARWtoJXL.Core.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -22,6 +23,7 @@ namespace ARWtoJXL.WPF.ViewModels
         private readonly IImageService _imageService;
         private readonly ObservableCollection<ImageItemViewModel> _selectedImages = new();
         private readonly HashSet<string> _addedFilePaths = new(StringComparer.OrdinalIgnoreCase);
+        private readonly SemaphoreSlim _confirmationSemaphore = new(1, 1);
         private CancellationTokenSource? _cancellationTokenSource;
 
         [ObservableProperty]
@@ -105,6 +107,22 @@ namespace ARWtoJXL.WPF.ViewModels
         }
 
         [ObservableProperty]
+        private bool _useCustomOutputDirectory;
+
+        partial void OnUseCustomOutputDirectoryChanged(bool value)
+        {
+            SaveSettings();
+        }
+
+        [ObservableProperty]
+        private string _customOutputDirectory = string.Empty;
+
+        partial void OnCustomOutputDirectoryChanged(string value)
+        {
+            SaveSettings();
+        }
+
+        [ObservableProperty]
         private ObservableCollection<string> _recentFiles = new();
 
         public void ApplySettings(SettingsViewModel settings)
@@ -116,6 +134,8 @@ namespace ARWtoJXL.WPF.ViewModels
             OutputFormat = settings.OutputFormat;
             ConflictResolution = settings.ConflictResolution;
             ConfirmOverwrite = settings.ConfirmOverwrite;
+            UseCustomOutputDirectory = settings.UseCustomOutputDirectory;
+            CustomOutputDirectory = settings.CustomOutputDirectory;
         }
 
         [ObservableProperty]
@@ -141,6 +161,8 @@ namespace ARWtoJXL.WPF.ViewModels
             OutputFormat = saved.OutputFormat;
             ConflictResolution = saved.ConflictResolution;
             ConfirmOverwrite = saved.ConfirmOverwrite;
+            UseCustomOutputDirectory = saved.UseCustomOutputDirectory;
+            CustomOutputDirectory = saved.CustomOutputDirectory;
         }
 
         [RelayCommand(CanExecute = nameof(CanExecuteConvertSelected))]
@@ -155,7 +177,7 @@ namespace ARWtoJXL.WPF.ViewModels
             TotalCount = readySelected.Count;
             StatusMessage = $"{AppStrings.ConvertingProgress}{0}{AppStrings.OfSuffix}{readySelected.Count}...";
             IsConverting = true;
-            IsCancelRequested = true;
+            IsCancelRequested = false;
             RefreshAllCommands();
 
             int maxConcurrency = Environment.ProcessorCount;
@@ -185,31 +207,42 @@ namespace ARWtoJXL.WPF.ViewModels
                         }
 
                         if (File.Exists(outputPath) && ConfirmOverwrite)
-                        {
-                            MessageBoxResult result = MessageBoxResult.No;
-                            await OnUiAsync(() =>
                             {
-                                result = MessageBox.Show(
-                                    $"Overwrite existing file?\n\n{Path.GetFileName(outputPath)}",
-                                    "Confirm Overwrite",
-                                    MessageBoxButton.YesNo,
-                                    MessageBoxImage.Question);
-                            });
-                            if (result != MessageBoxResult.Yes)
-                            {
-                                await OnUiAsync(() =>
+                                await _confirmationSemaphore.WaitAsync(_cancellationTokenSource.Token);
+                                MessageBoxResult result = MessageBoxResult.No;
+                                try
                                 {
-                                    item.Status = ImageStatus.Pending;
-                                    item.ErrorMessage = AppStrings.FileSkippedByUser;
-                                });
-                                return;
+                                    await OnUiAsync(() =>
+                                    {
+                                        result = MessageBox.Show(
+                                            $"Overwrite existing file?\n\n{Path.GetFileName(outputPath)}",
+                                            "Confirm Overwrite",
+                                            MessageBoxButton.YesNo,
+                                            MessageBoxImage.Question);
+                                    });
+                                }
+                                finally
+                                {
+                                    _confirmationSemaphore.Release();
+                                }
+                                if (result != MessageBoxResult.Yes)
+                                {
+                                    await OnUiAsync(() =>
+                                    {
+                                        item.Status = ImageStatus.Pending;
+                                        item.ErrorMessage = AppStrings.FileSkippedByUser;
+                                    });
+                                    return;
+                                }
                             }
-                        }
 
                         int quality = item.EffectiveQuality(QualityPreset);
 
                     try
                     {
+                        long sourceSize = 0;
+                        try { sourceSize = new FileInfo(item.FilePath).Length; } catch { }
+
                         await _imageService.ConvertArwToJxlAsync(
                             item.FilePath,
                             outputPath,
@@ -218,22 +251,36 @@ namespace ARWtoJXL.WPF.ViewModels
                             OutputFormat,
                             _cancellationTokenSource.Token);
 
+                        long outputSize = 0;
+                        try { outputSize = new FileInfo(outputPath).Length; } catch { }
+
                         await OnUiAsync(() =>
                         {
                             item.Status = ImageStatus.Converted;
+                            item.SourceFileSize = sourceSize;
+                            item.OutputFileSize = outputSize;
+                            item.OutputPath = outputPath;
                             SettingsService.AddRecentFile(item.FilePath);
                             RefreshRecentFiles();
                         });
                     }
-                    catch (OperationCanceledException)
-                    {
-                        await OnUiAsync(() =>
+                  catch (OperationCanceledException)
                         {
-                            item.Status = ImageStatus.Pending;
-                            item.ErrorMessage = AppStrings.Cancelled;
-                        });
-                    }
-                    catch (Exception ex)
+                            await OnUiAsync(() =>
+                            {
+                                item.Status = ImageStatus.Pending;
+                                item.ErrorMessage = AppStrings.Cancelled;
+                            });
+                        }
+                        catch (FileLockedException ex)
+                        {
+                            await OnUiAsync(() =>
+                            {
+                                item.Status = ImageStatus.Failed;
+                                item.ErrorMessage = $"{AppStrings.FileLockedPrefix}{ex.Message}";
+                            });
+                        }
+                        catch (Exception ex)
                     {
                         await OnUiAsync(() =>
                         {
@@ -284,6 +331,7 @@ namespace ARWtoJXL.WPF.ViewModels
             var itemsToRemove = _selectedImages.ToList();
             foreach (var item in itemsToRemove)
             {
+                item.IsRemoved = true;
                 item.PropertyChanged -= Item_PropertyChanged;
                 Images.Remove(item);
             }
@@ -495,6 +543,7 @@ namespace ARWtoJXL.WPF.ViewModels
                 await semaphore.WaitAsync();
                 try
                 {
+                    if (item.IsRemoved) return;
                     try
                     {
                         var thumbnailBytes = await _imageService.GetThumbnailAsync(item.FilePath);
@@ -505,11 +554,13 @@ namespace ARWtoJXL.WPF.ViewModels
                         bitmap.StreamSource = ms;
                         bitmap.EndInit();
                         bitmap.Freeze();
+                        if (item.IsRemoved) return;
                         await OnUiAsync(() => item.Thumbnail = bitmap);
                     }
                     catch (Exception ex)
                     {
-                        await OnUiAsync(() => item.ErrorMessage = $"{AppStrings.ThumbnailFailedPrefix}{ex.Message}");
+                        if (!item.IsRemoved)
+                            await OnUiAsync(() => item.ErrorMessage = $"{AppStrings.ThumbnailFailedPrefix}{ex.Message}");
                     }
                 }
                 finally
@@ -522,9 +573,17 @@ namespace ARWtoJXL.WPF.ViewModels
 
         private string? ResolveOutputPath(string inputPath)
         {
-            string directory = UseSubfolder
-                ? Path.Combine(Path.GetDirectoryName(inputPath)!, SubfolderName)
-                : Path.GetDirectoryName(inputPath)!;
+            string directory;
+            if (UseCustomOutputDirectory && !string.IsNullOrEmpty(CustomOutputDirectory))
+            {
+                directory = CustomOutputDirectory;
+            }
+            else
+            {
+                directory = UseSubfolder
+                    ? Path.Combine(Path.GetDirectoryName(inputPath)!, SubfolderName)
+                    : Path.GetDirectoryName(inputPath)!;
+            }
             Directory.CreateDirectory(directory);
 
             string baseName = Path.GetFileNameWithoutExtension(inputPath);
@@ -580,6 +639,7 @@ namespace ARWtoJXL.WPF.ViewModels
 
         private void SaveSettings()
         {
+            var saved = SettingsService.Load();
             SettingsService.Save(new AppSettings
             {
                 UseSubfolder = UseSubfolder,
@@ -588,7 +648,10 @@ namespace ARWtoJXL.WPF.ViewModels
                 SearchRecursive = SearchRecursive,
                 OutputFormat = OutputFormat,
                 ConflictResolution = ConflictResolution,
-                ConfirmOverwrite = ConfirmOverwrite
+                ConfirmOverwrite = ConfirmOverwrite,
+                UseCustomOutputDirectory = UseCustomOutputDirectory,
+                CustomOutputDirectory = CustomOutputDirectory,
+                Presets = saved.Presets
             });
         }
     }

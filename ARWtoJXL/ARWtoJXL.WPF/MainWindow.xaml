@@ -26,6 +26,7 @@
         <local:BooleanToTextConverter x:Key="BooleanToTextConverter"/>
         <local:BooleanToValueConverter x:Key="BooleanToValueConverter"/>
         <local:NullableIntConverter x:Key="NullableIntConverter"/>
+        <local:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
 
         <Style TargetType="ListBox">
             <Setter Property="BorderThickness" Value="1"/>
@@ -64,27 +65,33 @@
                            Margin="0,0,15,0"
                            VerticalAlignment="Top"/>
 
-                    <StackPanel Grid.Column="2" VerticalAlignment="Top">
+              <StackPanel Grid.Column="2" VerticalAlignment="Top">
                         <TextBlock Text="{Binding FileName}"
-                                   FontSize="13"
-                                   FontWeight="SemiBold"
-                                   TextTrimming="CharacterEllipsis"/>
+                                    FontSize="13"
+                                    FontWeight="SemiBold"
+                                    TextTrimming="CharacterEllipsis"/>
                         <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
                             <ProgressBar Width="160"
-                                         Height="4"
-                                         IsIndeterminate="True"
-                                         Visibility="{Binding Status, Converter={StaticResource ImageStatusToStringConverter}, ConverterParameter='Converting'}"
-                                         VerticalAlignment="Center"/>
+                                          Height="4"
+                                          IsIndeterminate="True"
+                                          Visibility="{Binding Status, Converter={StaticResource ImageStatusToStringConverter}, ConverterParameter='Converting'}"
+                                          VerticalAlignment="Center"/>
                             <TextBlock Text="{Binding Status, StringFormat='Status: {0}'}"
-                                       FontSize="11"
-                                       Margin="12,0,0,0"
-                                       VerticalAlignment="Center"/>
+                                        FontSize="11"
+                                        Margin="12,0,0,0"
+                                        VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding SizeInfoText}"
+                                        FontSize="10"
+                                        Foreground="Gray"
+                                        Margin="12,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Visibility="{Binding SizeInfoText, Converter={StaticResource StringToVisibilityConverter}}"/>
                         </StackPanel>
                         <TextBlock Text="{Binding ErrorMessage}"
-                                   FontSize="11"
-                                   Foreground="Red"
-                                   Visibility="{Binding ErrorMessage, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                   Margin="0,2,0,0"/>
+                                    FontSize="11"
+                                    Foreground="Red"
+                                    Visibility="{Binding ErrorMessage, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                    Margin="0,2,0,0"/>
                     </StackPanel>
 
                     <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0,0,0">

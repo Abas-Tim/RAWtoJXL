@@ -26,9 +26,43 @@ namespace ARWtoJXL.WPF.ViewModels
         [ObservableProperty]
         private int? _qualityOverride;
 
+        [ObservableProperty]
+        private bool _isRemoved;
+
+        [ObservableProperty]
+        private long _sourceFileSize;
+
+        [ObservableProperty]
+        private long _outputFileSize;
+
+        [ObservableProperty]
+        private string _outputPath = string.Empty;
+
+        public string SizeInfoText
+        {
+            get
+            {
+                if (Status != ImageStatus.Converted || SourceFileSize == 0 || OutputFileSize == 0)
+                    return string.Empty;
+
+                var saved = SourceFileSize - OutputFileSize;
+                var pct = (saved * 100.0) / SourceFileSize;
+                return $"{FormatBytes(OutputFileSize)} ({(pct >= 0 ? "-" : "+")}{Math.Abs(pct):F0}%)";
+            }
+        }
+
         public int EffectiveQuality(int globalQuality)
         {
             return QualityOverride ?? globalQuality;
+        }
+
+        private static string FormatBytes(long bytes)
+        {
+            if (bytes >= 1_000_000)
+                return $"{bytes / 1000_000.0:F1} MB";
+            if (bytes >= 1_000)
+                return $"{bytes / 1000.0:F1} KB";
+            return $"{bytes} B";
         }
     }
 }

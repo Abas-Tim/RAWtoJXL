@@ -122,7 +122,7 @@ public class CjxlEncoderService : ICjxlEncoder
         return cjxlPath;
     }
 
-    private List<string> BuildEncodingArguments(
+    protected internal List<string> BuildEncodingArguments(
         int quality,
         MetadataProfiles? metadata,
         string inputPath,

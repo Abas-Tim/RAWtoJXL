@@ -1,6 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <InternalsVisibleTo Include="ARWtoJXL.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\ARWtoJXL.Core\ARWtoJXL.Core.csproj" />
   </ItemGroup>
 

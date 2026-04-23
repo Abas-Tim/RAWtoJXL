@@ -23,7 +23,11 @@ namespace ARWtoJXL.WPF
                 if (string.IsNullOrEmpty(s))
                     return null;
                 if (int.TryParse(s, out int result))
+                {
+                    if (result < 0 || result > 100)
+                        return null;
                     return result;
+                }
                 return null;
             }
             return null;

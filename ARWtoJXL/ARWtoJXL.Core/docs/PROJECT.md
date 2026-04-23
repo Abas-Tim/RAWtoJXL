@@ -103,6 +103,7 @@ public ImageProcessingService(
 - Handles both lossless (quality≥100) and lossy modes
 - **cjxl progress estimation:** cjxl v0.11.2 does not output percentage progress during encoding. A background task (`ReportProgressAsync`) reports linear progress from 0.0 to 0.98 during cjxl encoding (updated every 100ms), mapped to 0.5→1.0 in the overall pipeline.
 - **Metadata embedding:** Delegates to `IExiftoolService.EmbedMetadataAsync()` for post-encoding metadata embedding via exiftool.
+- **BuildEncodingArguments:** `protected internal` method for constructing cjxl CLI arguments. Testable via subclass in test project (covered by `CjxlEncoderArgumentsTests`).
 - **Constructor:** `CjxlEncoderService(IPathResolver pathResolver, IExiftoolService exiftoolService, ILogger logger)` — all required (non-nullable)
 
 ### IFileService / FileService
@@ -208,7 +209,7 @@ When an ARW file is locked by another application (Adobe Bridge, Lightroom, etc.
 Pending    # Initial state OR cancelled conversion
 Ready      # Loaded, awaiting conversion
 Converting # Active conversion in progress
-Converted  # Successfully converted to JXL
+Converted  # Successfully converted to JXL (file sizes captured for compression ratio display)
 Failed     # Conversion error (ErrorMessage populated)
 ```
 

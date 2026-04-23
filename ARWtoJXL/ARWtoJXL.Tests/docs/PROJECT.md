@@ -11,6 +11,10 @@ ARWtoJXL.Tests/
 ├── MetadataPreservationTests.cs  # Metadata transfer tests (inherits Startup, resolves IMagickService, IImageService)
 ├── MetadataDebugTests.cs         # Diagnostic test with assertions for metadata preservation (inherits Startup)
 ├── QualityCalculatorTests.cs     # Unit tests for quality calculations (no DI)
+├── FileLockedExceptionTests.cs   # Unit tests for IsFileLocked() detection logic (Moq, no DI)
+├── SubfolderValidationTests.cs   # Unit tests for SettingsViewModel.ValidateSubfolderName() (no DI)
+├── ImageItemViewModelTests.cs    # Unit tests for EffectiveQuality fallback logic (no DI)
+├── CjxlEncoderArgumentsTests.cs  # Unit tests for BuildEncodingArguments() via protected internal test subclass (Moq)
 ├── SmokeTests.cs                 # FlaUI-based UI smoke tests (launches WPF app, verifies main window elements)
 └── Services/                     # Empty directory (reserved for future service tests)
 ```
@@ -23,6 +27,18 @@ ARWtoJXL.Tests/
 
 ### QualityCalculatorTests
 12 unit tests for quality→distance/effort mappings. No DI needed.
+
+### FileLockedExceptionTests
+10 unit tests for `FileLockedException.IsFileLocked()` static method. Tests HResult 32 detection, inner IOException unwrapping, message pattern matching ("process cannot access the file", "being used by another process"), null handling, and constructor behavior. No DI needed.
+
+### SubfolderValidationTests
+13 unit tests for `SettingsViewModel.ValidateSubfolderName()` static method. Tests empty/whitespace input, valid names, invalid path characters (platform-aware), leading/trailing whitespace, length limits, dot/dotdot names, and reserved Windows names (CON, PRN, AUX, NUL, COM1-9, LPT1-9). No DI needed.
+
+### ImageItemViewModelTests
+6 unit tests for `ImageItemViewModel.EffectiveQuality()` method. Tests global quality fallback, quality override, zero/100 edge cases, and override clearing. Also covers `SizeInfoText` computed property for compression ratio display. No DI needed.
+
+### CjxlEncoderArgumentsTests
+10 unit tests for `CjxlEncoderService.BuildEncodingArguments()` via a `protected internal` test subclass. Tests distance/effort argument generation, lossless vs lossy mode flags, metadata argument omission, and input/output path positioning. Uses Moq for `ILogger`, `IPathResolver`, `IExiftoolService`.
 
 ### ConversionTests
 Integration tests with real ARW files (inherits `Startup`):
@@ -55,6 +71,7 @@ FlaUI-based UI smoke tests (no DI, implements `IDisposable` for cleanup):
 - Verifies toolbar buttons exist: Open File, Select All, Convert, Remove, Settings
 - Verifies gallery ListBox (file list) is present
 - Verifies progress bar is present
+- **RemoveSelected_DoesNotCrashApp**: Creates temp .arw files, opens file dialog via FlaUI, adds file to gallery, selects all items, clicks Remove button, verifies app stays open and item count decreases — regression test for race condition where background thumbnail generation crashed the app when items were removed
 - Cleans up application process on test disposal
 - Tagged with `[Trait("category", "smoke")]` — run with `dotnet test --filter "category=smoke"`
 
