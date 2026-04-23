@@ -38,7 +38,7 @@ namespace ARWtoJXL.Tests
             var outputPath = GetOutputPath("jxl");
             await CleanOutputFile(outputPath);
 
-            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 5, CancellationToken.None);
+            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 5, OutputFormat.Jxl, CancellationToken.None);
 
             Assert.True(File.Exists(outputPath));
         }
@@ -54,7 +54,7 @@ namespace ARWtoJXL.Tests
             var outputPath = GetOutputPath($"quality{quality}");
             await CleanOutputFile(outputPath);
 
-            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, quality, CancellationToken.None);
+            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, quality, OutputFormat.Jxl, CancellationToken.None);
 
             Assert.True(File.Exists(outputPath));
             Assert.True(new FileInfo(outputPath).Length > 0);
@@ -67,7 +67,7 @@ namespace ARWtoJXL.Tests
             await CleanOutputFile(outputPath);
 
             double progress = 0;
-            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => progress = p, 100, CancellationToken.None);
+            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => progress = p, 100, OutputFormat.Jxl, CancellationToken.None);
 
             Assert.True(File.Exists(outputPath));
             Assert.True(new FileInfo(outputPath).Length > 0);
@@ -80,7 +80,7 @@ namespace ARWtoJXL.Tests
             var outputPath = GetOutputPath("visually_lossless");
             await CleanOutputFile(outputPath);
 
-            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 90, CancellationToken.None);
+            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 90, OutputFormat.Jxl, CancellationToken.None);
 
             Assert.True(File.Exists(outputPath));
             Assert.True(new FileInfo(outputPath).Length > 0);
@@ -92,7 +92,7 @@ namespace ARWtoJXL.Tests
             var outputPath = GetOutputPath("lowest_quality");
             await CleanOutputFile(outputPath);
 
-            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 0, CancellationToken.None);
+            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 0, OutputFormat.Jxl, CancellationToken.None);
 
             Assert.True(File.Exists(outputPath));
             Assert.True(new FileInfo(outputPath).Length > 0);
@@ -111,6 +111,7 @@ namespace ARWtoJXL.Tests
                 outputPath,
                 p => { lock (lockObj) progressValues.Add(p); },
                 50,
+                OutputFormat.Jxl,
                 CancellationToken.None);
 
             Assert.True(File.Exists(outputPath));

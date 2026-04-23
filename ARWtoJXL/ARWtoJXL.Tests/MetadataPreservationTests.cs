@@ -31,7 +31,7 @@ namespace ARWtoJXL.Tests
             var outputPath = GetOutputPath("metadata_transfer");
             await CleanOutputFile(outputPath);
 
-            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 90, CancellationToken.None);
+            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 90, OutputFormat.Jxl, CancellationToken.None);
 
             Assert.True(File.Exists(outputPath));
 
@@ -54,7 +54,7 @@ namespace ARWtoJXL.Tests
             var outputPath = GetOutputPath("icc_preserved");
             await CleanOutputFile(outputPath);
 
-            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 90, CancellationToken.None);
+            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 90, OutputFormat.Jxl, CancellationToken.None);
 
             Assert.True(File.Exists(outputPath));
 
@@ -83,7 +83,7 @@ namespace ARWtoJXL.Tests
             var outputPath = GetOutputPath("hasany_verify");
             await CleanOutputFile(outputPath);
 
-            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 90, CancellationToken.None);
+            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 90, OutputFormat.Jxl, CancellationToken.None);
 
             Assert.True(File.Exists(outputPath));
 
@@ -103,7 +103,7 @@ namespace ARWtoJXL.Tests
             var outputPath = GetOutputPath("exif_verify");
             await CleanOutputFile(outputPath);
 
-            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 90, CancellationToken.None);
+            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 90, OutputFormat.Jxl, CancellationToken.None);
 
             Assert.True(File.Exists(outputPath));
 
@@ -127,7 +127,7 @@ namespace ARWtoJXL.Tests
             var outputPath = GetOutputPath("icc_verify");
             await CleanOutputFile(outputPath);
 
-            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 90, CancellationToken.None);
+            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 90, OutputFormat.Jxl, CancellationToken.None);
 
             Assert.True(File.Exists(outputPath));
 
@@ -158,7 +158,7 @@ namespace ARWtoJXL.Tests
             var outputPath = GetOutputPath($"metadata_q{quality}");
             await CleanOutputFile(outputPath);
 
-            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, quality, CancellationToken.None);
+            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, quality, OutputFormat.Jxl, CancellationToken.None);
 
             Assert.True(File.Exists(outputPath));
 

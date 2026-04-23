@@ -1,6 +1,8 @@
+using System;
 using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using ARWtoJXL.Core.Interfaces;
 
 namespace ARWtoJXL.WPF.ViewModels
 {
@@ -16,6 +18,18 @@ namespace ARWtoJXL.WPF.ViewModels
         private int _qualityPreset;
 
         [ObservableProperty]
+        private bool _searchRecursive;
+
+        [ObservableProperty]
+        private OutputFormat _outputFormat = OutputFormat.Jxl;
+
+        [ObservableProperty]
+        private ConflictResolution _conflictResolution = ConflictResolution.Overwrite;
+
+        [ObservableProperty]
+        private bool _confirmOverwrite = true;
+
+        [ObservableProperty]
         private bool _isSaving;
 
         [ObservableProperty]
@@ -27,6 +41,10 @@ namespace ARWtoJXL.WPF.ViewModels
             UseSubfolder = saved.UseSubfolder;
             SubfolderName = saved.SubfolderName;
             QualityPreset = saved.QualityPreset;
+            SearchRecursive = saved.SearchRecursive;
+            OutputFormat = saved.OutputFormat;
+            ConflictResolution = saved.ConflictResolution;
+            ConfirmOverwrite = saved.ConfirmOverwrite;
         }
 
         partial void OnSubfolderNameChanged(string value)
@@ -74,7 +92,11 @@ namespace ARWtoJXL.WPF.ViewModels
             {
                 UseSubfolder = UseSubfolder,
                 SubfolderName = SubfolderName,
-                QualityPreset = QualityPreset
+                QualityPreset = QualityPreset,
+                SearchRecursive = SearchRecursive,
+                OutputFormat = OutputFormat,
+                ConflictResolution = ConflictResolution,
+                ConfirmOverwrite = ConfirmOverwrite
             });
             IsSaving = false;
         }

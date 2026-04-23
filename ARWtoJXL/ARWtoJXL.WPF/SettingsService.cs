@@ -1,6 +1,9 @@
+using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using ARWtoJXL.Core.Interfaces;
 
 namespace ARWtoJXL.WPF
 {
@@ -14,12 +17,28 @@ namespace ARWtoJXL.WPF
 
         [JsonPropertyName("qualityPreset")]
         public int QualityPreset { get; set; } = 90;
+
+        [JsonPropertyName("searchRecursive")]
+        public bool SearchRecursive { get; set; } = false;
+
+        [JsonPropertyName("recentFiles")]
+        public List<string> RecentFiles { get; set; } = new List<string>();
+
+        [JsonPropertyName("outputFormat")]
+        public OutputFormat OutputFormat { get; set; } = OutputFormat.Jxl;
+
+        [JsonPropertyName("conflictResolution")]
+        public ConflictResolution ConflictResolution { get; set; } = ConflictResolution.Overwrite;
+
+        [JsonPropertyName("confirmOverwrite")]
+        public bool ConfirmOverwrite { get; set; } = true;
     }
 
     public static class SettingsService
     {
         private static readonly string SettingsDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ARWtoJXL");
         private static readonly string SettingsPath = Path.Combine(SettingsDirectory, "settings.json");
+        private const int MaxRecentFiles = 50;
 
         public static AppSettings Load()
         {
@@ -48,8 +67,19 @@ namespace ARWtoJXL.WPF
             }
             catch
             {
-                // Silently ignore save failures
             }
+        }
+
+        public static void AddRecentFile(string filePath)
+        {
+            var settings = Load();
+            settings.RecentFiles.RemoveAll(p => p == filePath);
+            settings.RecentFiles.Insert(0, Path.GetFullPath(filePath));
+            while (settings.RecentFiles.Count > MaxRecentFiles)
+            {
+                settings.RecentFiles.RemoveAt(settings.RecentFiles.Count - 1);
+            }
+            Save(settings);
         }
     }
 }

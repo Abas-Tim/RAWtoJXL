@@ -27,5 +27,7 @@ namespace ARWtoJXL.WPF
         public const string ConvertingProgress = "Converting ";
         public const string OfSuffix = " of ";
         public const string SubfolderNameDefault = "jxl_output";
+        public const string FileSkipped = "Skipped (file exists)";
+        public const string FileSkippedByUser = "Skipped by user";
     }
 }

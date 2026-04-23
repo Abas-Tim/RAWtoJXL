@@ -22,5 +22,13 @@ namespace ARWtoJXL.WPF.ViewModels
 
         [ObservableProperty]
         private bool _isSelected;
+
+        [ObservableProperty]
+        private int? _qualityOverride;
+
+        public int EffectiveQuality(int globalQuality)
+        {
+            return QualityOverride ?? globalQuality;
+        }
     }
 }

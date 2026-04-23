@@ -15,6 +15,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IExiftoolService, ExiftoolService>();
         services.AddSingleton<IMagickService, MagickService>();
         services.AddSingleton<ICjxlEncoder, CjxlEncoderService>();
+        services.AddSingleton<IPngCache, PngCache>();
         services.AddSingleton<IImageService, ImageProcessingService>();
 
         return services;

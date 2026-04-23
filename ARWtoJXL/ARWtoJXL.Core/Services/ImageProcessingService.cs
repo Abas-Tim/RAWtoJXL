@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using ImageMagick;
 using ARWtoJXL.Core.Interfaces;
 using ARWtoJXL.Core.Models;
 
@@ -14,19 +15,25 @@ public class ImageProcessingService : IImageService
     private readonly IFileService _fileService;
     private readonly IPathResolver _pathResolver;
     private readonly ILogger _logger;
+    private readonly IExiftoolService _exiftoolService;
+    private readonly IPngCache _pngCache;
 
     public ImageProcessingService(
         IMagickService magickService,
         ICjxlEncoder cjxlEncoder,
         IFileService fileService,
         IPathResolver pathResolver,
-        ILogger logger)
+        ILogger logger,
+        IExiftoolService exiftoolService,
+        IPngCache pngCache)
     {
         _magickService = magickService ?? throw new ArgumentNullException(nameof(magickService));
         _cjxlEncoder = cjxlEncoder ?? throw new ArgumentNullException(nameof(cjxlEncoder));
         _fileService = fileService ?? throw new ArgumentNullException(nameof(fileService));
         _pathResolver = pathResolver ?? throw new ArgumentNullException(nameof(pathResolver));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _exiftoolService = exiftoolService ?? throw new ArgumentNullException(nameof(exiftoolService));
+        _pngCache = pngCache ?? throw new ArgumentNullException(nameof(pngCache));
     }
 
     public async Task<byte[]> GetThumbnailAsync(string filePath, CancellationToken cancellationToken = default)
@@ -39,10 +46,34 @@ public class ImageProcessingService : IImageService
         string outputPath,
         Action<double> progress,
         int quality,
+        OutputFormat outputFormat = OutputFormat.Jxl,
         CancellationToken cancellationToken = default)
     {
+        if (outputFormat == OutputFormat.Jxl)
+        {
+            await ConvertToJxlAsync(inputPath, outputPath, progress, quality, cancellationToken);
+        }
+        else if (outputFormat == OutputFormat.Jpeg)
+        {
+            await ConvertToJpegAsync(inputPath, outputPath, progress, quality, cancellationToken);
+        }
+        else if (outputFormat == OutputFormat.Png)
+        {
+            await ConvertToPngOutputAsync(inputPath, outputPath, progress, cancellationToken);
+        }
+    }
+
+    private async Task ConvertToJxlAsync(
+        string inputPath,
+        string outputPath,
+        Action<double> progress,
+        int quality,
+        CancellationToken cancellationToken)
+    {
         MetadataProfiles? metadata = null;
-        string tempPngPath = _fileService.GetTempFileName();
+        string? cachedPng = _pngCache.GetCachedPng(inputPath);
+        string? tempPngPath = null;
+        bool usedCache = cachedPng != null;
 
         try
         {
@@ -61,8 +92,20 @@ public class ImageProcessingService : IImageService
                 _logger.Write($"[ImageProcessing] Metadata extracted: Exif={metadata?.ExifPath ?? "none"}, Xmp={metadata?.XmpPath ?? "none"}, Icc={metadata?.IccPath ?? "none"}, Iptc={metadata?.IptcPath ?? "none"}, HasAny={metadata?.HasAny}");
             }
 
-            await _magickService.ConvertToPngAsync(inputPath, tempPngPath, cancellationToken);
-            progress?.Invoke(0.5);
+            if (usedCache)
+            {
+                tempPngPath = cachedPng;
+                _logger.Write($"[ImageProcessing] PNG cache hit for {Path.GetFileName(inputPath)}");
+                progress?.Invoke(0.5);
+            }
+            else
+            {
+                tempPngPath = _fileService.GetTempFileName();
+                await _magickService.ConvertToPngAsync(inputPath, tempPngPath, cancellationToken);
+                _pngCache.StorePng(inputPath, tempPngPath);
+                _logger.Write($"[ImageProcessing] PNG cached for {Path.GetFileName(inputPath)}");
+                progress?.Invoke(0.5);
+            }
 
             await _cjxlEncoder.EncodeAsync(
                 tempPngPath,
@@ -83,7 +126,105 @@ public class ImageProcessingService : IImageService
         finally
         {
             metadata?.Dispose();
-            _fileService.DeleteFile(tempPngPath);
+            if (!usedCache && tempPngPath != null)
+            {
+                _fileService.DeleteFile(tempPngPath);
+            }
+        }
+    }
+
+    private async Task ConvertToJpegAsync(
+        string inputPath,
+        string outputPath,
+        Action<double> progress,
+        int quality,
+        CancellationToken cancellationToken)
+    {
+        progress?.Invoke(0.1);
+
+        MetadataProfiles? metadata = null;
+        try
+        {
+            metadata = await _magickService.ExtractMetadataProfilesAsync(inputPath, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.Write($"[ImageProcessing] Metadata extraction failed: {ex.GetBaseException().Message}");
+        }
+
+        try
+        {
+            using var img = new MagickImage(inputPath);
+            progress?.Invoke(0.4);
+
+            img.Quality = (uint)Math.Max(1, Math.Min(100, quality));
+            img.Format = MagickFormat.Jpg;
+
+            var outputDir = Path.GetDirectoryName(outputPath);
+            if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+            {
+                Directory.CreateDirectory(outputDir);
+            }
+
+            img.Write(outputPath);
+            progress?.Invoke(0.9);
+
+            if (metadata != null && metadata.HasAny)
+            {
+                await _exiftoolService.EmbedMetadataAsync(inputPath, outputPath, metadata, cancellationToken);
+            }
+
+            progress?.Invoke(1.0);
+
+            if (!File.Exists(outputPath))
+            {
+                throw new FileNotFoundException($"Conversion completed but output file not found at: {outputPath}");
+            }
+        }
+        finally
+        {
+            metadata?.Dispose();
+        }
+    }
+
+    private async Task ConvertToPngOutputAsync(
+        string inputPath,
+        string outputPath,
+        Action<double> progress,
+        CancellationToken cancellationToken)
+    {
+        progress?.Invoke(0.1);
+
+        MetadataProfiles? metadata = null;
+        try
+        {
+            metadata = await _magickService.ExtractMetadataProfilesAsync(inputPath, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.Write($"[ImageProcessing] Metadata extraction failed: {ex.GetBaseException().Message}");
+        }
+
+        try
+        {
+            await _magickService.ConvertToPngAsync(inputPath, outputPath, cancellationToken);
+            progress?.Invoke(0.7);
+
+            if (metadata != null && metadata.HasAny)
+            {
+                await _exiftoolService.EmbedMetadataAsync(inputPath, outputPath, metadata, cancellationToken);
+            }
+
+            progress?.Invoke(1.0);
+
+            if (!File.Exists(outputPath))
+            {
+                throw new FileNotFoundException($"Conversion completed but output file not found at: {outputPath}");
+            }
+        }
+        finally
+        {
+            metadata?.Dispose();
         }
     }
 }

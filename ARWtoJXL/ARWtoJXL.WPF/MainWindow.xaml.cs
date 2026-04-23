@@ -1,4 +1,5 @@
 using System;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -30,6 +31,10 @@ namespace ARWtoJXL.WPF
             viewModel.UseSubfolder = saved.UseSubfolder;
             viewModel.SubfolderName = saved.SubfolderName;
             viewModel.QualityPreset = saved.QualityPreset;
+            viewModel.SearchRecursive = saved.SearchRecursive;
+            viewModel.OutputFormat = saved.OutputFormat;
+            viewModel.ConflictResolution = saved.ConflictResolution;
+                viewModel.ConfirmOverwrite = saved.ConfirmOverwrite;
 
             DataContext = viewModel;
         }
@@ -48,7 +53,10 @@ namespace ARWtoJXL.WPF
                     {
                         if (System.IO.Directory.Exists(path))
                         {
-                            allFiles.AddRange(System.IO.Directory.GetFiles(path, "*.*", System.IO.SearchOption.TopDirectoryOnly));
+                            var option = viewModel.SearchRecursive
+                                ? System.IO.SearchOption.AllDirectories
+                                : System.IO.SearchOption.TopDirectoryOnly;
+                            allFiles.AddRange(System.IO.Directory.GetFiles(path, "*.*", option));
                         }
                         else
                         {
@@ -81,6 +89,10 @@ namespace ARWtoJXL.WPF
                 _settingsWindow.Settings.UseSubfolder = viewModel.UseSubfolder;
                 _settingsWindow.Settings.SubfolderName = viewModel.SubfolderName;
                 _settingsWindow.Settings.QualityPreset = viewModel.QualityPreset;
+                _settingsWindow.Settings.SearchRecursive = viewModel.SearchRecursive;
+                _settingsWindow.Settings.OutputFormat = viewModel.OutputFormat;
+                _settingsWindow.Settings.ConflictResolution = viewModel.ConflictResolution;
+                _settingsWindow.Settings.ConfirmOverwrite = viewModel.ConfirmOverwrite;
                 _settingsWindow.Closed += (s, args) =>
                 {
                     viewModel.ApplySettings(_settingsWindow!.Settings);
@@ -93,6 +105,26 @@ namespace ARWtoJXL.WPF
             {
                 _settingsWindow.Activate();
             }
+        }
+
+        private async void RecentFile_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is System.Windows.Controls.TextBlock tb && !string.IsNullOrEmpty(tb.Text))
+            {
+                var viewModel = (MainViewModel)DataContext!;
+                await viewModel.AddFilesAsync(new[] { tb.Text });
+            }
+        }
+
+        private void QualityTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            e.Handled = !IsNumeric(e.Text);
+        }
+
+        private static bool IsNumeric(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return false;
+            return int.TryParse(value, out _);
         }
     }
 }

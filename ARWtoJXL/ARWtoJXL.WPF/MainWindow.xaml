@@ -25,6 +25,7 @@
         <local:BooleanToBrushConverter x:Key="BooleanToBrushConverter"/>
         <local:BooleanToTextConverter x:Key="BooleanToTextConverter"/>
         <local:BooleanToValueConverter x:Key="BooleanToValueConverter"/>
+        <local:NullableIntConverter x:Key="NullableIntConverter"/>
 
         <Style TargetType="ListBox">
             <Setter Property="BorderThickness" Value="1"/>
@@ -47,6 +48,7 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
                     <CheckBox Grid.Column="0"
@@ -63,10 +65,10 @@
                            VerticalAlignment="Top"/>
 
                     <StackPanel Grid.Column="2" VerticalAlignment="Top">
-                      <TextBlock Text="{Binding FileName}"
-                                    FontSize="13"
-                                    FontWeight="SemiBold"
-                                    TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Text="{Binding FileName}"
+                                   FontSize="13"
+                                   FontWeight="SemiBold"
+                                   TextTrimming="CharacterEllipsis"/>
                         <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
                             <ProgressBar Width="160"
                                          Height="4"
@@ -84,6 +86,16 @@
                                    Visibility="{Binding ErrorMessage, Converter={StaticResource BooleanToVisibilityConverter}}"
                                    Margin="0,2,0,0"/>
                     </StackPanel>
+
+                    <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0,0,0">
+                        <TextBlock Text="Q:" FontSize="11" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        <TextBox Width="40"
+                                 Text="{Binding QualityOverride, UpdateSourceTrigger=LostFocus, Converter={StaticResource NullableIntConverter}}"
+                                 FontSize="11"
+                                 VerticalAlignment="Center"
+                                 PreviewTextInput="QualityTextBox_PreviewTextInput"
+                                 ToolTip="Enter quality (0-100), leave empty for global"/>
+                    </StackPanel>
                 </Grid>
             </Border>
         </DataTemplate>
@@ -92,11 +104,11 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Header / Toolbar -->
         <Border Grid.Row="0"
                 Background="{DynamicResource Wpf.Ui.Brush.Background.Brush}"
                 BorderBrush="{DynamicResource Wpf.Ui.Brush.Control.Default}"
@@ -144,16 +156,50 @@
             </Grid>
         </Border>
 
-        <!-- File List -->
-        <ListBox Grid.Row="1"
+        <Border Grid.Row="1"
+                Background="{DynamicResource Wpf.Ui.Brush.Background.Brush}"
+                BorderBrush="{DynamicResource Wpf.Ui.Brush.Control.Default}"
+                BorderThickness="0,0,0,1"
+                Padding="15,6">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Recent:" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <ItemsControl ItemsSource="{Binding RecentFiles}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}"
+                                       FontSize="10"
+                                       Foreground="Blue"
+                                       TextDecorations="Underline"
+                                       Margin="0,0,8,0"
+                                       Cursor="Hand"
+                                       MouseLeftButtonDown="RecentFile_Click"
+                                       ToolTip="{Binding}"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <ui:Button Content="Load All"
+                           Command="{Binding LoadRecentFilesCommand}"
+                           FontSize="10"
+                           Margin="4,0,4,0"/>
+                <ui:Button Content="Clear"
+                           Command="{Binding ClearRecentFilesCommand}"
+                           FontSize="10"/>
+            </StackPanel>
+        </Border>
+
+        <ListBox Grid.Row="2"
                  ItemsSource="{Binding Images}"
                  Margin="15"
                  SelectionMode="Extended"
                  BorderThickness="1">
         </ListBox>
 
-        <!-- Footer / Progress -->
-        <Border Grid.Row="2"
+        <Border Grid.Row="3"
                 Background="{DynamicResource Wpf.Ui.Brush.Background.Brush}"
                 BorderBrush="{DynamicResource Wpf.Ui.Brush.Control.Default}"
                 BorderThickness="0,1,0,0"

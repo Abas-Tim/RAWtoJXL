@@ -49,7 +49,7 @@ namespace ARWtoJXL.Tests
             var outputPath = GetOutputPath("metadata_verify");
             await CleanOutputFile(outputPath);
 
-            await imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 90, System.Threading.CancellationToken.None);
+            await imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 90, OutputFormat.Jxl, System.Threading.CancellationToken.None);
 
             Console.WriteLine($"\n=== Output File ===");
             Console.WriteLine($"JXL exists: {File.Exists(outputPath)}");
