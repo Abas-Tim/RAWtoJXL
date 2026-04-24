@@ -8,15 +8,17 @@ using ARWtoJXL.Core.Models;
 namespace ARWtoJXL.Core.Services;
 
 public class ExiftoolService : IExiftoolService
-{
-    private readonly IProcessRunner _processRunner;
-    private readonly ILogger _logger;
-
-    public ExiftoolService(IProcessRunner processRunner, ILogger logger)
     {
-        _processRunner = processRunner ?? throw new ArgumentNullException(nameof(processRunner));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
+        private readonly IProcessRunner _processRunner;
+        private readonly IFileService _fileService;
+        private readonly ILogger _logger;
+
+        public ExiftoolService(IProcessRunner processRunner, IFileService fileService, ILogger logger)
+        {
+            _processRunner = processRunner ?? throw new ArgumentNullException(nameof(processRunner));
+            _fileService = fileService ?? throw new ArgumentNullException(nameof(fileService));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
 
     public async Task<string?> ExtractExifAsync(string filePath, CancellationToken cancellationToken = default)
     {
@@ -37,7 +39,7 @@ public class ExiftoolService : IExiftoolService
         if (exifData != null && exifData.Length > 0)
         {
             _logger.Write($"[ExiftoolService] exiftool extracted {exifData.Length} bytes of EXIF");
-            return SaveBytesToTemp(exifData, "exif");
+            return _fileService.SaveBytesToTemp(exifData, "exif");
         }
 
         _logger.Write("[ExiftoolService] exiftool returned empty EXIF data");
@@ -105,26 +107,4 @@ public class ExiftoolService : IExiftoolService
         return false;
     }
 
-    private string? SaveBytesToTemp(byte[] data, string extension)
-    {
-        if (data == null || data.Length == 0)
-            return null;
-
-        var sanitizedExtension = Path.GetExtension(extension);
-        if (string.IsNullOrEmpty(sanitizedExtension))
-            sanitizedExtension = "." + extension.TrimStart('.');
-
-        try
-        {
-            var tempFileName = Guid.NewGuid().ToString("N") + sanitizedExtension;
-            var tempPath = Path.Combine(Path.GetTempPath(), tempFileName);
-            File.WriteAllBytes(tempPath, data);
-            return tempPath;
-        }
-        catch (Exception ex)
-        {
-            _logger.Write($"Failed to save profile to temp file: {ex.Message}");
-            return null;
-        }
-    }
 }

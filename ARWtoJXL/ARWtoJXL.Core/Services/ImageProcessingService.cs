@@ -78,14 +78,7 @@ public class ImageProcessingService : IImageService
         {
             progress?.Invoke(0.1);
 
-            try
-            {
-                metadata = await _magickService.ExtractMetadataProfilesAsync(inputPath, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                _logger.Write($"[ImageProcessing] Metadata extraction failed: {ex.GetBaseException().Message}");
-            }
+            metadata = await ExtractMetadataWithLoggingAsync(inputPath, cancellationToken);
             if (metadata != null)
             {
                 _logger.Write($"[ImageProcessing] Metadata extracted: Exif={metadata?.ExifPath ?? "none"}, Xmp={metadata?.XmpPath ?? "none"}, Icc={metadata?.IccPath ?? "none"}, Iptc={metadata?.IptcPath ?? "none"}, HasAny={metadata?.HasAny}");
@@ -141,15 +134,7 @@ public class ImageProcessingService : IImageService
     {
         progress?.Invoke(0.1);
 
-        MetadataProfiles? metadata = null;
-        try
-        {
-            metadata = await _magickService.ExtractMetadataProfilesAsync(inputPath, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.Write($"[ImageProcessing] Metadata extraction failed: {ex.GetBaseException().Message}");
-        }
+        MetadataProfiles? metadata = await ExtractMetadataWithLoggingAsync(inputPath, cancellationToken);
 
         try
         {
@@ -182,15 +167,7 @@ public class ImageProcessingService : IImageService
     {
         progress?.Invoke(0.1);
 
-        MetadataProfiles? metadata = null;
-        try
-        {
-            metadata = await _magickService.ExtractMetadataProfilesAsync(inputPath, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.Write($"[ImageProcessing] Metadata extraction failed: {ex.GetBaseException().Message}");
-        }
+        MetadataProfiles? metadata = await ExtractMetadataWithLoggingAsync(inputPath, cancellationToken);
 
         try
         {
@@ -212,6 +189,19 @@ public class ImageProcessingService : IImageService
         finally
         {
             metadata?.Dispose();
+        }
+    }
+
+    private async Task<MetadataProfiles?> ExtractMetadataWithLoggingAsync(string inputPath, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await _magickService.ExtractMetadataProfilesAsync(inputPath, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.Write($"[ImageProcessing] Metadata extraction failed: {ex.GetBaseException().Message}");
+            return null;
         }
     }
 }

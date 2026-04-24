@@ -33,5 +33,27 @@ namespace ARWtoJXL.Core.Services
         {
             return Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".png");
         }
+
+        public string? SaveBytesToTemp(byte[] data, string extension)
+        {
+            if (data == null || data.Length == 0)
+                return null;
+
+            var sanitizedExtension = Path.GetExtension(extension);
+            if (string.IsNullOrEmpty(sanitizedExtension))
+                sanitizedExtension = "." + extension.TrimStart('.');
+
+            try
+            {
+                var tempFileName = Guid.NewGuid().ToString("N") + sanitizedExtension;
+                var tempPath = Path.Combine(Path.GetTempPath(), tempFileName);
+                File.WriteAllBytes(tempPath, data);
+                return tempPath;
+            }
+            catch
+            {
+                return null;
+            }
+        }
     }
 }

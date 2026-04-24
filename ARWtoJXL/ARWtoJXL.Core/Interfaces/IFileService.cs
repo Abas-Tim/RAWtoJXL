@@ -9,5 +9,6 @@ namespace ARWtoJXL.Core.Interfaces
         long GetFileSize(string filePath);
         string CombinePaths(string path1, string path2);
         string GetTempFileName();
+        string? SaveBytesToTemp(byte[] data, string extension);
     }
 }

@@ -38,17 +38,17 @@ ARWtoJXL.Core/
 **Dependency Injection (DI)** — all services depend on abstractions (interfaces), not concrete implementations. Registered via `ServiceCollectionExtensions.AddCoreServices()` which configures all 9 services as singletons.
 
 **DI Registration Order** (resolved via `ServiceProvider`):
-```
-ILogger → FileLogger (singleton)
-IProcessRunner → SystemProcessRunner (depends on ILogger)
-IFileService → FileService (no deps)
-IPathResolver → PathResolverService (no deps)
-IExiftoolService → ExiftoolService (depends on IProcessRunner, ILogger)
-IMagickService → MagickService (depends on IExiftoolService, ILogger)
-ICjxlEncoder → CjxlEncoderService (depends on IPathResolver, IExiftoolService, ILogger, IProcessRunner)
-IPngCache → PngCache (depends on ILogger)
-IImageService → ImageProcessingService (depends on IMagickService, ICjxlEncoder, IFileService, IPathResolver, ILogger, IExiftoolService, IPngCache)
-```
+    ```
+    ILogger → FileLogger (singleton)
+    IProcessRunner → SystemProcessRunner (depends on ILogger)
+    IFileService → FileService (no deps)
+    IPathResolver → PathResolverService (no deps)
+    IExiftoolService → ExiftoolService (depends on IProcessRunner, IFileService, ILogger)
+    IMagickService → MagickService (depends on IExiftoolService, IFileService, ILogger)
+    ICjxlEncoder → CjxlEncoderService (depends on IPathResolver, IExiftoolService, ILogger, IProcessRunner)
+    IPngCache → PngCache (depends on ILogger)
+    IImageService → ImageProcessingService (depends on IMagickService, ICjxlEncoder, IFileService, IPathResolver, ILogger, IExiftoolService, IPngCache)
+    ```
 
 ## Services & Responsibilities
 
@@ -87,13 +87,13 @@ public ImageProcessingService(
   - **ARW files:** Awaits `IExiftoolService.ExtractExifAsync()` for EXIF extraction (Magick.NET cannot reliably read EXIF from Sony ARW files). Much faster (~1s) than the previous Magick.NET fallback chain (~10s).
   - **Non-ARW files:** Offloads Magick.NET profile extraction to `Task.Run` (CPU-bound), then awaits exiftool fallback for JXL files.
   - **Helper:** `ExtractProfilesFromImageAsync()` runs Magick.NET profile extraction on a thread-pool thread via `Task.Run`.
-- **Constructor:** `MagickService(IExiftoolService exiftoolService, ILogger logger)` — both required (non-nullable)
+- **Constructor:** `MagickService(IExiftoolService exiftoolService, IFileService fileService, ILogger logger)` — all required (non-nullable)
 
 ### IExiftoolService / ExiftoolService
 - `ExtractExifAsync(filePath)`: Extracts raw EXIF bytes from ARW/JXL files using exiftool
 - `EmbedMetadataAsync(sourcePath, outputPath, metadata)`: Embeds EXIF, XMP, ICC metadata into output file using exiftool's `-tagsFromFile` — copies all available metadata types (EXIF, XMP, ICC) directly from source regardless of which profiles were extracted
 - Uses `IProcessRunner.FindExiftool()` for path resolution
-- **Constructor:** `ExiftoolService(IProcessRunner processRunner, ILogger logger)`
+- **Constructor:** `ExiftoolService(IProcessRunner processRunner, IFileService fileService, ILogger logger)`
 
 ### ICjxlEncoder / CjxlEncoderService
 - `EncodeAsync(inputPath, originalArwPath, outputPath, quality, metadata, cancellationToken, timeoutSeconds, progress)`: Invokes cjxl.exe with quality-based parameters
@@ -108,10 +108,11 @@ public ImageProcessingService(
 - **Constructor:** `CjxlEncoderService(IPathResolver pathResolver, IExiftoolService exiftoolService, ILogger logger, IProcessRunner processRunner)` — all required (non-nullable)
 
 ### IFileService / FileService
-- `DeleteFile()`: Safe file deletion with exception handling
-- `FileExists()`: File existence check
-- `CombinePaths()`: Path concatenation
-- `GetTempFileName()`: Generates unique temp PNG path
+    - `DeleteFile()`: Safe file deletion with exception handling
+    - `FileExists()`: File existence check
+    - `CombinePaths()`: Path concatenation
+    - `GetTempFileName()`: Generates unique temp PNG path
+    - `SaveBytesToTemp()`: Writes byte array to a uniquely-named temp file, returns path or null on failure
 
 ### IPngCache / PngCache
 - `GetCachedPng(inputPath)`: Returns cached PNG path for a given input ARW file, or null if not cached

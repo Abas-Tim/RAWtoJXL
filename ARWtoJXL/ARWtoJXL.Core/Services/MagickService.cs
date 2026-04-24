@@ -9,15 +9,17 @@ using ARWtoJXL.Core.Models;
 namespace ARWtoJXL.Core.Services;
 
 public class MagickService : IMagickService
-{
-    private readonly IExiftoolService _exiftoolService;
-    private readonly ILogger _logger;
-
-    public MagickService(IExiftoolService exiftoolService, ILogger logger)
     {
-        _exiftoolService = exiftoolService ?? throw new ArgumentNullException(nameof(exiftoolService));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
+        private readonly IExiftoolService _exiftoolService;
+        private readonly IFileService _fileService;
+        private readonly ILogger _logger;
+
+        public MagickService(IExiftoolService exiftoolService, IFileService fileService, ILogger logger)
+        {
+            _exiftoolService = exiftoolService ?? throw new ArgumentNullException(nameof(exiftoolService));
+            _fileService = fileService ?? throw new ArgumentNullException(nameof(fileService));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
 
     public async Task<byte[]> ExtractThumbnailAsync(string filePath, CancellationToken cancellationToken = default)
     {
@@ -200,7 +202,7 @@ public class MagickService : IMagickService
                     _logger.Write($"[MagickService] EXIF bytes: {(bytes == null ? "null" : $"{bytes.Length} bytes")}");
                     if (bytes != null && bytes.Length > 0)
                     {
-                        profiles.ExifPath = SaveBytesToTemp(bytes, "exif");
+                        profiles.ExifPath = _fileService.SaveBytesToTemp(bytes, "exif");
                         _logger.Write($"[MagickService] EXIF temp file: {profiles.ExifPath}");
                     }
                 }
@@ -213,7 +215,7 @@ public class MagickService : IMagickService
                     _logger.Write($"[MagickService] XMP bytes: {(bytes == null ? "null" : $"{bytes.Length} bytes")}");
                     if (bytes != null && bytes.Length > 0)
                     {
-                        profiles.XmpPath = SaveBytesToTemp(bytes, "xmp");
+                        profiles.XmpPath = _fileService.SaveBytesToTemp(bytes, "xmp");
                         _logger.Write($"[MagickService] XMP temp file: {profiles.XmpPath}");
                     }
                 }
@@ -226,7 +228,7 @@ public class MagickService : IMagickService
                     _logger.Write($"[MagickService] ICC bytes: {(bytes == null ? "null" : $"{bytes.Length} bytes")}");
                     if (bytes != null && bytes.Length > 0)
                     {
-                        profiles.IccPath = SaveBytesToTemp(bytes, "icc");
+                        profiles.IccPath = _fileService.SaveBytesToTemp(bytes, "icc");
                         _logger.Write($"[MagickService] ICC temp file: {profiles.IccPath}");
                     }
                 }
@@ -243,7 +245,7 @@ public class MagickService : IMagickService
                     _logger.Write($"[MagickService] IPTC bytes: {(bytes == null ? "null" : $"{bytes.Length} bytes")}");
                     if (bytes != null && bytes.Length > 0)
                     {
-                        profiles.IptcPath = SaveBytesToTemp(bytes, "jbf");
+                        profiles.IptcPath = _fileService.SaveBytesToTemp(bytes, "jbf");
                         _logger.Write($"[MagickService] IPTC temp file: {profiles.IptcPath}");
                     }
                 }
@@ -292,26 +294,4 @@ public class MagickService : IMagickService
         }
     }
 
-    private string? SaveBytesToTemp(byte[] data, string extension)
-    {
-        if (data == null || data.Length == 0)
-            return null;
-
-        var sanitizedExtension = Path.GetExtension(extension);
-        if (string.IsNullOrEmpty(sanitizedExtension))
-            sanitizedExtension = "." + extension.TrimStart('.');
-
-        try
-        {
-            var tempFileName = Guid.NewGuid().ToString("N") + sanitizedExtension;
-            var tempPath = Path.Combine(Path.GetTempPath(), tempFileName);
-            File.WriteAllBytes(tempPath, data);
-            return tempPath;
-        }
-        catch (Exception ex)
-        {
-            _logger.Write($"Failed to save profile to temp file: {ex.Message}");
-            return null;
-        }
-    }
 }
