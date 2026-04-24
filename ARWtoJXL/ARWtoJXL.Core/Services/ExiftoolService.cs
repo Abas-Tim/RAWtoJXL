@@ -31,7 +31,7 @@ public class ExiftoolService : IExiftoolService
             return null;
         }
 
-        byte[]? exifData = _processRunner.RunProcessBinaryAsync(
+        byte[]? exifData = await _processRunner.RunProcessBinaryAsync(
             exiftoolPath,
             $"-b -exif:all \"{filePath}\"",
             cancellationToken);

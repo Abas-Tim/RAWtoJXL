@@ -22,7 +22,10 @@ public class FileLogger : ILogger
             {
                 File.AppendAllText(_logPath, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} {message}{Environment.NewLine}");
             }
-            catch { }
+            catch (Exception ex)
+            {
+                try { Console.Error.WriteLine($"[FileLogger] Write failed: {ex.Message}"); } catch { }
+            }
         }
     }
 
@@ -30,7 +33,14 @@ public class FileLogger : ILogger
     {
         lock (_lockObj)
         {
-            try { File.Delete(_logPath); } catch { }
+            try
+            {
+                File.Delete(_logPath);
+            }
+            catch (Exception ex)
+            {
+                try { Console.Error.WriteLine($"[FileLogger] Clear failed: {ex.Message}"); } catch { }
+            }
         }
     }
 }

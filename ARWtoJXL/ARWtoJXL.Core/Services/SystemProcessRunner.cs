@@ -192,7 +192,7 @@ public class SystemProcessRunner : IProcessRunner
         return (process.ExitCode, stdout, stderr, timedOut);
     }
 
-    public byte[]? RunProcessBinaryAsync(
+    public async Task<byte[]?> RunProcessBinaryAsync(
         string fileName,
         string arguments,
         System.Threading.CancellationToken cancellationToken = default)
@@ -213,9 +213,14 @@ public class SystemProcessRunner : IProcessRunner
             return null;
         }
 
+        using var cancellationRegistration = cancellationToken.Register(() =>
+        {
+            try { if (!process.HasExited) process.Kill(); } catch { }
+        });
+
         using var ms = new MemoryStream();
-        process.StandardOutput.BaseStream.CopyTo(ms);
-        process.WaitForExit();
+        await process.StandardOutput.BaseStream.CopyToAsync(ms, cancellationToken);
+        await process.WaitForExitAsync(cancellationToken);
 
         byte[]? result = ms.ToArray();
         return result.Length > 0 ? result : null;

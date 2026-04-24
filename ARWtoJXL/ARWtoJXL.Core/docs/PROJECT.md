@@ -41,12 +41,12 @@ ARWtoJXL.Core/
     ```
     ILogger → FileLogger (singleton)
     IProcessRunner → SystemProcessRunner (depends on ILogger)
-    IFileService → FileService (no deps)
+    IFileService → FileService (depends on ILogger)
     IPathResolver → PathResolverService (no deps)
     IExiftoolService → ExiftoolService (depends on IProcessRunner, IFileService, ILogger)
     IMagickService → MagickService (depends on IExiftoolService, IFileService, ILogger)
     ICjxlEncoder → CjxlEncoderService (depends on IPathResolver, IExiftoolService, ILogger, IProcessRunner)
-    IPngCache → PngCache (depends on ILogger)
+    IPngCache → PngCache (IDisposable, depends on ILogger)
     IImageService → ImageProcessingService (depends on IMagickService, ICjxlEncoder, IFileService, IPathResolver, ILogger, IExiftoolService, IPngCache)
     ```
 
@@ -108,20 +108,23 @@ public ImageProcessingService(
 - **Constructor:** `CjxlEncoderService(IPathResolver pathResolver, IExiftoolService exiftoolService, ILogger logger, IProcessRunner processRunner)` — all required (non-nullable)
 
 ### IFileService / FileService
-    - `DeleteFile()`: Safe file deletion with exception handling
+    - `DeleteFile()`: Safe file deletion with exception logging via ILogger
     - `FileExists()`: File existence check
     - `CombinePaths()`: Path concatenation
     - `GetTempFileName()`: Generates unique temp PNG path
     - `SaveBytesToTemp()`: Writes byte array to a uniquely-named temp file, returns path or null on failure
+    - **Constructor:** `FileService(ILogger logger)` — depends on ILogger for exception logging
 
-### IPngCache / PngCache
+### IPngCache / PngCache (IDisposable)
 - `GetCachedPng(inputPath)`: Returns cached PNG path for a given input ARW file, or null if not cached
 - `StorePng(inputPath, pngPath)`: Stores a PNG in the cache keyed by input file hash
 - `EvictIfNeeded(newFileSize)`: Evicts oldest entries (by last access time) when cache exceeds 2GB limit
+- `Dispose()`: Clears all cached PNG files and removes cache directory on app exit
 - **Cache location:** `%TEMP%\ARWtoJXL\png_cache\` with SHA256 hash-based filenames
 - **Hash input:** Combination of file path, last write time, and file size — invalidates cache on file modification
 - **Memory-efficient:** Only file paths and sizes tracked in memory; actual PNGs stored on disk
 - **LRU eviction:** Evicts to 50% capacity before adding new entry, based on last access time
+- **Exception logging:** All file operations (index rebuild, store, eviction, disposal) log failures via ILogger
 
 ### IPathResolver / PathResolverService
 - `ResolveCjxlPath()`: Searches app directory, then executable directory, falls back to PATH
@@ -131,15 +134,15 @@ public ImageProcessingService(
 Interface + implementation for process execution (replaces static `ProcessHelper`):
 - `FindExiftool(logPrefix)`: Searches common paths, PATH, and app directory for exiftool.exe
 - `IsExiftoolWorking(exiftoolPath, logPrefix)`: Runs `exiftool -ver` to verify functionality
-- `RunProcessAsync(fileName, arguments)`: Generic async process launcher with stdout/stderr capture
-- `RunProcessBinaryAsync(fileName, arguments)`: Runs process and returns raw binary stdout
+- `RunProcessAsync(fileName, arguments, cancellationToken)`: Generic async process launcher with stdout/stderr capture and cancellation support
+- `RunProcessBinaryAsync(fileName, arguments, cancellationToken)`: Async process runner returning raw binary stdout; respects CancellationToken via process kill on cancellation
 - `RunProcessWithTimeoutAsync(fileName, arguments, timeoutSeconds, cancellationToken)`: Runs process with timeout, returns `(ExitCode, Stdout, Stderr, TimedOut)`. Kills orphan process on timeout via linked `CancellationTokenSource`. Injected into `CjxlEncoderService` for cjxl encoding with timeout protection.
 - Injected into `ExiftoolService` for testability
 
 ### ILogger / FileLogger
 Interface + implementation for logging (replaces static `Logger`):
-- `Write(string message)`: Appends timestamped message to temp file (`%TEMP%\ARWtoJXL.log`)
-- `Clear()`: Deletes the log file
+- `Write(string message)`: Appends timestamped message to temp file (`%TEMP%\ARWtoJXL.log`); falls back to Console.Error on write failure
+- `Clear()`: Deletes the log file; falls back to Console.Error on delete failure
 - Injected into all services that need logging for testability
 
 ### QualityCalculator (Static Helper)

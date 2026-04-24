@@ -1,3 +1,6 @@
+using System;
+using System.IO;
+
 namespace ARWtoJXL.Core.Models
 {
     public class MetadataProfiles : IDisposable
@@ -21,7 +24,16 @@ namespace ARWtoJXL.Core.Models
         {
             if (!string.IsNullOrEmpty(path) && File.Exists(path))
             {
-                try { File.Delete(path); } catch { }
+                try
+                {
+                    File.Delete(path);
+                }
+                catch (IOException)
+                {
+                }
+                catch (UnauthorizedAccessException)
+                {
+                }
             }
         }
     }

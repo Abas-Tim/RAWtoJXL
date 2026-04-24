@@ -10,7 +10,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddSingleton<ILogger, FileLogger>();
         services.AddSingleton<IProcessRunner, SystemProcessRunner>();
-        services.AddSingleton<IFileService, FileService>();
+        services.AddSingleton<IFileService, FileService>(sp => new FileService(sp.GetRequiredService<ILogger>()));
         services.AddSingleton<IPathResolver, PathResolverService>();
         services.AddSingleton<IExiftoolService, ExiftoolService>();
         services.AddSingleton<IMagickService, MagickService>();

@@ -1,8 +1,8 @@
-using System.Threading.Tasks;
+using System;
 
 namespace ARWtoJXL.Core.Interfaces
 {
-    public interface IPngCache
+    public interface IPngCache : IDisposable
     {
         string? GetCachedPng(string inputPath);
         void StorePng(string inputPath, string pngPath);

@@ -12,17 +12,20 @@ namespace ARWtoJXL.Core.Services
     {
         private readonly string _cacheDir;
         private readonly long _maxCacheSizeBytes;
+        private readonly ILogger _logger;
         private readonly object _lock = new();
         private readonly Dictionary<string, string> _hashToPath = new();
         private long _totalCacheSize;
+        private bool _disposed;
 
         public PngCache(ILogger logger)
         {
+            _logger = logger;
             _cacheDir = Path.Combine(Path.GetTempPath(), "ARWtoJXL", "png_cache");
             _maxCacheSizeBytes = 2L * 1024 * 1024 * 1024;
             Directory.CreateDirectory(_cacheDir);
             RebuildIndex();
-            logger.Write($"[PngCache] Initialized at {_cacheDir}, size: {_totalCacheSize} bytes");
+            _logger.Write($"[PngCache] Initialized at {_cacheDir}, size: {_totalCacheSize} bytes");
         }
 
         private void RebuildIndex()
@@ -39,8 +42,9 @@ namespace ARWtoJXL.Core.Services
                     }
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.Write($"[PngCache] Failed to rebuild index: {ex.Message}");
             }
         }
 
@@ -71,8 +75,9 @@ namespace ARWtoJXL.Core.Services
                     _hashToPath[hash] = destPath;
                     _totalCacheSize += new FileInfo(destPath).Length;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    _logger.Write($"[PngCache] Failed to store PNG for {Path.GetFileName(inputPath)}: {ex.Message}");
                 }
             }
         }
@@ -105,8 +110,9 @@ namespace ARWtoJXL.Core.Services
                     File.Delete(oldest.Value);
                     _totalCacheSize -= size;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    _logger.Write($"[PngCache] Failed to evict {Path.GetFileName(oldest.Value)}: {ex.Message}");
                 }
                 _hashToPath.Remove(oldest.Key);
             }
@@ -120,6 +126,34 @@ namespace ARWtoJXL.Core.Services
             var bytes = System.Text.Encoding.UTF8.GetBytes(content);
             var hash = sha256.ComputeHash(bytes);
             return Convert.ToHexString(hash).ToLowerInvariant();
+        }
+
+        public void Dispose()
+        {
+            if (_disposed) return;
+            _disposed = true;
+
+            lock (_lock)
+            {
+                try
+                {
+                    foreach (var path in _hashToPath.Values)
+                    {
+                        try { File.Delete(path); } catch { }
+                    }
+                    if (Directory.Exists(_cacheDir))
+                    {
+                        Directory.Delete(_cacheDir, recursive: true);
+                    }
+                    _hashToPath.Clear();
+                    _totalCacheSize = 0;
+                    _logger.Write("[PngCache] Disposed — cache cleared");
+                }
+                catch (Exception ex)
+                {
+                    _logger.Write($"[PngCache] Error during disposal: {ex.Message}");
+                }
+            }
         }
     }
 }

@@ -1,15 +1,30 @@
 using System;
 using System.IO;
+using ARWtoJXL.Core.Interfaces;
 
 namespace ARWtoJXL.Core.Services
 {
-    public class FileService : Interfaces.IFileService
+    public class FileService : IFileService
     {
+        private readonly ILogger _logger;
+
+        public FileService(ILogger logger)
+        {
+            _logger = logger;
+        }
+
         public void DeleteFile(string filePath)
         {
             if (File.Exists(filePath))
             {
-                try { File.Delete(filePath); } catch { }
+                try
+                {
+                    File.Delete(filePath);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Write($"[FileService] Failed to delete {filePath}: {ex.Message}");
+                }
             }
         }
 
@@ -50,8 +65,9 @@ namespace ARWtoJXL.Core.Services
                 File.WriteAllBytes(tempPath, data);
                 return tempPath;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.Write($"[FileService] Failed to save bytes to temp: {ex.Message}");
                 return null;
             }
         }
