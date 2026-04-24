@@ -120,10 +120,10 @@ public class CjxlEncoderArgumentsTests
         return new TestEncoder(logger.Object);
     }
 
-    private class TestEncoder : CjxlEncoderService
+private class TestEncoder : CjxlEncoderService
     {
         public TestEncoder(ILogger logger)
-            : base(Mock.Of<IPathResolver>(), Mock.Of<IExiftoolService>(), logger)
+            : base(Mock.Of<IPathResolver>(), Mock.Of<IExiftoolService>(), logger, Mock.Of<IProcessRunner>())
         {
         }
     }

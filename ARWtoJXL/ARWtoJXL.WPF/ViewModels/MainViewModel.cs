@@ -7,12 +7,11 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Threading;
 using System.Windows.Media.Imaging;
 using ARWtoJXL.Core.Interfaces;
 using ARWtoJXL.Core.Models;
-using ARWtoJXL.Core.Services;
+using ARWtoJXL.WPF.Services;
+using ARWtoJXL.WPF;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -21,9 +20,10 @@ namespace ARWtoJXL.WPF.ViewModels
     public partial class MainViewModel : ObservableObject
     {
         private readonly IImageService _imageService;
+        private readonly IDialogService _dialogService;
+        private readonly IDispatcherService _dispatcherService;
         private readonly ObservableCollection<ImageItemViewModel> _selectedImages = new();
         private readonly HashSet<string> _addedFilePaths = new(StringComparer.OrdinalIgnoreCase);
-        private readonly SemaphoreSlim _confirmationSemaphore = new(1, 1);
         private CancellationTokenSource? _cancellationTokenSource;
 
         [ObservableProperty]
@@ -147,9 +147,13 @@ namespace ARWtoJXL.WPF.ViewModels
         [ObservableProperty]
         private int _totalCount = 0;
 
-        public MainViewModel(IImageService imageService)
+        public event Action? RequestOpenSettings;
+
+        public MainViewModel(IImageService imageService, IDialogService dialogService, IDispatcherService dispatcherService)
         {
             _imageService = imageService;
+            _dialogService = dialogService;
+            _dispatcherService = dispatcherService;
             LoadRecentFiles();
         }
 
@@ -194,7 +198,7 @@ namespace ARWtoJXL.WPF.ViewModels
 
                     item.Status = ImageStatus.Converting;
 
-                    string outputPath = ResolveOutputPath(item.FilePath);
+                    string? outputPath = ResolveOutputPath(item.FilePath);
 
                  if (outputPath == null)
                         {
@@ -206,35 +210,21 @@ namespace ARWtoJXL.WPF.ViewModels
                             return;
                         }
 
-                        if (File.Exists(outputPath) && ConfirmOverwrite)
+                   if (File.Exists(outputPath) && ConfirmOverwrite)
+                    {
+                        bool confirm = await _dialogService.ShowConfirmAsync(
+                            $"Overwrite existing file?\n\n{Path.GetFileName(outputPath)}",
+                            "Confirm Overwrite");
+                        if (!confirm)
+                        {
+                            await OnUiAsync(() =>
                             {
-                                await _confirmationSemaphore.WaitAsync(_cancellationTokenSource.Token);
-                                MessageBoxResult result = MessageBoxResult.No;
-                                try
-                                {
-                                    await OnUiAsync(() =>
-                                    {
-                                        result = MessageBox.Show(
-                                            $"Overwrite existing file?\n\n{Path.GetFileName(outputPath)}",
-                                            "Confirm Overwrite",
-                                            MessageBoxButton.YesNo,
-                                            MessageBoxImage.Question);
-                                    });
-                                }
-                                finally
-                                {
-                                    _confirmationSemaphore.Release();
-                                }
-                                if (result != MessageBoxResult.Yes)
-                                {
-                                    await OnUiAsync(() =>
-                                    {
-                                        item.Status = ImageStatus.Pending;
-                                        item.ErrorMessage = AppStrings.FileSkippedByUser;
-                                    });
-                                    return;
-                                }
-                            }
+                                item.Status = ImageStatus.Pending;
+                                item.ErrorMessage = AppStrings.FileSkippedByUser;
+                            });
+                            return;
+                        }
+                    }
 
                         int quality = item.EffectiveQuality(QualityPreset);
 
@@ -362,6 +352,12 @@ namespace ARWtoJXL.WPF.ViewModels
         }
 
         private bool CanExecuteCancel() => IsCancelRequested;
+
+        [RelayCommand]
+        private void OpenSettings()
+        {
+            RequestOpenSettings?.Invoke();
+        }
 
         [RelayCommand(CanExecute = nameof(CanExecuteSelectAll))]
         private async Task OpenFile()
@@ -632,9 +628,9 @@ namespace ARWtoJXL.WPF.ViewModels
             }
         }
 
-        private async Task OnUiAsync(Action action)
+        private Task OnUiAsync(Action action)
         {
-            await App.Current.Dispatcher.InvokeAsync(action);
+            return _dispatcherService.InvokeAsync(action);
         }
 
         private void SaveSettings()

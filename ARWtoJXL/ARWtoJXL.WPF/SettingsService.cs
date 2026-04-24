@@ -7,6 +7,12 @@ using ARWtoJXL.Core.Interfaces;
 
 namespace ARWtoJXL.WPF
 {
+    public enum ConflictResolution
+    {
+        Overwrite,
+        Skip,
+        AppendNumber
+    }
     public class ConversionPreset
     {
         [JsonPropertyName("name")]

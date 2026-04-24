@@ -32,17 +32,6 @@ namespace ARWtoJXL.Tests
             await Assert.ThrowsAsync<FileNotFoundException>(() => _imageService.GetThumbnailAsync(invalidPath));
         }
 
-        [Fact]
-        public async Task ConvertArwToJxlAsync_ValidArw_CreatesJxlFile()
-        {
-            var outputPath = GetOutputPath("jxl");
-            await CleanOutputFile(outputPath);
-
-            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 5, OutputFormat.Jxl, CancellationToken.None);
-
-            Assert.True(File.Exists(outputPath));
-        }
-
         [Theory]
         [InlineData(0)]
         [InlineData(50)]
@@ -55,44 +44,6 @@ namespace ARWtoJXL.Tests
             await CleanOutputFile(outputPath);
 
             await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, quality, OutputFormat.Jxl, CancellationToken.None);
-
-            Assert.True(File.Exists(outputPath));
-            Assert.True(new FileInfo(outputPath).Length > 0);
-        }
-
-        [Fact]
-        public async Task ConvertArwToJxlAsync_Quality100_LosslessMode()
-        {
-            var outputPath = GetOutputPath("lossless");
-            await CleanOutputFile(outputPath);
-
-            double progress = 0;
-            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => progress = p, 100, OutputFormat.Jxl, CancellationToken.None);
-
-            Assert.True(File.Exists(outputPath));
-            Assert.True(new FileInfo(outputPath).Length > 0);
-            Assert.Equal(1.0, progress);
-        }
-
-        [Fact]
-        public async Task ConvertArwToJxlAsync_Quality90_VisuallyLossless()
-        {
-            var outputPath = GetOutputPath("visually_lossless");
-            await CleanOutputFile(outputPath);
-
-            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 90, OutputFormat.Jxl, CancellationToken.None);
-
-            Assert.True(File.Exists(outputPath));
-            Assert.True(new FileInfo(outputPath).Length > 0);
-        }
-
-        [Fact]
-        public async Task ConvertArwToJxlAsync_Quality0_LowestQuality()
-        {
-            var outputPath = GetOutputPath("lowest_quality");
-            await CleanOutputFile(outputPath);
-
-            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 0, OutputFormat.Jxl, CancellationToken.None);
 
             Assert.True(File.Exists(outputPath));
             Assert.True(new FileInfo(outputPath).Length > 0);

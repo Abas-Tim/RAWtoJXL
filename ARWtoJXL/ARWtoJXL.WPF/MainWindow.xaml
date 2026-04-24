@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:ARWtoJXL.WPF.ViewModels"
         xmlns:local="clr-namespace:ARWtoJXL.WPF"
+        xmlns:behaviors="clr-namespace:ARWtoJXL.WPF.Behaviors"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         mc:Ignorable="d"
         Title="ARW to JXL Converter"
@@ -12,7 +13,7 @@
         MinHeight="600"
         MinWidth="800"
         WindowStartupLocation="CenterScreen"
-        AllowDrop="True" Drop="Window_Drop" DragOver="Window_DragOver">
+        behaviors:DragDropBehavior.EnableDragDrop="True">
     <Window.InputBindings>
         <KeyBinding Gesture="Ctrl+A" Command="{Binding SelectAllCommand}"/>
         <KeyBinding Gesture="Ctrl+C" Command="{Binding ConvertSelectedCommand}"/>
@@ -152,10 +153,10 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <ui:Button Content="Settings"
-                               Click="SettingsButton_Click"
-                               Margin="0,0,12,0"
-                               Icon="Settings24"/>
+               <ui:Button Content="Settings"
+                                Command="{Binding OpenSettingsCommand}"
+                                Margin="0,0,12,0"
+                                Icon="Settings24"/>
                     <TextBlock Text="{Binding StatusMessage}"
                                VerticalAlignment="Center"
                                FontSize="12"/>

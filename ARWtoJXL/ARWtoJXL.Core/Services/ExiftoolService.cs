@@ -55,31 +55,17 @@ public class ExiftoolService : IExiftoolService
             return;
         }
 
-        var exiftoolArgs = new System.Text.StringBuilder();
-        exiftoolArgs.Append($"-tagsFromFile \"{sourcePath}\" ");
-
-        if (!string.IsNullOrEmpty(metadata.ExifPath) && File.Exists(metadata.ExifPath))
-        {
-            exiftoolArgs.Append("-exif:all ");
-            _logger.Write($"[ExiftoolService] Will embed EXIF from source: {sourcePath}");
-        }
-        if (!string.IsNullOrEmpty(metadata.XmpPath) && File.Exists(metadata.XmpPath))
-        {
-            exiftoolArgs.Append("-xmp:all ");
-            _logger.Write($"[ExiftoolService] Will embed XMP from source: {sourcePath}");
-        }
-        if (!string.IsNullOrEmpty(metadata.IccPath) && File.Exists(metadata.IccPath))
-        {
-            exiftoolArgs.Append("-icc-profile ");
-            _logger.Write($"[ExiftoolService] Will embed ICC from source: {sourcePath}");
-        }
-
-        if (exiftoolArgs.ToString().Trim() == $"-tagsFromFile \"{sourcePath}\" ")
+        if (!metadata.HasAny)
         {
             _logger.Write("[ExiftoolService] No metadata to embed");
             return;
         }
 
+        var exiftoolArgs = new System.Text.StringBuilder();
+        exiftoolArgs.Append($"-tagsFromFile \"{sourcePath}\" ");
+        exiftoolArgs.Append("-exif:all ");
+        exiftoolArgs.Append("-xmp:all ");
+        exiftoolArgs.Append("-icc-profile ");
         exiftoolArgs.Append("-overwrite_original \"");
         exiftoolArgs.Append(outputPath.Replace("\\", "/"));
         exiftoolArgs.Append('"');
@@ -93,12 +79,15 @@ public class ExiftoolService : IExiftoolService
 
         _logger.Write($"[ExiftoolService] exiftool metadata embedding exit={exitCode}, stdout='{stdout?.Trim()}', stderr='{stderr?.Trim()}'");
 
-        if (exitCode != 0 && !string.IsNullOrEmpty(stderr))
+        if (exitCode != 0)
         {
             if (IsFileLockError(stderr, sourcePath))
             {
                 throw new FileLockedException(sourcePath);
             }
+            throw new IOException(
+                $"exiftool metadata embedding failed with exit code {exitCode}. " +
+                $"stdout: {stdout?.Trim() ?? "(empty)"} stderr: {stderr?.Trim() ?? "(empty)"}");
         }
     }
 

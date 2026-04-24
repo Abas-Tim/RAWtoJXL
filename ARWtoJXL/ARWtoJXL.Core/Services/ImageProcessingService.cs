@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using ImageMagick;
 using ARWtoJXL.Core.Interfaces;
 using ARWtoJXL.Core.Models;
 
@@ -133,7 +132,7 @@ public class ImageProcessingService : IImageService
         }
     }
 
-    private async Task ConvertToJpegAsync(
+  private async Task ConvertToJpegAsync(
         string inputPath,
         string outputPath,
         Action<double> progress,
@@ -154,19 +153,7 @@ public class ImageProcessingService : IImageService
 
         try
         {
-            using var img = new MagickImage(inputPath);
-            progress?.Invoke(0.4);
-
-            img.Quality = (uint)Math.Max(1, Math.Min(100, quality));
-            img.Format = MagickFormat.Jpg;
-
-            var outputDir = Path.GetDirectoryName(outputPath);
-            if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-            {
-                Directory.CreateDirectory(outputDir);
-            }
-
-            img.Write(outputPath);
+            await _magickService.ConvertToJpegAsync(inputPath, outputPath, quality, cancellationToken);
             progress?.Invoke(0.9);
 
             if (metadata != null && metadata.HasAny)
@@ -176,7 +163,7 @@ public class ImageProcessingService : IImageService
 
             progress?.Invoke(1.0);
 
-            if (!File.Exists(outputPath))
+            if (!_fileService.FileExists(outputPath))
             {
                 throw new FileNotFoundException($"Conversion completed but output file not found at: {outputPath}");
             }
@@ -217,7 +204,7 @@ public class ImageProcessingService : IImageService
 
             progress?.Invoke(1.0);
 
-            if (!File.Exists(outputPath))
+            if (!_fileService.FileExists(outputPath))
             {
                 throw new FileNotFoundException($"Conversion completed but output file not found at: {outputPath}");
             }

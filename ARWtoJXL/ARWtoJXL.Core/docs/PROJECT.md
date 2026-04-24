@@ -45,7 +45,7 @@ IFileService → FileService (no deps)
 IPathResolver → PathResolverService (no deps)
 IExiftoolService → ExiftoolService (depends on IProcessRunner, ILogger)
 IMagickService → MagickService (depends on IExiftoolService, ILogger)
-ICjxlEncoder → CjxlEncoderService (depends on IPathResolver, IExiftoolService, ILogger)
+ICjxlEncoder → CjxlEncoderService (depends on IPathResolver, IExiftoolService, ILogger, IProcessRunner)
 IPngCache → PngCache (depends on ILogger)
 IImageService → ImageProcessingService (depends on IMagickService, ICjxlEncoder, IFileService, IPathResolver, ILogger, IExiftoolService, IPngCache)
 ```
@@ -57,14 +57,14 @@ Defines two async operations:
 - `GetThumbnailAsync(filePath)` → byte[]: Extracts thumbnail from ARW/JXL using Magick.NET (300x300 JPG)
 - `ConvertArwToJxlAsync(inputPath, outputPath, progressCallback, quality, outputFormat, cancellationToken)`: Orchestrates conversion pipeline
   - `outputFormat = OutputFormat.Jxl`: Two-stage PNG→JXL via cjxl (default), uses PNG cache to skip ARW→PNG on re-conversion
-  - `outputFormat = OutputFormat.Jpeg`: Direct ARW→JPEG via Magick.NET with quality setting
+  - `outputFormat = OutputFormat.Jpeg`: ARW→JPEG via IMagickService with quality setting + exiftool metadata embedding
   - `outputFormat = OutputFormat.Png`: Direct ARW→PNG via Magick.NET (16-bit lossless)
   - All formats support metadata embedding via exiftool post-processing
 
 ### ImageProcessingService (Orchestrator)
 Coordinates the conversion pipeline by delegating to specialized services. Supports three output formats:
 1. **JXL (default)**: Two-stage via MagickService (ARW→PNG) + CjxlEncoderService (PNG→JXL)
-2. **JPEG**: Direct ARW→JPEG via Magick.NET with quality setting + exiftool metadata embedding
+2. **JPEG**: Delegates to `IMagickService.ConvertToJpegAsync()` for ARW→JPEG + exiftool metadata embedding
 3. **PNG**: Direct ARW→PNG via MagickService (16-bit lossless) + exiftool metadata embedding
 
 **Constructor Injection:**
@@ -82,6 +82,7 @@ public ImageProcessingService(
 ### IMagickService / MagickService
 - `ExtractThumbnailAsync()`: Resizes image to 300x300, outputs JPEG
 - `ConvertToPngAsync()`: Converts ARW to 16-bit PNG in temp directory
+- `ConvertToJpegAsync()`: Converts ARW to JPEG with quality setting, creates output directory if needed
 - `ExtractMetadataProfilesAsync()`: Extracts EXIF, XMP, ICC, IPTC profiles to temp files for cjxl — fully async, no sync-over-async blocking
   - **ARW files:** Awaits `IExiftoolService.ExtractExifAsync()` for EXIF extraction (Magick.NET cannot reliably read EXIF from Sony ARW files). Much faster (~1s) than the previous Magick.NET fallback chain (~10s).
   - **Non-ARW files:** Offloads Magick.NET profile extraction to `Task.Run` (CPU-bound), then awaits exiftool fallback for JXL files.
@@ -90,7 +91,7 @@ public ImageProcessingService(
 
 ### IExiftoolService / ExiftoolService
 - `ExtractExifAsync(filePath)`: Extracts raw EXIF bytes from ARW/JXL files using exiftool
-- `EmbedMetadataAsync(sourcePath, outputPath, metadata)`: Embeds EXIF, XMP, ICC metadata into JXL using exiftool's `-tagsFromFile` post-processing
+- `EmbedMetadataAsync(sourcePath, outputPath, metadata)`: Embeds EXIF, XMP, ICC metadata into output file using exiftool's `-tagsFromFile` — copies all available metadata types (EXIF, XMP, ICC) directly from source regardless of which profiles were extracted
 - Uses `IProcessRunner.FindExiftool()` for path resolution
 - **Constructor:** `ExiftoolService(IProcessRunner processRunner, ILogger logger)`
 
@@ -104,7 +105,7 @@ public ImageProcessingService(
 - **cjxl progress estimation:** cjxl v0.11.2 does not output percentage progress during encoding. A background task (`ReportProgressAsync`) reports linear progress from 0.0 to 0.98 during cjxl encoding (updated every 100ms), mapped to 0.5→1.0 in the overall pipeline.
 - **Metadata embedding:** Delegates to `IExiftoolService.EmbedMetadataAsync()` for post-encoding metadata embedding via exiftool.
 - **BuildEncodingArguments:** `protected internal` method for constructing cjxl CLI arguments. Testable via subclass in test project (covered by `CjxlEncoderArgumentsTests`).
-- **Constructor:** `CjxlEncoderService(IPathResolver pathResolver, IExiftoolService exiftoolService, ILogger logger)` — all required (non-nullable)
+- **Constructor:** `CjxlEncoderService(IPathResolver pathResolver, IExiftoolService exiftoolService, ILogger logger, IProcessRunner processRunner)` — all required (non-nullable)
 
 ### IFileService / FileService
 - `DeleteFile()`: Safe file deletion with exception handling
@@ -131,6 +132,7 @@ Interface + implementation for process execution (replaces static `ProcessHelper
 - `IsExiftoolWorking(exiftoolPath, logPrefix)`: Runs `exiftool -ver` to verify functionality
 - `RunProcessAsync(fileName, arguments)`: Generic async process launcher with stdout/stderr capture
 - `RunProcessBinaryAsync(fileName, arguments)`: Runs process and returns raw binary stdout
+- `RunProcessWithTimeoutAsync(fileName, arguments, timeoutSeconds, cancellationToken)`: Runs process with timeout, returns `(ExitCode, Stdout, Stderr, TimedOut)`. Kills orphan process on timeout via linked `CancellationTokenSource`. Injected into `CjxlEncoderService` for cjxl encoding with timeout protection.
 - Injected into `ExiftoolService` for testability
 
 ### ILogger / FileLogger
@@ -157,7 +159,7 @@ Centralized quality calculations to avoid duplication:
 
 **JPEG Pipeline (Two-stage process):**
 1. **Stage 0 (Magick.NET):** Extract metadata profiles
-2. **Stage 1 (Magick.NET):** ARW → JPEG with quality setting
+2. **Stage 1 (Magick.NET via IMagickService):** ARW → JPEG with quality setting
 3. **Post-processing:** exiftool metadata embedding
 
 **PNG Pipeline (Two-stage process):**
@@ -175,7 +177,7 @@ Centralized quality calculations to avoid duplication:
 **Metadata handling:**
 - **EXIF extraction (ARW):** `IExiftoolService.ExtractExifAsync()` uses exiftool (`-b -exif:all`) to extract raw EXIF bytes from source ARW (~1s). Non-ARW files use Magick.NET first.
 - **XMP/ICC/IPTC:** Extracted via Magick.NET profile lookup (`GetProfile("XMP")`, `GetProfile("ICC ")`, `GetIptcProfile()`).
-- **Metadata embedding:** cjxl's `-x exif` argument does not reliably embed metadata (v0.11.2 known issue). Post-encoding, `IExiftoolService.EmbedMetadataAsync()` uses exiftool `-tagsFromFile source.arw -exif:all -overwrite_original output.jxl` to copy metadata from the original ARW to the JXL.
+- **Metadata embedding:** cjxl's `-x exif` argument does not reliably embed metadata (v0.11.2 known issue). Post-encoding, `IExiftoolService.EmbedMetadataAsync()` uses exiftool `-tagsFromFile source.arw -exif:all -xmp:all -icc-profile -overwrite_original output.jxl` to copy all available metadata (EXIF, XMP, ICC) from the original ARW to the output file.
 - **Path resolution:** `IProcessRunner.FindExiftool()` centralizes exiftool.exe discovery (common paths → PATH → app directory).
 - Metadata temp files kept alive during encoding (disposed AFTER `EncodeAsync` completes in finally block).
 - Auto-cleanup via `MetadataProfiles.Dispose()` after encoding completes.
@@ -200,7 +202,7 @@ When an ARW file is locked by another application (Adobe Bridge, Lightroom, etc.
 
 - **Magick.NET-Q16-AnyCPU** (14.11.1): RAW image decoding, thumbnail extraction (Apache-2.0)
 - **cjxl.exe** (downloaded at build): JPEG-XL encoder from libjxl (BSD-3-Clause)
-- **exiftool.exe** (downloaded at build): Metadata extraction/embedding (GPL-3.0)
+- **exiftool.exe** + **exiftool_files/** (bundled): Metadata extraction/embedding — exiftool requires companion Perl runtime DLLs from `exiftool_files/` (perl532.dll, etc.) to function. Both `exiftool.exe` and the entire `exiftool_files/` directory are copied to output in all projects (Core, WPF, Tests).
 
 ## Enums
 

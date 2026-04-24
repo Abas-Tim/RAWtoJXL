@@ -56,7 +56,7 @@ public class MagickService : IMagickService
         }, cancellationToken);
     }
 
-    public async Task ConvertToPngAsync(string inputPath, string outputPath, CancellationToken cancellationToken = default)
+   public async Task ConvertToPngAsync(string inputPath, string outputPath, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(inputPath))
         {
@@ -89,6 +89,50 @@ public class MagickService : IMagickService
             catch (Exception ex)
             {
                 throw new Exception($"Failed to convert {Path.GetFileName(inputPath)} to PNG: {ex.Message}", ex);
+            }
+        }, cancellationToken);
+    }
+
+    public async Task ConvertToJpegAsync(string inputPath, string outputPath, int quality, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(inputPath))
+        {
+            throw new ArgumentException("Input path cannot be null or empty.", nameof(inputPath));
+        }
+
+        if (string.IsNullOrWhiteSpace(outputPath))
+        {
+            throw new ArgumentException("Output path cannot be null or empty.", nameof(outputPath));
+        }
+
+        if (!File.Exists(inputPath))
+        {
+            throw new FileNotFoundException($"Input file not found: {inputPath}");
+        }
+
+        await Task.Run(() =>
+        {
+            try
+            {
+                using var image = new MagickImage(inputPath);
+                image.Quality = (uint)Math.Max(1, Math.Min(100, quality));
+                image.Format = MagickFormat.Jpg;
+
+                var outputDir = Path.GetDirectoryName(outputPath);
+                if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+                {
+                    Directory.CreateDirectory(outputDir);
+                }
+
+                image.Write(outputPath);
+            }
+            catch (IOException ex) when (FileLockedException.IsFileLocked(ex))
+            {
+                throw new FileLockedException(inputPath, ex);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Failed to convert {Path.GetFileName(inputPath)} to JPEG: {ex.Message}", ex);
             }
         }, cancellationToken);
     }

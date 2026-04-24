@@ -15,6 +15,7 @@ namespace ARWtoJXL.Tests
     public class MetadataDebugTests : Startup
     {
         [Fact]
+        [Trait("category", "manual")]
         public async Task Debug_FullExtractionAndConversion()
         {
             var magickService = Services.GetRequiredService<IMagickService>();

@@ -3,18 +3,17 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
-using Wpf.Ui.Controls;
 using ARWtoJXL.WPF.ViewModels;
 using ARWtoJXL.Core.Interfaces;
 using ARWtoJXL.Core;
+using ARWtoJXL.WPF.Services;
+
 namespace ARWtoJXL.WPF
 {
     public partial class MainWindow : Window
     {
         private SettingsWindow? _settingsWindow;
-        private readonly IImageService _imageService;
 
         public MainWindow()
         {
@@ -22,10 +21,14 @@ namespace ARWtoJXL.WPF
 
             var serviceCollection = new ServiceCollection();
             serviceCollection.AddCoreServices();
+            serviceCollection.AddSingleton<IDialogService, DialogService>();
+            serviceCollection.AddSingleton<IDispatcherService>(sp => new DispatcherService(Dispatcher));
             var serviceProvider = serviceCollection.BuildServiceProvider();
 
-            _imageService = serviceProvider.GetRequiredService<IImageService>();
-            var viewModel = new MainViewModel(_imageService);
+            var imageService = serviceProvider.GetRequiredService<IImageService>();
+            var dialogService = serviceProvider.GetRequiredService<IDialogService>();
+            var dispatcherService = serviceProvider.GetRequiredService<IDispatcherService>();
+            var viewModel = new MainViewModel(imageService, dialogService, dispatcherService);
 
             var saved = SettingsService.Load();
             viewModel.UseSubfolder = saved.UseSubfolder;
@@ -38,47 +41,12 @@ namespace ARWtoJXL.WPF
             viewModel.UseCustomOutputDirectory = saved.UseCustomOutputDirectory;
             viewModel.CustomOutputDirectory = saved.CustomOutputDirectory;
 
+            viewModel.RequestOpenSettings += OnRequestOpenSettings;
+
             DataContext = viewModel;
         }
 
-        private void Window_Drop(object sender, DragEventArgs e)
-        {
-            if (e.Data.GetDataPresent(DataFormats.FileDrop))
-            {
-                var files = e.Data.GetData(DataFormats.FileDrop) as string[];
-                if (files != null)
-                {
-                    var viewModel = (MainViewModel)DataContext!;
-
-                    var allFiles = new List<string>();
-                    foreach (var path in files)
-                    {
-                        if (System.IO.Directory.Exists(path))
-                        {
-                            var option = viewModel.SearchRecursive
-                                ? System.IO.SearchOption.AllDirectories
-                                : System.IO.SearchOption.TopDirectoryOnly;
-                            allFiles.AddRange(System.IO.Directory.GetFiles(path, "*.*", option));
-                        }
-                        else
-                        {
-                            allFiles.Add(path);
-                        }
-                    }
-
-                    _ = viewModel.AddFilesAsync(allFiles);
-                }
-            }
-            e.Handled = true;
-        }
-
-        private void Window_DragOver(object sender, DragEventArgs e)
-        {
-            e.Effects = DragDropEffects.Copy;
-            e.Handled = true;
-        }
-
-        private void SettingsButton_Click(object sender, RoutedEventArgs e)
+        private void OnRequestOpenSettings()
         {
             if (_settingsWindow == null || !_settingsWindow.IsVisible)
             {
@@ -113,7 +81,7 @@ namespace ARWtoJXL.WPF
 
         private async void RecentFile_Click(object sender, MouseButtonEventArgs e)
         {
-            if (sender is System.Windows.Controls.TextBlock tb && !string.IsNullOrEmpty(tb.Text))
+            if (sender is TextBlock tb && !string.IsNullOrEmpty(tb.Text))
             {
                 var viewModel = (MainViewModel)DataContext!;
                 await viewModel.AddFilesAsync(new[] { tb.Text });
@@ -122,7 +90,7 @@ namespace ARWtoJXL.WPF
 
         private void QualityTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
-            if (sender is System.Windows.Controls.TextBox tb)
+            if (sender is TextBox tb)
             {
                 string currentText = tb.Text;
                 int selectionStart = tb.CaretIndex;

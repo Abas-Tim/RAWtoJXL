@@ -8,11 +8,19 @@ Presentation layer implementing the WPF UI with MVVM pattern, drag-drop support,
 ARWtoJXL.WPF/
 ├── ViewModels/
 │   ├── ImageItemViewModel.cs      # WPF view model for image items ([ObservableProperty], BitmapImage thumbnail, QualityOverride for per-file quality, IsRemoved flag, SourceFileSize/OutputFileSize for size tracking, SizeInfoText computed property)
-│   ├── MainViewModel.cs           # MVVM viewmodel ([ObservableProperty], [RelayCommand], auto-saves settings, recent files, conflict resolution, custom output directory)
+│   ├── MainViewModel.cs           # MVVM viewmodel ([ObservableProperty], [RelayCommand], auto-saves settings, recent files, conflict resolution, custom output directory, depends on IDialogService + IDispatcherService)
 │   └── SettingsViewModel.cs       # Settings dialog viewmodel ([ObservableProperty], [RelayCommand], RequestClose event, SubfolderName validation, presets management, custom output directory)
-├── MainWindow.xaml(.cs)           # Drag-drop gallery UI with DI wiring, recursive folder search, recent files handlers, lazy thumbnail loading
+├── Services/
+│   ├── IDialogService.cs          # Async dialog interface (ShowConfirmAsync returns Task<bool>)
+│   ├── DialogService.cs           # IDialogService implementation using ConfirmDialog window
+│   ├── ConfirmDialog.xaml(.cs)    # Async confirm dialog window (replaces blocking MessageBox.Show)
+│   ├── IDispatcherService.cs      # Dispatcher abstraction interface (InvokeAsync for UI thread marshaling)
+│   └── DispatcherService.cs       # IDispatcherService implementation wrapping System.Windows.Threading.Dispatcher
+├── Behaviors/
+│   └── DragDropBehavior.cs        # Attached behavior for MVVM drag-drop (replaces code-behind Drop/DragOver handlers)
+├── MainWindow.xaml(.cs)           # Gallery UI with DI wiring, attached drag-drop behavior, minimal code-behind (input validation only)
 ├── SettingsWindow.xaml(.cs)       # Settings dialog window (format, conflict, recursive, confirm overwrite, output directory, presets)
-├── SettingsService.cs             # JSON settings persistence with recent files tracking, ConversionPreset model, AppSettings model
+├── SettingsService.cs             # JSON settings persistence, ConflictResolution enum, ConversionPreset model, AppSettings model
 ├── BooleanToBrushConverter.cs     # WPF value converters (cached static SolidColorBrush, no per-call allocation)
 ├── BooleanToTextConverter.cs
 ├── BooleanToValueConverter.cs

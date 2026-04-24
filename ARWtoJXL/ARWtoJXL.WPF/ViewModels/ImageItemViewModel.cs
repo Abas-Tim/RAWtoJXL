@@ -14,6 +14,11 @@ namespace ARWtoJXL.WPF.ViewModels
         [ObservableProperty]
         private ImageStatus _status;
 
+        partial void OnStatusChanged(ImageStatus value)
+        {
+            OnPropertyChanged(nameof(SizeInfoText));
+        }
+
         [ObservableProperty]
         private System.Windows.Media.Imaging.BitmapImage? _thumbnail;
 
@@ -32,8 +37,18 @@ namespace ARWtoJXL.WPF.ViewModels
         [ObservableProperty]
         private long _sourceFileSize;
 
+        partial void OnSourceFileSizeChanged(long value)
+        {
+            OnPropertyChanged(nameof(SizeInfoText));
+        }
+
         [ObservableProperty]
         private long _outputFileSize;
+
+        partial void OnOutputFileSizeChanged(long value)
+        {
+            OnPropertyChanged(nameof(SizeInfoText));
+        }
 
         [ObservableProperty]
         private string _outputPath = string.Empty;

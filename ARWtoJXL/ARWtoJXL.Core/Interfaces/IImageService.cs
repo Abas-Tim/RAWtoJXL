@@ -22,13 +22,6 @@ namespace ARWtoJXL.Core.Interfaces
         Png
     }
 
-    public enum ConflictResolution
-    {
-        Overwrite,
-        Skip,
-        AppendNumber
-    }
-
     public interface IImageService
     {
         Task<byte[]> GetThumbnailAsync(string filePath, CancellationToken cancellationToken = default);

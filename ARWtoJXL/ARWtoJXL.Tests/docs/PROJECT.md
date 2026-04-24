@@ -8,8 +8,8 @@ xUnit test suite for ARWtoJXL.Core with DI-based integration tests and unit test
 ARWtoJXL.Tests/
 ├── Startup.cs                    # DI service configuration (Microsoft.Extensions.DependencyInjection)
 ├── ConversionTests.cs            # Core conversion tests (inherits Startup, resolves IImageService)
-├── MetadataPreservationTests.cs  # Metadata transfer tests (inherits Startup, resolves IMagickService, IImageService)
-├── MetadataDebugTests.cs         # Diagnostic test with assertions for metadata preservation (inherits Startup)
+├── MetadataPreservationTests.cs  # Metadata transfer test (inherits Startup, resolves IMagickService, IImageService)
+├── MetadataDebugTests.cs         # Diagnostic test for metadata preservation (inherits Startup, manual-only)
 ├── QualityCalculatorTests.cs     # Unit tests for quality calculations (no DI)
 ├── FileLockedExceptionTests.cs   # Unit tests for IsFileLocked() detection logic (Moq, no DI)
 ├── SubfolderValidationTests.cs   # Unit tests for SettingsViewModel.ValidateSubfolderName() (no DI)
@@ -22,6 +22,19 @@ ARWtoJXL.Tests/
 ## Test Configuration
 
 - **Startup**: Central DI configuration — calls `services.AddCoreServices()` from `ARWtoJXL.Core`. Tests inherit from `Startup` and resolve services from `ServiceProvider`. Provides `CreateScope()` for test isolation.
+
+## Running Tests
+
+```bash
+# All tests except smoke and manual (default)
+dotnet test --filter "category!=smoke&category!=manual"
+
+# Include smoke tests
+dotnet test --filter "category!=manual"
+
+# Run only unit tests (fast, ~0.4s)
+dotnet test --filter "FullyQualifiedName~QualityCalculatorTests|FullyQualifiedName~FileLockedExceptionTests|FullyQualifiedName~SubfolderValidationTests|FullyQualifiedName~ImageItemViewModelTests|FullyQualifiedName~CjxlEncoderArgumentsTests"
+```
 
 ## Test Suites
 
@@ -43,25 +56,25 @@ ARWtoJXL.Tests/
 ### ConversionTests
 Integration tests with real ARW files (inherits `Startup`):
 - Resolves `IImageService` from `ServiceProvider`
-- Thumbnail extraction
-- Conversion at various quality levels (0, 50, 70, 90, 100)
-- Lossless mode verification
+- Thumbnail extraction (valid ARW, invalid file)
+- Conversion at various quality levels via Theory (0, 50, 70, 90, 100)
 - Progress callback verification (smooth updates, monotonic increase, final 1.0)
 
 ### MetadataPreservationTests
-Metadata-specific tests (inherits `Startup`):
+Single metadata preservation test (inherits `Startup`):
 - Resolves `IMagickService` and `IImageService` from `ServiceProvider`
-- EXIF transfer verification
-- ICC profile preservation
-- HasAny property verification
-- Metadata at different quality levels (90, 100)
+- Converts ARW to JXL at quality 90
+- Verifies EXIF profile transferred and non-empty
+- Verifies ICC profile preserved and non-empty
+- Verifies HasAny property on both input and output
 
 ### MetadataDebugTests
-Diagnostic test with assertions for full metadata preservation verification (inherits `Startup`):
+Diagnostic test tagged with `[Trait("category", "manual")]` — does NOT run by default:
 - Resolves services from `ServiceProvider`
 - Extracts metadata from ARW, converts to JXL, verifies 15+ EXIF tags preserved via exiftool
 - Uses exiftool `-s -n -Make -Model ...` format for tag-specific reading
 - Assertions: minimum 5 matched tags, no missing tags, output has metadata
+- Run with: `dotnet test --filter "category=manual"`
 
 ### SmokeTests
 FlaUI-based UI smoke tests (no DI, implements `IDisposable` for cleanup):

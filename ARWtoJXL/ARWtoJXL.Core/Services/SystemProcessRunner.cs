@@ -136,6 +136,62 @@ public class SystemProcessRunner : IProcessRunner
         return (process.ExitCode, await stdoutTask, await stderrTask);
     }
 
+    public async Task<(int ExitCode, string? Stdout, string? Stderr, bool TimedOut)> RunProcessWithTimeoutAsync(
+        string fileName,
+        string arguments,
+        int timeoutSeconds,
+        System.Threading.CancellationToken cancellationToken = default)
+    {
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = fileName,
+            Arguments = arguments,
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true
+        };
+
+        using var process = Process.Start(startInfo);
+        if (process == null)
+        {
+            return (-1, null, null, false);
+        }
+
+        using var cancellationRegistration = cancellationToken.Register(() =>
+        {
+            try { if (!process.HasExited) process.Kill(); } catch { }
+        });
+
+        var stdoutTask = process.StandardOutput.ReadToEndAsync();
+        var stderrTask = process.StandardError.ReadToEndAsync();
+
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(TimeSpan.FromSeconds(timeoutSeconds));
+
+        bool timedOut = false;
+        try
+        {
+            await process.WaitForExitAsync(timeoutCts.Token);
+        }
+        catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested)
+        {
+            timedOut = !cancellationToken.IsCancellationRequested;
+            if (!process.HasExited)
+            {
+                try { process.Kill(); } catch { }
+                process.WaitForExit();
+            }
+        }
+
+        string? stdout = null;
+        string? stderr = null;
+        try { stdout = await stdoutTask; } catch { }
+        try { stderr = await stderrTask; } catch { }
+
+        return (process.ExitCode, stdout, stderr, timedOut);
+    }
+
     public byte[]? RunProcessBinaryAsync(
         string fileName,
         string arguments,

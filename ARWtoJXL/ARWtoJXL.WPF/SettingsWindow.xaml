@@ -134,9 +134,9 @@
                     <ComboBox Grid.Column="1" Width="180" HorizontalAlignment="Left"
                               SelectedValue="{Binding ConflictResolution}"
                               SelectedValuePath="Tag">
-                        <ComboBoxItem Content="Overwrite existing" Tag="{x:Static core:ConflictResolution.Overwrite}"/>
-                        <ComboBoxItem Content="Skip existing" Tag="{x:Static core:ConflictResolution.Skip}"/>
-                        <ComboBoxItem Content="Append number" Tag="{x:Static core:ConflictResolution.AppendNumber}"/>
+                        <ComboBoxItem Content="Overwrite existing" Tag="{x:Static local:ConflictResolution.Overwrite}"/>
+                        <ComboBoxItem Content="Skip existing" Tag="{x:Static local:ConflictResolution.Skip}"/>
+                        <ComboBoxItem Content="Append number" Tag="{x:Static local:ConflictResolution.AppendNumber}"/>
                     </ComboBox>
                 </Grid>
 
