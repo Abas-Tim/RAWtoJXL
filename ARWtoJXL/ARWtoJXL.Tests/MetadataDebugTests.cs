@@ -18,10 +18,10 @@ namespace ARWtoJXL.Tests
         [Trait("category", "manual")]
         public async Task Debug_FullExtractionAndConversion()
         {
-            var magickService = Services.GetRequiredService<IMagickService>();
+            var imageConverterService = Services.GetRequiredService<IImageConverterService>();
             var imageService = Services.GetRequiredService<IImageService>();
 
-            var metadata = await magickService.ExtractMetadataProfilesAsync(TestArwPath);
+            var metadata = await imageConverterService.ExtractMetadataProfilesAsync(TestArwPath);
             Console.WriteLine($"=== Extraction Result ===");
             Console.WriteLine($"HasAny: {metadata.HasAny}");
             Console.WriteLine($"ExifPath: {metadata.ExifPath ?? "null"}");
@@ -56,7 +56,7 @@ namespace ARWtoJXL.Tests
             Console.WriteLine($"JXL exists: {File.Exists(outputPath)}");
             Console.WriteLine($"JXL size: {new FileInfo(outputPath).Length} bytes");
 
-            var outputMetadata = await magickService.ExtractMetadataProfilesAsync(outputPath);
+            var outputMetadata = await imageConverterService.ExtractMetadataProfilesAsync(outputPath);
             Console.WriteLine($"\n=== Output Metadata (MagickService) ===");
             Console.WriteLine($"HasAny: {outputMetadata.HasAny}");
             Console.WriteLine($"ExifPath: {outputMetadata.ExifPath ?? "null"}");

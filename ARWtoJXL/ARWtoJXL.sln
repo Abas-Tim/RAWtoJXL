@@ -6,7 +6,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ARWtoJXL.Core", "ARWtoJXL.C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ARWtoJXL.Tests", "ARWtoJXL.Tests\ARWtoJXL.Tests.csproj", "{5FEFF0E4-92D8-F668-0FBB-0A593029289D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ARWtoJXL.WPF", "ARWtoJXL.WPF\ARWtoJXL.WPF.csproj", "{1F653A8B-CCED-9E1E-C43A-7CEA3D1D4B87}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ARWtoJXL.Avalonia", "ARWtoJXL.Avalonia\ARWtoJXL.Avalonia.csproj", "{2A764C9D-1B3E-4F5A-9C8D-6E4B7A2D1F90}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -22,10 +22,10 @@ Global
 		{5FEFF0E4-92D8-F668-0FBB-0A593029289D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5FEFF0E4-92D8-F668-0FBB-0A593029289D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5FEFF0E4-92D8-F668-0FBB-0A593029289D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1F653A8B-CCED-9E1E-C43A-7CEA3D1D4B87}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1F653A8B-CCED-9E1E-C43A-7CEA3D1D4B87}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1F653A8B-CCED-9E1E-C43A-7CEA3D1D4B87}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1F653A8B-CCED-9E1E-C43A-7CEA3D1D4B87}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2A764C9D-1B3E-4F5A-9C8D-6E4B7A2D1F90}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2A764C9D-1B3E-4F5A-9C8D-6E4B7A2D1F90}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2A764C9D-1B3E-4F5A-9C8D-6E4B7A2D1F90}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2A764C9D-1B3E-4F5A-9C8D-6E4B7A2D1F90}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

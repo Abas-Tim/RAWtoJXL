@@ -13,9 +13,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IFileService, FileService>(sp => new FileService(sp.GetRequiredService<ILogger>()));
         services.AddSingleton<IPathResolver, PathResolverService>();
         services.AddSingleton<IExiftoolService, ExiftoolService>();
-        services.AddSingleton<IMagickService, MagickService>();
+        services.AddSingleton<IImageConverterService, ImageConverterService>();
         services.AddSingleton<ICjxlEncoder, CjxlEncoderService>();
-        services.AddSingleton<IPngCache, PngCache>();
         services.AddSingleton<IImageService, ImageProcessingService>();
 
         return services;

@@ -225,4 +225,66 @@ public class SystemProcessRunner : IProcessRunner
         byte[]? result = ms.ToArray();
         return result.Length > 0 ? result : null;
     }
+
+    public async Task<(int ExitCode, string? Stdout, string? Stderr, bool TimedOut)> RunProcessWithStdinAsync(
+        string fileName,
+        string arguments,
+        Stream stdinStream,
+        int timeoutSeconds,
+        System.Threading.CancellationToken cancellationToken = default)
+    {
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = fileName,
+            Arguments = arguments,
+            UseShellExecute = false,
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true
+        };
+
+        using var process = Process.Start(startInfo);
+        if (process == null)
+        {
+            return (-1, null, null, false);
+        }
+
+        using var cancellationRegistration = cancellationToken.Register(() =>
+        {
+            try { if (!process.HasExited) process.Kill(); } catch { }
+        });
+
+        var stdoutTask = process.StandardOutput.ReadToEndAsync();
+        var stderrTask = process.StandardError.ReadToEndAsync();
+        var stdinTask = stdinStream.CopyToAsync(process.StandardInput.BaseStream, cancellationToken);
+
+        await stdinTask;
+        process.StandardInput.Close();
+
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(TimeSpan.FromSeconds(timeoutSeconds));
+
+        bool timedOut = false;
+        try
+        {
+            await process.WaitForExitAsync(timeoutCts.Token);
+        }
+        catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested)
+        {
+            timedOut = !cancellationToken.IsCancellationRequested;
+            if (!process.HasExited)
+            {
+                try { process.Kill(); } catch { }
+                process.WaitForExit();
+            }
+        }
+
+        string? stdout = null;
+        string? stderr = null;
+        try { stdout = await stdoutTask; } catch { }
+        try { stderr = await stderrTask; } catch { }
+
+        return (process.ExitCode, stdout, stderr, timedOut);
+    }
 }

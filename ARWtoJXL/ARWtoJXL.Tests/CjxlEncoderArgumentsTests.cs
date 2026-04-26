@@ -113,6 +113,46 @@ public class CjxlEncoderArgumentsTests
         Assert.InRange(args.Count, 6, 7);
     }
 
+    [Fact]
+    public void BuildEncodingArguments_EffortOverride_UsesCustomEffort()
+    {
+        var service = CreateTestEncoder();
+        var args = service.BuildEncodingArguments(50, null, @"C:\input.png", @"C:\output.jxl", effortOverride: 3);
+
+        Assert.Contains("--effort=3", args);
+        Assert.DoesNotContain("--effort=6", args);
+    }
+
+    [Fact]
+    public void BuildEncodingArguments_EffortOverrideNull_UsesAutoEffort()
+    {
+        var service = CreateTestEncoder();
+        var args = service.BuildEncodingArguments(50, null, @"C:\input.png", @"C:\output.jxl", effortOverride: null);
+
+        Assert.Contains("--effort=6", args);
+    }
+
+    [Fact]
+    public void BuildEncodingArguments_RawDistanceOverride_UsesCustomDistance()
+    {
+        var service = CreateTestEncoder();
+        var args = service.BuildEncodingArguments(85, null, @"C:\input.png", @"C:\output.jxl", rawDistance: 0.5f);
+
+        Assert.Contains("--distance=0.50", args);
+        float expectedAuto = QualityCalculator.CalculateDistance(85);
+        Assert.DoesNotContain($"--distance={expectedAuto:F2}", args);
+    }
+
+    [Fact]
+    public void BuildEncodingArguments_RawDistanceNull_UsesAutoDistance()
+    {
+        var service = CreateTestEncoder();
+        var args = service.BuildEncodingArguments(85, null, @"C:\input.png", @"C:\output.jxl", rawDistance: null);
+
+        float expectedDistance = QualityCalculator.CalculateDistance(85);
+        Assert.Contains($"--distance={expectedDistance:F2}", args);
+    }
+
     private static TestEncoder CreateTestEncoder()
     {
         var logger = new Mock<ILogger>();

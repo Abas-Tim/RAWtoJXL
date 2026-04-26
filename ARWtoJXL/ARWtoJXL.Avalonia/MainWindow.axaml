@@ -1,0 +1,208 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ARWtoJXL.Avalonia.ViewModels"
+        xmlns:local="using:ARWtoJXL.Avalonia"
+        xmlns:conv="using:ARWtoJXL.Avalonia.Converters"
+        xmlns:behaviors="using:ARWtoJXL.Avalonia.Behaviors"
+        xmlns:controls="using:Avalonia.Controls"
+        x:Class="ARWtoJXL.Avalonia.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Title="ARW to JXL Converter"
+        Width="1000" Height="750"
+        MinWidth="800" MinHeight="600"
+        WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <conv:ImageStatusToStringConverter x:Key="ImageStatusToStringConverter"/>
+        <conv:ImageStatusToVisibilityConverter x:Key="ImageStatusToVisibilityConverter"/>
+        <conv:BooleanToBrushConverter x:Key="BooleanToBrushConverter"/>
+        <conv:BooleanToTextConverter x:Key="BooleanToTextConverter"/>
+        <conv:BooleanToValueConverter x:Key="BooleanToValueConverter"/>
+        <conv:NullableIntConverter x:Key="NullableIntConverter"/>
+        <conv:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
+    </Window.Resources>
+
+    <Grid behaviors:DragDropBehavior.EnableDragDrop="True" DragDrop.AllowDrop="True">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0"
+                Background="Transparent"
+                BorderBrush="Gray"
+                BorderThickness="0,0,0,1"
+                Padding="15,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <Button Content="Open File"
+                            Command="{Binding OpenFileCommand}"
+                            Margin="0,0,8,0"/>
+                    <Button Content="Select All"
+                            Command="{Binding SelectAllCommand}"
+                            Margin="0,0,8,0"/>
+                    <Button Content="Convert"
+                            Command="{Binding ConvertSelectedCommand}"
+                            Margin="0,0,8,0"
+                            Classes="accent"/>
+                    <Button Content="Remove"
+                            Command="{Binding RemoveSelectedCommand}"
+                            Margin="0,0,8,0"/>
+                    <Button Content="Cancel"
+                            Command="{Binding CancelCommand}"
+                            Margin="0,0,8,0"
+                            Classes="danger"
+                            IsVisible="{Binding IsConverting}"/>
+                    <Button Content="Open Output Folder"
+                            Command="{Binding OpenOutputFolderCommand}"
+                            Margin="0,0,8,0"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Content="Settings"
+                            Command="{Binding OpenSettingsCommand}"
+                            Margin="0,0,12,0"/>
+                    <TextBlock Text="{Binding StatusMessage}"
+                               VerticalAlignment="Center"
+                               FontSize="12"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="1"
+                Background="Transparent"
+                BorderBrush="Gray"
+                BorderThickness="0,0,0,1"
+                Padding="15,6">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Recent:" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <ItemsControl ItemsSource="{Binding RecentFiles}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}"
+                                       FontSize="10"
+                                       Foreground="Blue"
+                                       Margin="0,0,8,0"
+                                       Cursor="Hand"
+                                       ToolTip.Tip="{Binding}"
+                                       Classes="recent-file"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <Button Content="Load All"
+                        Command="{Binding LoadRecentFilesCommand}"
+                        FontSize="10"
+                        Margin="4,0,4,0"/>
+                <Button Content="Clear"
+                        Command="{Binding ClearRecentFilesCommand}"
+                        FontSize="10"/>
+            </StackPanel>
+        </Border>
+
+        <ListBox Grid.Row="2"
+                 ItemsSource="{Binding Images}"
+                 Margin="15"
+                 x:Name="ImagesListBox">
+            <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:ImageItemViewModel">
+                    <Border Background="Transparent"
+                            BorderBrush="Gray"
+                            BorderThickness="1"
+                            Padding="10"
+                            Margin="0,3"
+                            CornerRadius="4">
+                            <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+
+                            <CheckBox Grid.Column="0"
+                                      IsChecked="{Binding IsSelected}"
+                                      VerticalAlignment="Center"
+                                      Margin="0,0,12,0"/>
+
+                            <Image Grid.Column="1"
+                                   Source="{Binding Thumbnail}"
+                                   Width="80"
+                                   Height="60"
+                                   Stretch="Uniform"
+                                   Margin="0,0,15,0"
+                                   VerticalAlignment="Top"/>
+
+                            <StackPanel Grid.Column="2" VerticalAlignment="Top">
+                                <TextBlock Text="{Binding FileName}"
+                                           FontSize="13"
+                                           FontWeight="SemiBold"
+                                           TextTrimming="CharacterEllipsis"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                    <ProgressBar Width="160"
+                                                 Height="4"
+                                                 IsIndeterminate="True"
+                                                 IsVisible="{Binding Status, Converter={StaticResource ImageStatusToVisibilityConverter}, ConverterParameter='Converting'}"
+                                                 VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Status, StringFormat='Status: {}{0}'}"
+                                               FontSize="11"
+                                               Margin="12,0,0,0"
+                                               VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding SizeInfoText}"
+                                               FontSize="10"
+                                               Foreground="Gray"
+                                               Margin="12,0,0,0"
+                                               VerticalAlignment="Center"
+                                               IsVisible="{Binding SizeInfoText, Converter={StaticResource StringToVisibilityConverter}}"/>
+                                </StackPanel>
+                                <TextBlock Text="{Binding ErrorMessage}"
+                                           FontSize="11"
+                                           Foreground="Red"
+                                           Margin="0,2,0,0"
+                                           IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToVisibilityConverter}}"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0,0,0">
+                                <TextBlock Text="Q:" FontSize="11" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                <TextBox Width="40"
+                                         Text="{Binding QualityOverride, Converter={StaticResource NullableIntConverter}, Mode=TwoWay}"
+                                         FontSize="11"
+                                         VerticalAlignment="Center"
+                                         ToolTip.Tip="Enter quality (0-100), leave empty for global"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <Border Grid.Row="3"
+                Background="Transparent"
+                BorderBrush="Gray"
+                BorderThickness="0,1,0,0"
+                Padding="15,10">
+            <StackPanel>
+                <ProgressBar Minimum="0"
+                             Maximum="{Binding TotalCount, Converter={StaticResource BooleanToValueConverter}, ConverterParameter='DefaultIfZero'}"
+                             Value="{Binding CompletedCount}"
+                             Height="5"
+                             Margin="0,0,0,8"/>
+              <TextBlock Text="{Binding StatusMessage}"
+                            HorizontalAlignment="Center"
+                            FontSize="11"
+                            Margin="0,0,0,4"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

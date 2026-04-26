@@ -3,7 +3,7 @@ $ErrorActionPreference = "Continue"
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 if ([string]::IsNullOrEmpty($scriptDir)) { $scriptDir = Get-Location }
 
-$projectName = "ARWtoJXL.WPF/ARWtoJXL.WPF.csproj"
+$projectName = "ARWtoJXL.Avalonia/ARWtoJXL.Avalonia.csproj"
 $testProject = "ARWtoJXL.Tests/ARWtoJXL.Tests.csproj"
 $runtime = "win-x64"
 $configuration = "Release"
@@ -13,7 +13,7 @@ $cjxlPath = Join-Path $scriptDir "cjxl.exe"
 $exiftoolVersion = "13.57"
 $exiftoolUrl = "https://sourceforge.net/projects/exiftool/files/exiftool-$exiftoolVersion_64.zip/download"
 $exiftoolPath = Join-Path $scriptDir "exiftool.exe"
-$publishDir = Join-Path $scriptDir "ARWtoJXL.WPF\bin\$configuration\net8.0-windows\$runtime\publish"
+$publishDir = Join-Path $scriptDir "ARWtoJXL.Avalonia\bin\$configuration\net8.0\$runtime\publish"
 
 Write-Host "Starting build process from $scriptDir..." -ForegroundColor Cyan
 

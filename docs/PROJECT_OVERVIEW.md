@@ -2,7 +2,7 @@
 
 ## Summary
 
-Windows desktop app (.NET 8 WPF) that converts Sony RAW (.ARW) camera files to JPEG-XL (.JXL), JPEG (.JPG), or PNG (.PNG) formats. Uses a multi-stage pipeline: Magick.NET for RAW decoding and metadata extraction + cjxl CLI for JXL encoding with metadata preservation. Features include recursive folder search, conversion history, per-file quality override, file conflict resolution, custom output directory picker, named conversion presets, and per-file compression ratio display.
+Windows desktop app (.NET 8, Avalonia 12 UI) that converts Sony RAW (.ARW) camera files to JPEG-XL (.JXL), JPEG (.JPG), or PNG (.PNG) formats. Uses a multi-stage pipeline: Magick.NET for RAW decoding and metadata extraction + cjxl CLI for JXL encoding with metadata preservation. The JXL pipeline pipes 16-bit RGB PPM data directly to cjxl stdin for zero intermediate disk I/O. Features include recursive folder search, conversion history, per-file quality override, file conflict resolution, custom output directory picker, named conversion presets, per-file compression ratio display, metadata skip toggle, and advanced cjxl options (effort, near-lossless, raw distance).
 
 ## Repository Layout
 
@@ -20,8 +20,8 @@ ARWtoJPEGXL/
     ├── ARWtoJXL.sln
     ├── ARWtoJXL.Core/                     # Business logic layer
     │   └── docs/PROJECT.md               # Core project documentation
-    ├── ARWtoJXL.WPF/                      # WPF presentation layer
-    │   └── docs/PROJECT.md               # WPF project documentation
+    ├── ARWtoJXL.Avalonia/                      # Avalonia UI presentation layer
+    │   └── docs/PROJECT.md               # Avalonia project documentation
     └── ARWtoJXL.Tests/                    # xUnit test suite
         └── docs/PROJECT.md               # Tests project documentation
 ```
@@ -33,7 +33,7 @@ Each project maintains its own documentation with detailed information on archit
 - **ARWtoJXL.Core** — `ARWtoJXL/ARWtoJXL.Core/docs/PROJECT.md`
   - Services, interfaces, DI registration, conversion pipeline, file lock handling, concurrency model, enums
 
-- **ARWtoJXL.WPF** — `ARWtoJXL/ARWtoJXL.WPF/docs/PROJECT.md`
+- **ARWtoJXL.Avalonia** — `ARWtoJXL/ARWtoJXL.Avalonia/docs/PROJECT.md`
   - UI/UX flow, view models, UI components, settings, keyboard shortcuts, selection logic
 
 - **ARWtoJXL.Tests** — `ARWtoJXL/ARWtoJXL.Tests/docs/PROJECT.md`

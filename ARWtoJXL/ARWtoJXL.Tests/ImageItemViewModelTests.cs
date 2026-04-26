@@ -1,4 +1,4 @@
-using ARWtoJXL.WPF.ViewModels;
+using ARWtoJXL.Avalonia.ViewModels;
 
 namespace ARWtoJXL.Tests;
 

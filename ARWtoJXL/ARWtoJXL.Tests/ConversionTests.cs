@@ -71,8 +71,8 @@ namespace ARWtoJXL.Tests
             lock (lockObj)
             {
                 Assert.True(progressValues.Any(v => v >= 0.05 && v <= 0.15), "Should report progress at metadata stage (~0.1)");
-                Assert.True(progressValues.Any(v => v >= 0.45 && v <= 0.55), "Should report progress at PNG stage (~0.5)");
-                Assert.True(progressValues.Any(v => v >= 0.5 && v < 1.0), "Should report smooth progress during cjxl encoding");
+                Assert.True(progressValues.Any(v => v >= 0.25 && v <= 0.35), "Should report progress at RGB extraction stage (~0.3)");
+                Assert.True(progressValues.Any(v => v >= 0.35 && v < 1.0), "Should report smooth progress during cjxl encoding");
                 Assert.True(progressValues.Any(v => v >= 1.0), "Should report final progress of 1.0");
 
                 for (int i = 1; i < progressValues.Count; i++)

@@ -1,0 +1,25 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:ARWtoJXL.Avalonia.Services"
+        x:Class="ARWtoJXL.Avalonia.Services.ConfirmDialog"
+        x:DataType="local:ConfirmDialog"
+        Title="{Binding TitleText}"
+        SizeToContent="WidthAndHeight"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        WindowDecorations="Full">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0"
+                   Text="{Binding MessageText}"
+                   TextWrapping="Wrap"
+                   Margin="0,0,0,12"/>
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Yes" Width="80" Margin="0,0,8,0" Click="YesButton_Click" IsDefault="True"/>
+            <Button Content="No" Width="80" Click="NoButton_Click" IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window>

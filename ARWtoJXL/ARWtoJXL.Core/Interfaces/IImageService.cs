@@ -32,6 +32,9 @@ namespace ARWtoJXL.Core.Interfaces
             Action<double> progress,
             int quality,
             OutputFormat outputFormat = OutputFormat.Jxl,
-            CancellationToken cancellationToken = default);
+            CancellationToken cancellationToken = default,
+            bool skipMetadata = false,
+            int? effort = null,
+            float? rawDistance = null);
     }
 }

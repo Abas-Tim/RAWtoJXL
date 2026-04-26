@@ -9,19 +9,19 @@ namespace ARWtoJXL.Tests
 {
     public class MetadataPreservationTests : Startup
     {
-        private readonly IMagickService _magickService;
+        private readonly IImageConverterService _imageConverterService;
         private readonly IImageService _imageService;
 
         public MetadataPreservationTests()
         {
-            _magickService = Services.GetRequiredService<IMagickService>();
+            _imageConverterService = Services.GetRequiredService<IImageConverterService>();
             _imageService = Services.GetRequiredService<IImageService>();
         }
 
         [Fact]
         public async Task ConvertArwToJxlAsync_Metadata_PreservesExifAndIccProfiles()
         {
-            using var inputMetadata = await _magickService.ExtractMetadataProfilesAsync(TestArwPath);
+            using var inputMetadata = await _imageConverterService.ExtractMetadataProfilesAsync(TestArwPath);
 
             Assert.NotNull(inputMetadata);
             Assert.True(inputMetadata.HasAny, "Input ARW should have metadata");
@@ -33,7 +33,7 @@ namespace ARWtoJXL.Tests
 
             Assert.True(File.Exists(outputPath));
 
-            using var outputMetadata = await _magickService.ExtractMetadataProfilesAsync(outputPath);
+             using var outputMetadata = await _imageConverterService.ExtractMetadataProfilesAsync(outputPath);
             Assert.NotNull(outputMetadata);
             Assert.True(outputMetadata.HasAny, "Output JXL should have metadata");
 

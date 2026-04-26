@@ -1,227 +1,391 @@
-using FlaUI.Core;
-using FlaUI.Core.AutomationElements;
-using FlaUI.Core.Definitions;
-using FlaUI.UIA3;
-using System.Runtime.InteropServices;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Headless.XUnit;
+using ARWtoJXL.Avalonia;
+using ARWtoJXL.Avalonia.Services;
+using ARWtoJXL.Avalonia.ViewModels;
+using ARWtoJXL.Core.Interfaces;
+using Moq;
 
 namespace ARWtoJXL.Tests;
 
 [Trait("category", "smoke")]
-public class SmokeTests : IDisposable
+public class SmokeTests
 {
-    private Application? _app;
-    private UIA3Automation? _automation;
-    private Window? _mainWindow;
-    private readonly List<string> _tempFiles = new();
-
-    private static string GetAppPath()
+    private MainViewModel CreateViewModel(
+        Mock<IImageService>? imageService = null,
+        Mock<IDialogService>? dialogService = null,
+        Mock<IDispatcherService>? dispatcherService = null,
+        Mock<IFilePickerService>? filePickerService = null)
     {
-        var assemblyDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)
-                          ?? Directory.GetCurrentDirectory();
-        var paths = new[]
-        {
-            Path.Combine(assemblyDir, "..", "..", "..", "..", "ARWtoJXL.WPF", "bin", "Debug", "net8.0-windows", "ARWtoJXL.WPF.exe"),
-            Path.Combine(assemblyDir, "..", "..", "..", "..", "ARWtoJXL.WPF", "bin", "Release", "net8.0-windows", "ARWtoJXL.WPF.exe"),
-        };
-        foreach (var path in paths)
-        {
-            if (File.Exists(path)) return path;
-        }
-        throw new InvalidOperationException("ARWtoJXL.WPF.exe not found. Build the WPF project first.");
+        imageService ??= new Mock<IImageService>();
+        dialogService ??= new Mock<IDialogService>();
+       dispatcherService ??= new Mock<IDispatcherService>();
+        dispatcherService.Setup(x => x.InvokeAsync(It.IsAny<Action>()))
+                         .Returns<Action>(a => { a(); return Task.CompletedTask; });
+
+        filePickerService ??= new Mock<IFilePickerService>();
+        filePickerService.Setup(x => x.PickFilesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()))
+                         .ReturnsAsync(Array.Empty<string>());
+        filePickerService.Setup(x => x.PickFolderAsync(It.IsAny<string>()))
+                         .ReturnsAsync((string?)null);
+
+        return new MainViewModel(
+            imageService.Object,
+            dialogService.Object,
+            dispatcherService.Object,
+            filePickerService.Object);
     }
 
-    private void LaunchApp()
+    /* --- MainViewModel smoke tests (no UI needed) --- */
+
+    [Fact]
+    public void ViewModel_Commands_AreInitiallyDisabled()
     {
-        _app = Application.Launch(GetAppPath());
-        _automation = new UIA3Automation();
-        _mainWindow = _app.GetMainWindow(_automation, TimeSpan.FromSeconds(10));
-        Assert.NotNull(_mainWindow);
+        var vm = CreateViewModel();
+        Assert.False(vm.RemoveSelectedCommand.CanExecute(null));
+        Assert.False(vm.ConvertSelectedCommand.CanExecute(null));
     }
 
     [Fact]
-    public void MainWindow_Opens_And_HasExpectedTitle()
+    public void AddFiles_AddsItemsToGallery()
     {
-        LaunchApp();
-        Assert.Equal("ARW to JXL Converter", _mainWindow!.Title);
-    }
-
-    [Fact]
-    public void MainWindow_HasToolbarButtons()
-    {
-        LaunchApp();
-        var buttonNames = new[] { "Open File", "Select All", "Convert", "Remove", "Settings" };
-        foreach (var name in buttonNames)
-        {
-            var button = _mainWindow!.FindFirstDescendant(cf => cf.ByName(name).And(cf.ByControlType(ControlType.Button)));
-            Assert.NotNull(button);
-        }
-    }
-
-    [Fact]
-    public void MainWindow_HasGalleryListBox()
-    {
-        LaunchApp();
-        var listBox = _mainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.List));
-        Assert.NotNull(listBox);
-    }
-
-    [Fact]
-    public void MainWindow_HasProgressBar()
-    {
-        LaunchApp();
-        var progressBar = _mainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.ProgressBar));
-        Assert.NotNull(progressBar);
-    }
-
-    [Fact(Timeout = 60000)]
-    public void RemoveSelected_DoesNotCrashApp()
-    {
-        LaunchApp();
-
         var tempDir = Path.Combine(Path.GetTempPath(), "ARWtoJXL_Test_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(tempDir);
-
-        var tempFiles = new[]
-        {
-            Path.Combine(tempDir, "test1.arw"),
-            Path.Combine(tempDir, "test2.arw"),
-        };
-
-        foreach (var f in tempFiles)
-        {
-            File.WriteAllText(f, "");
-            _tempFiles.Add(f);
-        }
+        var tempFile = Path.Combine(tempDir, "test1.arw");
+        File.WriteAllText(tempFile, "");
 
         try
         {
-            var openFileButton = _mainWindow!.FindFirstDescendant(cf => cf.ByName("Open File").And(cf.ByControlType(ControlType.Button)));
-            Assert.NotNull(openFileButton);
-            openFileButton!.Click();
+            var vm = CreateViewModel();
+            vm.AddFilesAsync(new[] { tempFile }).Wait();
 
-            Thread.Sleep(1000);
-
-            var dialogWindow = _app!.GetAllTopLevelWindows(_automation!).FirstOrDefault(w => w.Title.Contains("Open"));
-            if (dialogWindow == null)
-            {
-                dialogWindow = _app.GetAllTopLevelWindows(_automation!).FirstOrDefault();
-            }
-            Assert.NotNull(dialogWindow);
-
-            var editBox = dialogWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Edit));
-            Assert.NotNull(editBox);
-
-            var dialogWinHandle = System.Diagnostics.Process.GetProcessById(_app!.ProcessId).MainWindowHandle;
-            SetForegroundWindow(dialogWinHandle);
-            Thread.Sleep(200);
-
-            editBox!.Focus();
-            Thread.Sleep(200);
-
-            var handle = GetForegroundWindow();
-            SetForegroundWindow(handle);
-            Thread.Sleep(100);
-
-            // Type the file path character by character
-            foreach (var c in tempFiles[0])
-            {
-                keybd_event((byte)c, 0, 0, IntPtr.Zero);
-                keybd_event((byte)c, 0, KEYEVENTF_KEYUP, IntPtr.Zero);
-                Thread.Sleep(5);
-            }
-            Thread.Sleep(500);
-
-            PressEnter();
-            Thread.Sleep(2000);
-
-            Thread.Sleep(2000);
-
-            _mainWindow = _app.GetMainWindow(_automation!, TimeSpan.FromSeconds(5)) ?? _mainWindow;
-            Assert.NotNull(_mainWindow);
-
-            var listBox = _mainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.List));
-            Assert.NotNull(listBox);
-            var initialItems = listBox!.FindAllDescendants(cf => cf.ByControlType(ControlType.ListItem)).ToList();
-            var initialItemCount = initialItems.Count;
-            Assert.True(initialItemCount >= 1, $"Expected at least 1 item in gallery, got {initialItemCount}");
-
-            Thread.Sleep(500);
-
-            var selectAllButton = _mainWindow.FindFirstDescendant(cf => cf.ByName("Select All").And(cf.ByControlType(ControlType.Button)));
-            Assert.NotNull(selectAllButton);
-            selectAllButton!.Click();
-            Thread.Sleep(500);
-
-            var removeButton = _mainWindow.FindFirstDescendant(cf => cf.ByName("Remove").And(cf.ByControlType(ControlType.Button)));
-            Assert.NotNull(removeButton);
-            removeButton!.Click();
-
-            Thread.Sleep(1000);
-
-            Assert.NotNull(_mainWindow);
-
-            var remainingItems = listBox!.FindAllDescendants(cf => cf.ByControlType(ControlType.ListItem)).ToList();
-            var remainingCount = remainingItems.Count;
-            Assert.True(remainingCount < initialItemCount, $"Expected fewer items after removal. Before: {initialItemCount}, After: {remainingCount}");
-
-            Assert.Equal("ARW to JXL Converter", _mainWindow.Title);
+            Assert.Equal(1, vm.Images.Count);
+            Assert.Equal("test1.arw", vm.Images[0].FileName);
+            Assert.Equal(ImageStatus.Ready, vm.Images[0].Status);
         }
         finally
         {
-            foreach (var f in _tempFiles)
-            {
-                try { File.Delete(f); } catch { }
-            }
+            File.Delete(tempFile);
+            Directory.Delete(tempDir, false);
+        }
+    }
+
+    [Fact]
+    public void AddFiles_SkipsDuplicates()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "ARWtoJXL_Test_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        var tempFile = Path.Combine(tempDir, "test1.arw");
+        File.WriteAllText(tempFile, "");
+
+        try
+        {
+            var vm = CreateViewModel();
+            vm.AddFilesAsync(new[] { tempFile }).Wait();
+            vm.AddFilesAsync(new[] { tempFile }).Wait();
+            Assert.Equal(1, vm.Images.Count);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+            Directory.Delete(tempDir, false);
+        }
+    }
+
+    [Fact]
+    public void AddFiles_SkipsInvalidExtensions()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "ARWtoJXL_Test_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        var tempFile = Path.Combine(tempDir, "test1.txt");
+        File.WriteAllText(tempFile, "");
+
+        try
+        {
+            var vm = CreateViewModel();
+            vm.AddFilesAsync(new[] { tempFile }).Wait();
+            Assert.Equal(0, vm.Images.Count);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+            Directory.Delete(tempDir, false);
+        }
+    }
+
+    [Fact]
+    public void SelectAll_SelectsAllItems()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "ARWtoJXL_Test_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        var tempFile1 = Path.Combine(tempDir, "test1.arw");
+        var tempFile2 = Path.Combine(tempDir, "test2.arw");
+        File.WriteAllText(tempFile1, "");
+        File.WriteAllText(tempFile2, "");
+
+        try
+        {
+            var vm = CreateViewModel();
+            vm.AddFilesAsync(new[] { tempFile1, tempFile2 }).Wait();
+            Assert.False(vm.IsAnySelected);
+            vm.SelectAllCommand.Execute(null);
+            Assert.True(vm.IsAnySelected);
+            Assert.True(vm.IsAllSelected);
+            Assert.Equal(2, vm.Images.Count(i => i.IsSelected));
+        }
+        finally
+        {
+            try { File.Delete(tempFile1); } catch { }
+            try { File.Delete(tempFile2); } catch { }
             try { Directory.Delete(tempDir, false); } catch { }
         }
     }
 
-    [DllImport("user32.dll")]
-    private static extern IntPtr GetForegroundWindow();
-
-    [DllImport("user32.dll")]
-    private static extern bool SetForegroundWindow(IntPtr hWnd);
-
-    [DllImport("user32.dll")]
-    private static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, IntPtr dwExtraInfo);
-
-    private const int KEYEVENTF_KEYUP = 0x0002;
-    private const byte VK_V = 0x56;
-    private const byte VK_CONTROL = 0x11;
-    private const byte VK_RETURN = 0x0D;
-
-    private static void PressKey(byte vk, bool ctrl = false)
+    [Fact]
+    public void RemoveSelected_RemovesItems()
     {
-        if (ctrl) keybd_event(VK_CONTROL, 0, 0, IntPtr.Zero);
-        keybd_event(vk, 0, 0, IntPtr.Zero);
-        keybd_event(vk, 0, KEYEVENTF_KEYUP, IntPtr.Zero);
-        if (ctrl) keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, IntPtr.Zero);
-    }
+        var tempDir = Path.Combine(Path.GetTempPath(), "ARWtoJXL_Test_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        var tempFile1 = Path.Combine(tempDir, "test1.arw");
+        var tempFile2 = Path.Combine(tempDir, "test2.arw");
+        File.WriteAllText(tempFile1, "");
+        File.WriteAllText(tempFile2, "");
 
-    private static void CtrlV()
-    {
-        PressKey(VK_V, ctrl: true);
-        Thread.Sleep(100);
-    }
-
-    private static void PressEnter()
-    {
-        PressKey(VK_RETURN);
-        Thread.Sleep(100);
-    }
-
-    public void Dispose()
-    {
         try
         {
-            _mainWindow?.Close();
+            var vm = CreateViewModel();
+            vm.AddFilesAsync(new[] { tempFile1, tempFile2 }).Wait();
+            Assert.Equal(2, vm.Images.Count);
+            vm.SelectAllCommand.Execute(null);
+            vm.RemoveSelectedCommand.Execute(null);
+            Assert.Equal(0, vm.Images.Count);
+            Assert.False(vm.IsAnySelected);
+            Assert.Contains("removed", vm.StatusMessage, StringComparison.OrdinalIgnoreCase);
         }
-        catch { }
+        finally
+        {
+            try { File.Delete(tempFile1); } catch { }
+            try { File.Delete(tempFile2); } catch { }
+            try { Directory.Delete(tempDir, false); } catch { }
+        }
+    }
+
+    [Fact]
+    public void RemoveSelected_DoesNotCrashApp()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "ARWtoJXL_Test_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        var tempFile1 = Path.Combine(tempDir, "test1.arw");
+        var tempFile2 = Path.Combine(tempDir, "test2.arw");
+        File.WriteAllText(tempFile1, "");
+        File.WriteAllText(tempFile2, "");
+
         try
         {
-            _app?.Kill();
+            var vm = CreateViewModel();
+            vm.AddFilesAsync(new[] { tempFile1, tempFile2 }).Wait();
+            vm.SelectAllCommand.Execute(null);
+            vm.RemoveSelectedCommand.Execute(null);
+            Assert.Equal(0, vm.Images.Count);
         }
-        catch { }
-        _automation?.Dispose();
+        finally
+        {
+            try { File.Delete(tempFile1); } catch { }
+            try { File.Delete(tempFile2); } catch { }
+            try { Directory.Delete(tempDir, false); } catch { }
+        }
+    }
+
+    [Fact]
+    public void ClearRecentFiles_ClearsList()
+    {
+        var vm = CreateViewModel();
+        vm.ClearRecentFilesCommand.Execute(null);
+        Assert.Equal(0, vm.RecentFiles.Count);
+    }
+
+    [Fact]
+    public void ViewModel_RemoveCommand_Enabled_AfterSelection()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "ARWtoJXL_Test_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        var tempFile = Path.Combine(tempDir, "test1.arw");
+        File.WriteAllText(tempFile, "");
+
+        try
+        {
+            var vm = CreateViewModel();
+            vm.AddFilesAsync(new[] { tempFile }).Wait();
+            vm.SelectAllCommand.Execute(null);
+            Assert.True(vm.RemoveSelectedCommand.CanExecute(null));
+        }
+        finally
+        {
+            try { File.Delete(tempFile); } catch { }
+            try { Directory.Delete(tempDir, false); } catch { }
+        }
+    }
+
+    [Fact]
+    public void ImageItem_EffectiveQuality_UsesOverride()
+    {
+        var item = new ImageItemViewModel
+        {
+            FilePath = "test.arw",
+            FileName = "test.arw",
+            Status = ImageStatus.Ready,
+            QualityOverride = 75
+        };
+        Assert.Equal(75, item.EffectiveQuality(90));
+    }
+
+    [Fact]
+    public void ImageItem_EffectiveQuality_FallsBackToGlobal()
+    {
+        var item = new ImageItemViewModel
+        {
+            FilePath = "test.arw",
+            FileName = "test.arw",
+            Status = ImageStatus.Ready
+        };
+        Assert.Equal(90, item.EffectiveQuality(90));
+    }
+
+    /* --- UI element tests (require Avalonia initialization) --- */
+
+    [AvaloniaFact]
+    public void MainWindow_Opens_And_HasExpectedTitle()
+    {
+        var window = CreateWindow();
+        Assert.Equal("ARW to JXL Converter", window.Title);
+    }
+
+    [AvaloniaFact]
+    public void MainWindow_HasToolbarButtons()
+    {
+        var window = CreateWindow();
+        var buttonContents = GetButtonContents(window);
+        var expectedButtons = new[] { "Open File", "Select All", "Convert", "Remove", "Cancel", "Open Output Folder", "Settings", "Load All", "Clear" };
+        foreach (var expected in expectedButtons)
+        {
+            Assert.Contains(expected, buttonContents, StringComparer.OrdinalIgnoreCase);
+        }
+    }
+
+    [AvaloniaFact]
+    public void MainWindow_CancelButton_Hidden_WhenNotConverting()
+    {
+        var window = CreateWindow();
+        var cancelButton = GetAllControls<Button>(window)
+            .FirstOrDefault(b => b.Content?.ToString() == "Cancel");
+        Assert.NotNull(cancelButton);
+        Assert.False(cancelButton!.IsVisible);
+    }
+
+    [AvaloniaFact]
+    public void MainWindow_HasGalleryListBox()
+    {
+        var window = CreateWindow();
+        var listBox = window.FindControl<ListBox>("ImagesListBox");
+        Assert.NotNull(listBox);
+        Assert.Equal(SelectionMode.Multiple, listBox!.SelectionMode);
+    }
+
+    [AvaloniaFact]
+    public void MainWindow_HasProgressBar()
+    {
+        var window = CreateWindow();
+        var count = GetAllControls<ProgressBar>(window).Count();
+        Assert.True(count >= 1, "Expected at least one ProgressBar in the status bar");
+    }
+
+    [AvaloniaFact]
+    public void MainWindow_HasStatusBarText()
+    {
+        var window = CreateWindow();
+        var texts = GetAllControls<TextBlock>(window).Select(t => t.Text).ToList();
+        Assert.Contains("Ready", texts);
+    }
+
+    [AvaloniaFact]
+    public void MainWindow_HasRecentFilesSection()
+    {
+        var window = CreateWindow();
+        var texts = GetAllControls<TextBlock>(window).Select(t => t.Text).ToList();
+        Assert.Contains(texts, t => t.Contains("Recent", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [AvaloniaFact]
+    public void SettingsWindow_CreatesSuccessfully()
+    {
+        var settingsWindow = new SettingsWindow();
+        Assert.Equal("Settings", settingsWindow.Title);
+    }
+
+    [AvaloniaFact]
+    public void SettingsWindow_HasExpectedControls()
+    {
+        var settingsWindow = new SettingsWindow();
+        var buttons = GetAllControls<Button>(settingsWindow).Select(b => b.Content?.ToString()).ToList();
+        var sliderCount = GetAllControls<Slider>(settingsWindow).Count();
+        var checkBoxCount = GetAllControls<CheckBox>(settingsWindow).Count();
+        var comboBoxCount = GetAllControls<ComboBox>(settingsWindow).Count();
+
+        Assert.Contains("Save", buttons, StringComparer.OrdinalIgnoreCase);
+        Assert.Contains("Cancel", buttons, StringComparer.OrdinalIgnoreCase);
+        Assert.Contains("Browse", buttons, StringComparer.OrdinalIgnoreCase);
+        Assert.Contains("Load", buttons, StringComparer.OrdinalIgnoreCase);
+        Assert.Contains("Save As", buttons, StringComparer.OrdinalIgnoreCase);
+        Assert.Contains("Delete", buttons, StringComparer.OrdinalIgnoreCase);
+        Assert.True(sliderCount >= 1, "Expected at least one Slider for quality");
+        Assert.True(checkBoxCount >= 1, "Expected CheckBox controls in settings");
+        Assert.True(comboBoxCount >= 1, "Expected ComboBox controls in settings");
+    }
+
+    [AvaloniaFact]
+    public void ConfirmDialog_CreatesSuccessfully()
+    {
+        var dialog = new ARWtoJXL.Avalonia.Services.ConfirmDialog();
+        Assert.NotNull(dialog);
+    }
+
+    /* --- UI helpers --- */
+
+    private MainWindow CreateWindow()
+    {
+        var vm = CreateViewModel();
+        var window = new MainWindow();
+        window.DataContext = vm;
+        return window;
+    }
+
+    private static IEnumerable<T> GetAllControls<T>(Control root) where T : class
+    {
+        var result = new List<T>();
+        Traverse(root);
+        return result;
+
+        void Traverse(Control control)
+        {
+            if (control is T tCtrl) result.Add(tCtrl);
+            if (control is Panel panel)
+            {
+                foreach (var child in panel.Children)
+                {
+                    if (child is Control childCtrl)
+                        Traverse(childCtrl);
+                }
+            }
+            else if (control is ContentControl cc && cc.Content is Control contentCtrl)
+            {
+                Traverse(contentCtrl);
+            }
+        }
+    }
+
+    private static List<string?> GetButtonContents(Window window)
+    {
+        return GetAllControls<Button>(window).Select(b => b.Content?.ToString()).ToList();
     }
 }

@@ -37,7 +37,9 @@ public class CjxlEncoderService : ICjxlEncoder
         MetadataProfiles? metadata = null,
         CancellationToken cancellationToken = default,
         int timeoutSeconds = DefaultTimeoutSeconds,
-        Action<double>? progress = null)
+        Action<double>? progress = null,
+        int? effort = null,
+        float? rawDistance = null)
     {
         ValidateInputParameters(inputPath, outputPath, quality);
         cancellationToken.ThrowIfCancellationRequested();
@@ -51,9 +53,49 @@ public class CjxlEncoderService : ICjxlEncoder
 
         string cjxlPath = await ResolveCjxlExecutableAsync(cancellationToken);
 
-        var args = BuildEncodingArguments(quality, metadata, inputPath, outputPath);
+        var args = BuildEncodingArguments(quality, metadata, inputPath, outputPath, effort, rawDistance);
 
         await ExecuteEncodingProcessAsync(cjxlPath, args, cancellationToken, timeoutSeconds, progress);
+
+        VerifyOutputFile(outputPath);
+
+        if (metadata != null && metadata.HasAny)
+        {
+            await _exiftoolService.EmbedMetadataAsync(originalArwPath, outputPath, metadata, cancellationToken);
+        }
+    }
+
+    public async Task EncodeFromStreamAsync(
+        Stream inputStream,
+        string originalArwPath,
+        string outputPath,
+        int quality,
+        MetadataProfiles? metadata = null,
+        CancellationToken cancellationToken = default,
+        int timeoutSeconds = DefaultTimeoutSeconds,
+        Action<double>? progress = null,
+        int? effort = null,
+        float? rawDistance = null)
+    {
+        if (string.IsNullOrWhiteSpace(outputPath))
+        {
+            throw new ArgumentNullException(nameof(outputPath), "Output path cannot be null or empty.");
+        }
+
+        if (quality < 0 || quality > 100)
+        {
+            throw new ArgumentOutOfRangeException(nameof(quality), "Quality must be between 0 and 100.");
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        EnsureOutputDirectoryExists(outputPath);
+
+        string cjxlPath = await ResolveCjxlExecutableAsync(cancellationToken);
+
+        var args = BuildStreamEncodingArguments(quality, metadata, outputPath, effort, rawDistance);
+
+        await ExecuteEncodingProcessFromStreamAsync(cjxlPath, args, inputStream, cancellationToken, timeoutSeconds, progress);
 
         VerifyOutputFile(outputPath);
 
@@ -128,12 +170,14 @@ public class CjxlEncoderService : ICjxlEncoder
         int quality,
         MetadataProfiles? metadata,
         string inputPath,
-        string outputPath)
+        string outputPath,
+        int? effortOverride = null,
+        float? rawDistance = null)
     {
         var args = new List<string>(16);
 
-        float distance = QualityCalculator.CalculateDistance(quality);
-        int effort = QualityCalculator.CalculateEffort(quality);
+        float distance = rawDistance ?? QualityCalculator.CalculateDistance(quality);
+        int effort = effortOverride ?? QualityCalculator.CalculateEffort(quality);
         bool isLossless = QualityCalculator.IsLossless(quality);
 
         args.Add(isLossless ? "--distance=0" : $"--distance={distance:F2}");
@@ -150,13 +194,89 @@ public class CjxlEncoderService : ICjxlEncoder
             args.Add("--progressive_dc=1");
         }
 
-        _logger.Write($"[CjxlEncoder] Building args: quality={quality}, metadata={metadata?.HasAny}");
+        _logger.Write($"[CjxlEncoder] Building args: quality={quality}, effort={effort}, distance={distance:F2}, metadata={metadata?.HasAny}");
         AddMetadataArguments(args, metadata);
 
         args.Add(inputPath);
         args.Add(outputPath);
 
         return args;
+    }
+
+     protected internal List<string> BuildStreamEncodingArguments(
+        int quality,
+        MetadataProfiles? metadata,
+        string outputPath,
+        int? effortOverride = null,
+        float? rawDistance = null)
+    {
+        var args = new List<string>(16);
+
+        float distance = rawDistance ?? QualityCalculator.CalculateDistance(quality);
+        int effort = effortOverride ?? QualityCalculator.CalculateEffort(quality);
+        bool isLossless = QualityCalculator.IsLossless(quality);
+
+        args.Add(isLossless ? "--distance=0" : $"--distance={distance:F2}");
+        args.Add($"--effort={effort}");
+        args.Add($"--num_threads={Environment.ProcessorCount}");
+        args.Add("--container=1");
+
+        if (isLossless)
+        {
+            args.Add("--modular=1");
+        }
+        else
+        {
+            args.Add("--progressive_dc=1");
+        }
+
+        _logger.Write($"[CjxlEncoder] Building stream args: quality={quality}, effort={effort}, distance={distance:F2}, metadata={metadata?.HasAny}");
+        AddMetadataArguments(args, metadata);
+
+        args.Add("-");
+        args.Add(outputPath);
+
+        return args;
+    }
+
+    private async Task ExecuteEncodingProcessFromStreamAsync(
+        string cjxlPath,
+        List<string> args,
+        Stream inputStream,
+        CancellationToken cancellationToken,
+        int timeoutSeconds,
+        Action<double>? progress)
+    {
+        var argumentsString = string.Join(" ", args.Select(EscapeArgument));
+
+        _logger.Write($"[CjxlEncoder] Full cjxl command (stdin): {cjxlPath} {argumentsString}");
+        _logger.Write($"[CjxlEncoder] Raw args ({args.Count}): [{string.Join("] [", args)}]");
+
+        var startTime = DateTime.UtcNow;
+        var progressTask = ReportProgressAsync(startTime, TimeSpan.FromSeconds(timeoutSeconds), progress, cancellationToken);
+
+        var result = await _processRunner.RunProcessWithStdinAsync(cjxlPath, argumentsString, inputStream, timeoutSeconds, cancellationToken);
+
+        _logger.Write($"cjxl stdout: {result.Stdout}");
+        _logger.Write($"cjxl stderr: {result.Stderr}");
+
+        if (result.TimedOut)
+        {
+            throw new TimeoutException(
+                $"cjxl encoding timed out after {timeoutSeconds} seconds. " +
+                "Consider increasing the timeout for large files.");
+        }
+
+        if (result.ExitCode != 0)
+        {
+            string errorMessage = string.IsNullOrWhiteSpace(result.Stderr)
+                ? "Unknown error occurred during encoding"
+                : result.Stderr.Trim();
+
+            throw new CjxlEncodingException(
+                $"cjxl encoding failed with exit code {result.ExitCode}: {errorMessage}",
+                result.ExitCode);
+        }
     }
 
     private void AddMetadataArguments(List<string> args, MetadataProfiles? metadata)
