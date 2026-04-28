@@ -13,10 +13,15 @@ ARWtoJXL.Tests/
 ├── QualityCalculatorTests.cs     # Unit tests for quality calculations (no DI)
 ├── FileLockedExceptionTests.cs   # Unit tests for IsFileLocked() detection logic (Moq, no DI)
 ├── SubfolderValidationTests.cs   # Unit tests for SettingsViewModel.ValidateSubfolderName() (no DI)
-├── RawDistanceValidationTests.cs # Unit tests for SettingsViewModel.ValidateRawDistance() (no DI)
 ├── ImageItemViewModelTests.cs    # Unit tests for EffectiveQuality fallback logic (no DI)
 ├── CjxlEncoderArgumentsTests.cs  # Unit tests for BuildEncodingArguments() via protected internal test subclass (Moq)
-├── SmokeTests.cs                 # Avalonia Headless UI smoke tests (headless MainWindow, MainViewModel, command tests)
+├── GUITests/                     # Avalonia Headless GUI tests (split by category)
+│   ├── GUITestHelpers.cs         # Shared helpers: CreateViewModel, CreateWindow, GetAllControls, FindAll, SettingsScope
+│   ├── MainWindowStructuralTests.cs     # MainWindow structure: title, buttons, ListBox, ProgressBar, status bar, drag-drop, min size
+│   ├── MainWindowBehavioralTests.cs     # MainWindow behavior: ListBox item display, command bindings, drag-drop behavior
+│   ├── SettingsWindowTests.cs          # SettingsWindow structure: tabs, buttons, subfolder validation
+│   ├── SettingsPersistenceTests.cs     # Settings persistence round-trip: quality, format, effort, metadata, subfolder, conflict, presets
+│   └── ConfirmDialogTests.cs           # ConfirmDialog structure and behavior: buttons, message, data context, title binding
 └── Services/                     # Empty directory (reserved for future service tests)
 ```
 
@@ -27,14 +32,14 @@ ARWtoJXL.Tests/
 ## Running Tests
 
 ```bash
-# All tests except smoke and manual (default)
-dotnet test --filter "category!=smoke&category!=manual"
+# All tests except GUI and manual (default)
+dotnet test --filter "category!=gui&category!=manual"
 
-# Include smoke tests
+# Include GUI tests
 dotnet test --filter "category!=manual"
 
 # Run only unit tests (fast, ~0.4s)
-dotnet test --filter "FullyQualifiedName~QualityCalculatorTests|FullyQualifiedName~FileLockedExceptionTests|FullyQualifiedName~SubfolderValidationTests|FullyQualifiedName~RawDistanceValidationTests|FullyQualifiedName~ImageItemViewModelTests|FullyQualifiedName~CjxlEncoderArgumentsTests"
+dotnet test --filter "FullyQualifiedName~QualityCalculatorTests|FullyQualifiedName~FileLockedExceptionTests|FullyQualifiedName~SubfolderValidationTests|FullyQualifiedName~ImageItemViewModelTests|FullyQualifiedName~CjxlEncoderArgumentsTests"
 ```
 
 ## Test Suites
@@ -48,14 +53,11 @@ dotnet test --filter "FullyQualifiedName~QualityCalculatorTests|FullyQualifiedNa
 ### SubfolderValidationTests
 13 unit tests for `SettingsViewModel.ValidateSubfolderName()` static method. Tests empty/whitespace input, valid names, invalid path characters (platform-aware), leading/trailing whitespace, length limits, dot/dotdot names, and reserved Windows names (CON, PRN, AUX, NUL, COM1-9, LPT1-9). No DI needed.
 
-### RawDistanceValidationTests
-7 unit tests for `SettingsViewModel.ValidateRawDistance()` static method. Tests empty/whitespace input (returns null), valid numeric values (0.0-150.0), negative values, too-high values, and non-numeric strings. No DI needed.
-
 ### ImageItemViewModelTests
 6 unit tests for `ImageItemViewModel.EffectiveQuality()` method. Tests global quality fallback, quality override, zero/100 edge cases, and override clearing. Also covers `SizeInfoText` computed property for compression ratio display. No DI needed.
 
 ### CjxlEncoderArgumentsTests
-15 unit tests for `CjxlEncoderService.BuildEncodingArguments()` via a `protected internal` test subclass. Tests distance/effort argument generation, lossless vs lossy mode flags, metadata argument omission, input/output path positioning, effort override, and raw distance override. Uses Moq for `ILogger`, `IPathResolver`, `IExiftoolService`.
+13 unit tests for `CjxlEncoderService.BuildEncodingArguments()` via a `protected internal` test subclass. Tests distance/effort argument generation, lossless vs lossy mode flags, metadata argument omission, input/output path positioning, and effort override. Uses Moq for `ILogger`, `IPathResolver`, `IExiftoolService`.
 
 ### ConversionTests
 Integration tests with real ARW files (inherits `Startup`):
@@ -80,30 +82,61 @@ Diagnostic test tagged with `[Trait("category", "manual")]` — does NOT run by 
 - Assertions: minimum 5 matched tags, no missing tags, output has metadata
 - Run with: `dotnet test --filter "category=manual"`
 
-### SmokeTests
-Avalonia Headless UI smoke tests (no DI, implements `IDisposable` for cleanup):
-- Uses `Avalonia.Headless` to launch `App` in headless session
-- Mocks `IDialogService`, `IFilePickerService`, `IDispatcherService`
-- Creates `MainViewModel` and `MainWindow` directly in headless context
-- Verifies window title is "ARW to JXL Converter"
-- Verifies toolbar buttons exist: Open File, Select All, Convert, Remove, Cancel, Open Output Folder, Settings, Load All, Clear
-- Verifies gallery ListBox (`ImagesListBox`) with `SelectionMode.Multiple`
-- Verifies progress bar, status bar text ("Ready"), recent files section
-- **AddFiles_AddsItemsToGallery**: Creates temp .arw files, adds via `MainViewModel.AddFilesAsync`, verifies count, filename, status
-- **AddFiles_SkipsDuplicates**: Verifies duplicate files are not added
-- **AddFiles_SkipsInvalidExtensions**: Verifies non-.arw/.jxl files are rejected
-- **SelectAll_SelectsAllItems**: Verifies `SelectAllCommand` selects all items and sets `IsAllSelected`/`IsAnySelected`
-- **RemoveSelected_RemovesItems**: Verifies `RemoveSelectedCommand` removes items, clears selection, updates status message
-- **RemoveSelected_DoesNotCrashApp**: Regression test for race condition with background thumbnail generation
-- **ClearRecentFiles_ClearsList**: Verifies `ClearRecentFilesCommand` clears recent files
-- **SettingsWindow_CreatesSuccessfully**: Verifies `SettingsWindow` can be created in headless mode
-- **SettingsWindow_HasExpectedControls**: Verifies settings window has Save/Cancel/Browse/Load/Save As/Delete buttons, sliders, checkboxes, comboboxes
-- **ConfirmDialog_CreatesSuccessfully**: Verifies `ConfirmDialog` can be created
-- **ViewModel_Commands_AreInitiallyDisabled**: Verifies `RemoveSelectedCommand` and `ConvertSelectedCommand` are disabled with no selection
-- **ViewModel_RemoveCommand_Enabled_AfterSelection**: Verifies `RemoveSelectedCommand` becomes enabled after selection
-- **ImageItem_EffectiveQuality_UsesOverride**: Verifies `ImageItemViewModel.EffectiveQuality()` uses per-file override
-- **ImageItem_EffectiveQuality_FallsBackToGlobal**: Verifies `ImageItemViewModel.EffectiveQuality()` falls back to global quality
-- Tagged with `[Trait("category", "smoke")]` — run with `dotnet test --filter "category=smoke"`
+### GUITests
+Avalonia Headless GUI tests (no DI, mocks services). Split into `GUITests/` folder by category. Shared utilities in `GUITestHelpers.cs` (`CreateViewModel`, `CreateWindow`, `GetAllControls`, `FindAll`, `SettingsScope`). All tagged `[Trait("category", "gui")]`.
+
+**MainWindowStructuralTests** (10 tests):
+- **MainWindow_Opens_And_HasExpectedTitle**: Verifies title is "ARW to JXL Converter"
+- **MainWindow_HasToolbarButtons**: Verifies all toolbar buttons exist
+- **MainWindow_CancelButton_Hidden_WhenNotConverting**: Verifies cancel button hidden by default
+- **MainWindow_HasGalleryListBox**: Verifies `ImagesListBox` with `SelectionMode.Multiple`
+- **MainWindow_HasProgressBar**: Verifies at least one progress bar exists
+- **MainWindow_HasStatusBarText**: Verifies "Ready" status text
+- **MainWindow_HasRecentFilesSection**: Verifies "Recent" section label
+- **MainWindow_HasDragDropEnabled**: Verifies root Grid has `DragDrop.AllowDrop=true`
+- **MainWindow_DataContext_IsMainViewModel**: Verifies data context type
+- **MainWindow_MinSize_IsSet**: Verifies min width 800, min height 600
+
+**MainWindowBehavioralTests** (10 tests):
+- **MainWindow_ListBox_DisplaysItemsFromViewModel**: Verifies ListBox reflects ViewModel Images collection
+- **MainWindow_ListBox_Items_AreImageItemViewModels**: Verifies ListBox items are `ImageItemViewModel` instances
+- **MainWindow_ConvertButton_Command_BoundToConvertSelectedCommand**: Verifies Convert button binding
+- **MainWindow_RemoveButton_Command_BoundToRemoveSelectedCommand**: Verifies Remove button binding
+- **MainWindow_SelectAllButton_Command_BoundToSelectAllCommand**: Verifies Select All button binding
+- **MainWindow_SettingsButton_Command_BoundToOpenSettingsCommand**: Verifies Settings button binding
+- **MainWindow_CancelButton_Command_BoundToCancelCommand**: Verifies Cancel button binding
+- **MainWindow_StatusBar_BindsToStatusMessage**: Verifies status bar binds to ViewModel StatusMessage
+- **MainWindow_DragDropBehavior_EnabledOnRootGrid**: Verifies `DragDropBehavior.EnableDragDrop` and `AllowDrop`
+- **MainWindow_DragDropBehavior_HasDropHandlerAttached**: Verifies drag-drop behavior infrastructure
+
+**SettingsWindowTests** (5 tests):
+- **SettingsWindow_CreatesSuccessfully**: Verifies window title is "Settings"
+- **SettingsWindow_HasFourTabs**: Verifies Conversion/Output/Behavior/Presets tabs exist
+- **SettingsWindow_HasSaveAndCancelButton**: Verifies Save and Cancel buttons exist
+- **SettingsWindow_SubfolderValidation_HidesWhenValid**: Verifies valid subfolder names pass validation
+- **SettingsWindow_SubfolderValidation_ShowsWhenInvalid**: Verifies invalid chars, reserved names, whitespace fail validation
+
+**SettingsPersistenceTests** (10 tests):
+Each test follows: open settings → select tab → change UI control → verify settings file → close → reopen → verify value persisted. Uses `SettingsScope` to isolate `settings.json` per test.
+- **SettingsWindow_QualityPreset_PersistsAcrossReopens**: Conversion tab — quality slider
+- **SettingsWindow_OutputFormat_PersistsAcrossReopens**: Conversion tab — output format ComboBox
+- **SettingsWindow_CjxlEffort_PersistsAcrossReopens**: Conversion tab — effort ComboBox
+- **SettingsWindow_SkipMetadata_PersistsAcrossReopens**: Conversion tab — skip metadata CheckBox
+- **SettingsWindow_UseSubfolder_PersistsAcrossReopens**: Output tab — use subfolder CheckBox
+- **SettingsWindow_SubfolderName_PersistsAcrossReopens**: Output tab — subfolder name TextBox
+- **SettingsWindow_SearchRecursive_PersistsAcrossReopens**: Output tab — recursive search CheckBox
+- **SettingsWindow_ConflictResolution_PersistsAcrossReopens**: Behavior tab — conflict resolution ComboBox
+- **SettingsWindow_ConfirmOverwrite_PersistsAcrossReopens**: Behavior tab — confirm overwrite CheckBox
+- **SettingsWindow_Preset_SavesAndPersists**: Presets tab — create preset via Save As button
+
+**ConfirmDialogTests** (7 tests):
+- **ConfirmDialog_CreatesSuccessfully**: Verifies dialog can be created
+- **ConfirmDialog_HasYesAndNoButtons**: Verifies Yes/No buttons exist
+- **ConfirmDialog_HasMessageTextBlock**: Verifies message TextBlock with bound text
+- **ConfirmDialog_DataContext_IsItself**: Verifies data context is the dialog itself
+- **ConfirmDialog_YesButton_HasClickHandler**: Verifies Yes button is `IsDefault`
+- **ConfirmDialog_NoButton_HasClickHandler**: Verifies No button is `IsCancel`
+- **ConfirmDialog_TitleText_BindsToWindowTitle**: Verifies `TitleText` property binds to window `Title`
 
 ## Key Dependencies
 
@@ -111,4 +144,4 @@ Avalonia Headless UI smoke tests (no DI, implements `IDisposable` for cleanup):
 - **Moq**: Mocking framework (BSD-3-Clause)
 - **Avalonia.Headless** (12.0.1): Headless UI testing for Avalonia (MIT)
 - Depends on `ARWtoJXL.Core` for services under test
-- Depends on `ARWtoJXL.Avalonia` for smoke test target application
+- Depends on `ARWtoJXL.Avalonia` for GUI test target application
