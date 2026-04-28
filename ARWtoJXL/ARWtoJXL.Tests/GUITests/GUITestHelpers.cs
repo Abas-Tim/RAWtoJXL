@@ -5,6 +5,7 @@ using ARWtoJXL.Avalonia;
 using ARWtoJXL.Avalonia.Services;
 using ARWtoJXL.Avalonia.ViewModels;
 using ARWtoJXL.Core.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
 namespace ARWtoJXL.Tests.GUITests;
@@ -131,6 +132,7 @@ public static class GUITestHelpers
         readonly string _settingsPath;
         readonly string _backupPath;
         readonly bool _fileExisted;
+        readonly IServiceProvider _testServiceProvider;
 
         public SettingsScope()
         {
@@ -142,6 +144,11 @@ public static class GUITestHelpers
             if (_fileExisted)
                 File.Copy(_settingsPath, _backupPath, overwrite: true);
             SettingsService.Save(new AppSettings());
+
+            var services = new ServiceCollection();
+            services.AddSingleton<IFilePickerService>(CreateMockFilePicker());
+            _testServiceProvider = services.BuildServiceProvider();
+            App.Services = _testServiceProvider;
         }
 
         public void Dispose()
@@ -156,6 +163,16 @@ public static class GUITestHelpers
                     File.Delete(_backupPath);
             }
             catch { }
+        }
+
+        private static IFilePickerService CreateMockFilePicker()
+        {
+            var mock = new Mock<IFilePickerService>();
+            mock.Setup(x => x.PickFilesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()))
+                .ReturnsAsync(Array.Empty<string>());
+            mock.Setup(x => x.PickFolderAsync(It.IsAny<string>()))
+                .ReturnsAsync((string?)null);
+            return mock.Object;
         }
     }
 }

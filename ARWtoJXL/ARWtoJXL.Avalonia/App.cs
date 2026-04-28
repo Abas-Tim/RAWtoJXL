@@ -12,6 +12,8 @@ namespace ARWtoJXL.Avalonia;
 
 public partial class App : Application
 {
+    public static IServiceProvider? Services { get; internal set; }
+
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
@@ -27,6 +29,7 @@ public partial class App : Application
             serviceCollection.AddSingleton<IDispatcherService, DispatcherService>();
             serviceCollection.AddSingleton<IFilePickerService, FilePickerService>();
             var serviceProvider = serviceCollection.BuildServiceProvider();
+            Services = serviceProvider;
 
             var imageService = serviceProvider.GetRequiredService<IImageService>();
             var dialogService = serviceProvider.GetRequiredService<IDialogService>();

@@ -160,20 +160,20 @@ namespace ARWtoJXL.Avalonia.ViewModels
             SaveSettings();
         }
 
-         public void ApplySettings(SettingsViewModel settings)
+         public void RefreshSettings()
         {
-            UseSubfolder = settings.UseSubfolder;
-            SubfolderName = settings.SubfolderName;
-            QualityPreset = settings.QualityPreset;
-            SearchRecursive = settings.SearchRecursive;
-            OutputFormat = settings.OutputFormat;
-            ConflictResolution = settings.ConflictResolution;
-            ConfirmOverwrite = settings.ConfirmOverwrite;
-            UseCustomOutputDirectory = settings.UseCustomOutputDirectory;
-            CustomOutputDirectory = settings.CustomOutputDirectory;
-            SkipMetadata = settings.SkipMetadata;
-            CjxlEffort = settings.CjxlEffort;
-            SaveSettings();
+            var saved = SettingsService.Load();
+            UseSubfolder = saved.UseSubfolder;
+            SubfolderName = saved.SubfolderName;
+            QualityPreset = saved.QualityPreset;
+            SearchRecursive = saved.SearchRecursive;
+            OutputFormat = saved.OutputFormat;
+            ConflictResolution = saved.ConflictResolution;
+            ConfirmOverwrite = saved.ConfirmOverwrite;
+            UseCustomOutputDirectory = saved.UseCustomOutputDirectory;
+            CustomOutputDirectory = saved.CustomOutputDirectory;
+            SkipMetadata = saved.SkipMetadata;
+            CjxlEffort = saved.CjxlEffort;
         }
 
         [ObservableProperty]

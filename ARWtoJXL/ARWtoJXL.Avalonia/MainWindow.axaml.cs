@@ -28,22 +28,9 @@ namespace ARWtoJXL.Avalonia
                 if (viewModel == null) return;
 
                 _settingsWindow = new SettingsWindow();
-
-                _settingsWindow.Settings.UseSubfolder = viewModel.UseSubfolder;
-                _settingsWindow.Settings.SubfolderName = viewModel.SubfolderName;
-                _settingsWindow.Settings.QualityPreset = viewModel.QualityPreset;
-                _settingsWindow.Settings.SearchRecursive = viewModel.SearchRecursive;
-                _settingsWindow.Settings.OutputFormat = viewModel.OutputFormat;
-                _settingsWindow.Settings.ConflictResolution = viewModel.ConflictResolution;
-                _settingsWindow.Settings.ConfirmOverwrite = viewModel.ConfirmOverwrite;
-                _settingsWindow.Settings.UseCustomOutputDirectory = viewModel.UseCustomOutputDirectory;
-                _settingsWindow.Settings.CustomOutputDirectory = viewModel.CustomOutputDirectory;
-                _settingsWindow.Settings.SkipMetadata = viewModel.SkipMetadata;
-                _settingsWindow.Settings.CjxlEffort = viewModel.CjxlEffort;
-
                 _settingsWindow.Closed += (s, args) =>
                 {
-                    viewModel.ApplySettings(_settingsWindow!.Settings);
+                    viewModel.RefreshSettings();
                     _settingsWindow = null;
                 };
 
