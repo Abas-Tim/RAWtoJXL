@@ -290,7 +290,7 @@ public class CjxlEncoderService : ICjxlEncoder
         _logger.Write($"[CjxlEncoder] Raw args ({args.Count}): [{string.Join("] [", args)}]");
 
         var startTime = DateTime.UtcNow;
-        var progressTask = ReportProgressAsync(startTime, TimeSpan.FromSeconds(timeoutSeconds), progress, cancellationToken);
+        var progressTask = ReportProgressAsync(startTime, TimeSpan.FromSeconds(timeoutSeconds), progress, cancellationToken, _logger);
 
         var result = await _processRunner.RunProcessWithStdinAsync(cjxlPath, argumentsString, inputStream, timeoutSeconds, cancellationToken);
 
@@ -356,7 +356,7 @@ public class CjxlEncoderService : ICjxlEncoder
         _logger.Write($"[CjxlEncoder] Raw args ({args.Count}): [{string.Join("] [", args)}]");
 
         var startTime = DateTime.UtcNow;
-        var progressTask = ReportProgressAsync(startTime, TimeSpan.FromSeconds(timeoutSeconds), progress, cancellationToken);
+        var progressTask = ReportProgressAsync(startTime, TimeSpan.FromSeconds(timeoutSeconds), progress, cancellationToken, _logger);
 
         var result = await _processRunner.RunProcessWithTimeoutAsync(cjxlPath, argumentsString, timeoutSeconds, cancellationToken);
 
@@ -397,7 +397,7 @@ public class CjxlEncoderService : ICjxlEncoder
         _logger.Write($"[CjxlEncoder] Raw args ({args.Count}): [{string.Join("] [", args)}]");
 
         var startTime = DateTime.UtcNow;
-        var progressTask = ReportProgressAsync(startTime, TimeSpan.FromSeconds(timeoutSeconds), progress, cancellationToken);
+        var progressTask = ReportProgressAsync(startTime, TimeSpan.FromSeconds(timeoutSeconds), progress, cancellationToken, _logger);
 
         var startInfo = new ProcessStartInfo
         {
@@ -527,7 +527,8 @@ public class CjxlEncoderService : ICjxlEncoder
         DateTime startTime,
         TimeSpan maxTime,
         Action<double>? progress,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        ILogger logger)
     {
         if (progress == null) return;
 
@@ -536,7 +537,14 @@ public class CjxlEncoderService : ICjxlEncoder
             await Task.Delay(100, cancellationToken);
             var elapsed = DateTime.UtcNow - startTime;
             var fraction = Math.Min(elapsed.TotalSeconds / maxTime.TotalSeconds, 0.98);
-            progress?.Invoke(fraction);
+            try
+            {
+                progress(fraction);
+            }
+            catch (Exception ex)
+            {
+                logger.Write($"[CjxlEncoder] Progress callback threw: {ex.GetBaseException().Message}");
+            }
         }
     }
 

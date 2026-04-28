@@ -55,7 +55,7 @@ ARWtoJXL.Core/
 Defines two async operations:
 - `GetThumbnailAsync(filePath, cancellationToken)` → `byte[]`: Extracts thumbnail from ARW/JXL using Magick.NET (300x300 JPG)
 - `ConvertArwToJxlAsync(inputPath, outputPath, progress, quality, outputFormat, cancellationToken, skipMetadata, effort)`: Orchestrates conversion pipeline
-  - `progress` is a required `Action<double>` callback (non-nullable, no default)
+  - `progress` is a required `Action<double>` callback (non-nullable, no default). Fault-tolerant: exceptions from the callback are caught and logged, preventing pipeline breakage and orphaned temp files.
   - `outputFormat = OutputFormat.Jxl`: Two-stage direct PPM streaming to cjxl stdin via `StreamPpmToAsync` + writer delegate — zero intermediate disk I/O, single file open, native ImageMagick C-code encoding
   - `outputFormat = OutputFormat.Jpeg`: ARW→JPEG via IImageConverterService with quality setting + exiftool metadata embedding
   - `outputFormat = OutputFormat.Png`: Direct ARW→PNG via Magick.NET (16-bit lossless)
@@ -113,7 +113,7 @@ public ImageProcessingService(
 - `EncodeFromStreamAsync(inputPath, originalArwPath, outputPath, quality, metadata, ppmWriter, cancellationToken, timeoutSeconds, progress, effort)`: Encodes from a PPM writer delegate — `ppmWriter(Stream, CancellationToken)` writes PPM directly to cjxl stdin via `ExecuteEncodingProcessWithWriterAsync`, zero intermediate buffering. All parameters except `progress` and `effort` are required (no defaults).
 - Uses `QualityCalculator` for distance/effort mapping when overrides not provided
 - Handles lossless (quality≥100) and lossy modes
-- **cjxl progress estimation:** cjxl v0.11.2 does not output percentage progress during encoding. A background task (`ReportProgressAsync`) reports linear progress from 0.0 to 0.98 during cjxl encoding (updated every 100ms), mapped to 0.5→1.0 in the overall pipeline.
+- **cjxl progress estimation:** cjxl v0.11.2 does not output percentage progress during encoding. A background task (`ReportProgressAsync`) reports linear progress from 0.0 to 0.98 during cjxl encoding (updated every 100ms), mapped to 0.5→1.0 in the overall pipeline. Progress invocations are wrapped in try-catch so a failing callback does not abort encoding.
 - **Metadata embedding:** Delegates to `IExiftoolService.EmbedMetadataAsync()` for post-encoding metadata embedding via exiftool.
 - **BuildEncodingArguments:** `protected internal` method for constructing cjxl CLI arguments. Accepts optional effort override and raw distance. Testable via subclass in test project (covered by `CjxlEncoderArgumentsTests`).
 - **BuildStreamEncodingArguments:** `protected internal` method for constructing cjxl CLI arguments for stdin pipe encoding (input arg is `-`).

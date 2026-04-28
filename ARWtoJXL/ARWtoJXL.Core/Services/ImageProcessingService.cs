@@ -74,7 +74,7 @@ public class ImageProcessingService : IImageService
 
         try
         {
-            progress?.Invoke(0.1);
+            ReportProgress(progress, 0.1);
 
             if (!skipMetadata)
             {
@@ -89,7 +89,7 @@ public class ImageProcessingService : IImageService
                 _logger.Write($"[ImageProcessing] Metadata extraction skipped for {Path.GetFileName(inputPath)}");
             }
 
-            progress?.Invoke(0.3);
+            ReportProgress(progress, 0.3);
 
             await _cjxlEncoder.EncodeFromStreamAsync(
                 inputPath,
@@ -100,10 +100,10 @@ public class ImageProcessingService : IImageService
                 async (stream, ct) => await _imageConverterService.StreamPpmToAsync(inputPath, stream, ct),
                 cancellationToken,
                 timeoutSeconds: 300,
-                cjxlProgress => progress?.Invoke(0.35 + cjxlProgress * 0.63),
+                cjxlProgress => ReportProgress(progress, 0.35 + cjxlProgress * 0.63),
                 effort);
 
-            progress?.Invoke(1.0);
+            ReportProgress(progress, 1.0);
 
             if (!_fileService.FileExists(outputPath))
             {
@@ -124,7 +124,7 @@ public class ImageProcessingService : IImageService
         CancellationToken cancellationToken,
         bool skipMetadata = false)
     {
-        progress?.Invoke(0.1);
+        ReportProgress(progress, 0.1);
 
         MetadataProfiles? metadata = null;
         if (!skipMetadata)
@@ -139,14 +139,14 @@ public class ImageProcessingService : IImageService
         try
         {
             await _imageConverterService.ConvertToJpegAsync(inputPath, outputPath, quality, cancellationToken);
-            progress?.Invoke(0.9);
+            ReportProgress(progress, 0.9);
 
             if (metadata != null && metadata.HasAny)
             {
                 await _exiftoolService.EmbedMetadataAsync(inputPath, outputPath, metadata, cancellationToken);
             }
 
-            progress?.Invoke(1.0);
+            ReportProgress(progress, 1.0);
 
             if (!_fileService.FileExists(outputPath))
             {
@@ -166,7 +166,7 @@ public class ImageProcessingService : IImageService
         CancellationToken cancellationToken,
         bool skipMetadata = false)
     {
-        progress?.Invoke(0.1);
+        ReportProgress(progress, 0.1);
 
         MetadataProfiles? metadata = null;
         if (!skipMetadata)
@@ -181,14 +181,14 @@ public class ImageProcessingService : IImageService
         try
         {
             await _imageConverterService.ConvertToPngAsync(inputPath, outputPath, cancellationToken);
-            progress?.Invoke(0.7);
+            ReportProgress(progress, 0.7);
 
             if (metadata != null && metadata.HasAny)
             {
                 await _exiftoolService.EmbedMetadataAsync(inputPath, outputPath, metadata, cancellationToken);
             }
 
-            progress?.Invoke(1.0);
+            ReportProgress(progress, 1.0);
 
             if (!_fileService.FileExists(outputPath))
             {
@@ -211,6 +211,18 @@ public class ImageProcessingService : IImageService
         {
             _logger.Write($"[ImageProcessing] Metadata extraction failed: {ex.GetBaseException().Message}");
             return null;
+        }
+    }
+
+    private void ReportProgress(Action<double> progress, double value)
+    {
+        try
+        {
+            progress(value);
+        }
+        catch (Exception ex)
+        {
+            _logger.Write($"[ImageProcessing] Progress callback threw: {ex.GetBaseException().Message}");
         }
     }
 }
