@@ -57,22 +57,7 @@ Workflow
     Discover validation commands from local tooling, then run the narrowest relevant check.
 
 Workflow compression applies only to coupled, single-track work where the next step depends on the current finding.
-
 For review, debugging, or analysis requests, do not force code changes once findings are evidenced.
-Subagents
-
-Use 2+ subagents or none. NEVER launch exactly 1 subagent.
-
-The main agent is a builder, not a dispatcher. Work first, delegate second. Use subagents proactively, but only after main-agent scoping has clearly split the work into 2+ parallel independent tracks. A subagent call blocks the main agent, so main agent + 1 subagent is sequential work, not parallelism.
-
-    Scope the whole batch in the main agent before the first subagent call. If only one subagent task is ready, use zero subagents and keep scoping in the main agent.
-    Independence is execution independence, not shared final synthesis. If one track's findings decide what another track should inspect or how, keep scoping in the main agent.
-    A valid batch has 2+ substantial independent subagents, each with a distinct concern and clear return format. One broad exploratory subagent is not a batch, even if it performs many reads, searches, or internal parallel work.
-    Launch the batch together and wait for all results. Later singleton launches do not complete an earlier batch. If the interface cannot start 2+ subagents together, use zero subagents.
-    Keep quick scoping, simple concurrent I/O, and work on data already in context in the main agent. Use parallel tool calls when helpful.
-    Use subagents for repo exploration only after the exploration is split into 2+ substantial independent concerns.
-    Do not hand off data already in main-agent context to a subagent for formatting, transformation, or generation.
-    After the batch returns, synthesize results and use the main agent only for narrow gap-filling before implementation.
 
 Testing
 
@@ -130,7 +115,7 @@ For review, debugging, or analysis outputs, use: findings with references, concl
 - **Before reading source files, check the documentation for the project you are working on:**
   - Root overview: `docs/PROJECT_OVERVIEW.md`
   - Core project: `ARWtoJXL/ARWtoJXL.Core/docs/PROJECT.md`
-  - WPF project: `ARWtoJXL/ARWtoJXL.WPF/docs/PROJECT.md`
+  - Avalonia GUI project: `ARWtoJXL/ARWtoJXL.Avalonia/docs/PROJECT.md`
   - Tests project: `ARWtoJXL/ARWtoJXL.Tests/docs/PROJECT.md`
 - **Write code with no duplication. Design with DI in mind — depend on interfaces, not concrete implementations.**
 - **After any source code changes, update the corresponding project's `docs/PROJECT.md` to reflect the new state.**
@@ -138,7 +123,7 @@ For review, debugging, or analysis outputs, use: findings with references, concl
 
 # ARWtoJPEGXL
 
-High-performance Windows desktop app for converting Sony RAW (.ARW) to JPEG-XL (.JXL). .NET 8, WPF, MVVM.
+High-performance Windows desktop app for converting Sony RAW (.ARW) to JPEG-XL (.JXL). .NET 8, Avalonia, MVVM.
 
 ## Directory Structure
 
@@ -157,8 +142,8 @@ ARWtoJPEGXL/
     │   └── docs/PROJECT.md               # Core documentation
     ├── ARWtoJXL.Tests/                    # xUnit tests
     │   └── docs/PROJECT.md               # Tests documentation
-    └── ARWtoJXL.WPF/                      # WPF UI
-        └── docs/PROJECT.md               # WPF documentation
+    └── ARWtoJXL.Avalonia/                      # Avalonia UI
+        └── docs/PROJECT.md               # Avalonia documentation
 ```
 
 ## Git Ignore Policy

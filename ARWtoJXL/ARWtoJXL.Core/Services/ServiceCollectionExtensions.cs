@@ -9,13 +9,13 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddCoreServices(this IServiceCollection services)
     {
         services.AddSingleton<ILogger, FileLogger>();
-        services.AddSingleton<IProcessRunner, SystemProcessRunner>();
-        services.AddSingleton<IFileService, FileService>(sp => new FileService(sp.GetRequiredService<ILogger>()));
-        services.AddSingleton<IPathResolver, PathResolverService>();
-        services.AddSingleton<IExiftoolService, ExiftoolService>();
-        services.AddSingleton<IImageConverterService, ImageConverterService>();
-        services.AddSingleton<ICjxlEncoder, CjxlEncoderService>();
-        services.AddSingleton<IImageService, ImageProcessingService>();
+        services.AddTransient<IProcessRunner, SystemProcessRunner>();
+        services.AddTransient<IFileService, FileService>();
+        services.AddTransient<IPathResolver, PathResolverService>();
+        services.AddTransient<IExiftoolService, ExiftoolService>();
+        services.AddTransient<IImageConverterService, ImageConverterService>();
+        services.AddTransient<ICjxlEncoder, CjxlEncoderService>();
+        services.AddTransient<IImageService, ImageProcessingService>();
 
         return services;
     }

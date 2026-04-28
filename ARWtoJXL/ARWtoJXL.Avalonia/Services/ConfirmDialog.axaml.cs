@@ -7,7 +7,7 @@ namespace ARWtoJXL.Avalonia.Services
 {
     public partial class ConfirmDialog : Window, INotifyPropertyChanged
     {
-        public event PropertyChangedEventHandler? PropertyChanged;
+        public new event PropertyChangedEventHandler? PropertyChanged;
 
         private string _messageText = string.Empty;
         public string MessageText

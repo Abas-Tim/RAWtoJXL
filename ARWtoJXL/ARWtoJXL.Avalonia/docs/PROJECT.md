@@ -6,40 +6,42 @@ Avalonia UI presentation layer implementing the desktop app with MVVM pattern, d
 
 ```
 ARWtoJXL.Avalonia/
-├── App.axaml + App.axaml.cs          # Application entry point with DI container setup
-├── AppStrings.cs                     # Shared string resources
-├── MainWindow.axaml + .axaml.cs      # Main window with keyboard bindings, drag-drop, recent files, item template
-├── SettingsWindow.axaml + .axaml.cs  # Settings dialog with presets, cjxl options, file picker integration
-├── ViewLocator.cs                    # IDataTemplate implementation for MVVM view-model to view mapping
-├── Program.cs                        # App bootstrap with Avalonia app builder
-├── app.manifest                      # Application manifest (DPI awareness, v6 support)
+├── App.axaml + App.cs                       # Application entry point with DI container setup
+├── AppStrings.cs                            # Shared string resource constants (26 string constants)
+├── MainWindow.axaml + MainWindow.axaml.cs   # Main window with toolbar, image list, recent files, status bar
+├── SettingsWindow.axaml + SettingsWindow.axaml.cs # Resizable tabbed settings dialog (Conversion, Output, Behavior, Presets tabs)
+├── SettingsService.cs                       # Settings persistence (JSON-based), AppSettings/ConversionPreset models, ConflictResolution enum
+├── ViewLocator.cs                           # IDataTemplate implementation for MVVM view-model to view mapping
+├── Program.cs                               # App bootstrap with Avalonia app builder
+├── app.manifest                             # Application manifest (requestedExecutionLevel, Windows OS compatibility)
 ├── Behaviors/
-│   └── DragDropBehavior.cs           # Avalonia attached properties for drag-drop file/folder handling
+│   └── DragDropBehavior.cs                  # Avalonia attached property for drag-drop file/folder handling
 ├── Converters/
-│   ├── BooleanToBrushConverter.cs    # Bool to SolidColorBrush converter
-│   ├── BooleanToTextConverter.cs     # Bool to text converter
-│   ├── BooleanToValueConverter.cs    # Bool to value converter
-│   ├── ImageStatusToStringConverter.cs # ImageStatus enum to string converter
-│   ├── ImageStatusToVisibilityConverter.cs # ImageStatus to bool (IsVisible) converter
-│   ├── NullableIntConverter.cs       # Nullable int converter
-│   └── StringToVisibilityConverter.cs # String to bool (IsVisible) converter
+│   ├── BooleanToBrushConverter.cs           # Bool to SolidColorBrush converter (declared in XAML, currently unused)
+│   ├── BooleanToTextConverter.cs            # Bool to text converter (declared in XAML, currently unused)
+│   ├── BooleanToValueConverter.cs           # Bool to value converter (supports "Invert", "InvertContent", "DefaultIfZero" parameters)
+│   ├── ImageStatusToStringConverter.cs      # ImageStatus enum to string converter
+│   ├── ImageStatusToVisibilityConverter.cs  # ImageStatus to bool (IsVisible) converter
+│   ├── NullableIntConverter.cs              # Nullable int converter
+│   ├── StringToIntConverter.cs              # String to int converter (ComboBox Tag binding)
+│   └── StringToVisibilityConverter.cs       # String to bool (IsVisible) converter
 ├── Services/
-│   ├── ConfirmDialog.axaml + .axaml.cs # Confirmation dialog window
-│   ├── DialogService.cs              # IDialogService implementation
-│   ├── DispatcherService.cs          # IDispatcherService implementation (Avalonia Dispatcher.UIThread)
-│   ├── FilePickerService.cs          # IFilePickerService implementation (Avalonia storage APIs)
-│   ├── IDialogService.cs             # Dialog service interface
-│   ├── IDispatcherService.cs         # Dispatcher service interface
-│   └── IFilePickerService.cs         # File picker service interface
-├── Settings/
-│   └── SettingsService.cs            # Settings persistence (JSON-based)
-└── ViewModels/
-    ├── ImageItemViewModel.cs         # View model for image items (ObservableProperty, Bitmap thumbnail, QualityOverride)
-    ├── MainViewModel.cs              # Main view model with IFilePickerService injection
-    └── SettingsViewModel.cs          # Settings view model with presets, validation
+│   ├── ConfirmDialog.axaml + ConfirmDialog.axaml.cs # Confirmation dialog window (MessageText, TitleText properties)
+│   ├── DialogService.cs                     # IDialogService implementation
+│   ├── DispatcherService.cs                 # IDispatcherService implementation (Avalonia Dispatcher.UIThread)
+│   ├── FilePickerService.cs                 # IFilePickerService implementation (Avalonia storage APIs)
+│   ├── IDialogService.cs                    # Dialog service interface
+│   ├── IDispatcherService.cs                # Dispatcher service interface
+│   └── IFilePickerService.cs                # File picker service interface
+├── ViewModels/
+│   ├── ImageItemViewModel.cs                # View model for image items (ObservableProperty, Bitmap thumbnail, QualityOverride)
+│   ├── MainViewModel.cs                     # Main view model with IFilePickerService injection, auto-persists settings on change
+│   └── SettingsViewModel.cs                 # Settings view model with presets, validation, auto-persists on every property change via OnPropertyChanged
+└── docs/
+    └── PROJECT.md                           # This file
 ```
 
-- For any uknowns refer to API refernce https://docs.avaloniaui.net/api#namespaces and from there to related topics
+- For any unknowns refer to API reference https://docs.avaloniaui.net/api#namespaces and from there to related topics
 
 ## Architecture
 
@@ -53,18 +55,65 @@ ARWtoJXL.Avalonia/
 
 **XAML Loading**: Uses `InitializeComponent()` in constructors. `AvaloniaXamlLoader.Load(this)` replaced for Avalonia 12 compatibility.
 
-**ViewLocator**: Implements `IDataTemplate` to automatically map view models to views. `Match()` only matches types from `.ViewModels` namespace to avoid intercepting strings and other primitives.
+**ViewLocator**: Implements `IDataTemplate` to automatically map view models to views. `Match()` only matches types from `.ViewModels` namespace to avoid intercepting strings and other primitives. `Build()` replaces `.ViewModels` with `.Views` and strips "ViewModel" suffix from type name. Falls back to "Not Found" TextBlock if type not found. No `Views/` folder exists in the project.
 
 **Compiled Bindings**: Disabled (`<AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>`) due to incompatibility with CommunityToolkit.Mvvm generated command properties.
 
+**InternalsVisibleTo**: Set for `ARWtoJXL.Tests` to allow GUI test access to internal members (e.g., `HeadlessTestMode`).
+
 ## Key Features
 
-- **Drag-Drop**: Attached properties pattern (`DragDropBehavior.AllowDrop`, `DragDropBehavior.DropCommand`) with Avalonia `DataTransfer.TryGetFiles()` API
-- **Keyboard Shortcuts**: `Key.Delete` for remove, `Ctrl+A` for select all, `Ctrl+Shift+R` for reset selection
-- **Recent Files**: Clickable list of recently used files/folders in the main window
+- **Drag-Drop**: Single attached property `DragDropBehavior.EnableDragDrop` on root Grid. Internally wires `DragDrop.SetAllowDrop`, `AddDragEnterHandler`, `AddDragOverHandler`, `AddDropHandler`. Drop handler finds ancestor `MainViewModel` via `DataContext` chain, reads `SearchRecursive` for recursive folder enumeration. Supports both structured file data (`DataFormat.File`) and plain text paths (`DataFormat.Text`) for Windows Explorer compatibility.
+- **Recent Files**: Clickable list of recently used files/folders in the main window. `SettingsService.AddRecentFile()` maintains max 50 entries.
 - **File Picker**: Avalonia storage APIs (`StorageProvider.OpenFilePickerAsync`, `OpenFolderPickerAsync`)
 - **Presets**: Named conversion presets with quality, effort, raw distance settings
-- **Confirmation Dialogs**: Custom dialog for destructive operations (remove, clear completed)
+- **Confirmation Dialogs**: Custom `ConfirmDialog` window with `MessageText`/`TitleText` properties. Yes button (`IsDefault`) closes with `true`, No button (`IsCancel`) closes with `false`.
+- **Settings Persistence**: Both `MainViewModel` and `SettingsViewModel` auto-save to disk on every property change via `OnPropertyChanged` partial methods. `MainViewModel` loads all settings from disk on startup. Settings stored in `%APPDATA%\ARWtoJXL\settings.json`.
+- **Quality Scale Segments**: The quality slider in SettingsWindow displays a three-segment color bar below the track: Lossy (0-89, red), Near-lossless (90-99, amber), Lossless (100, green) with labeled captions aligned to each segment.
+- **HeadlessTestMode**: `MainViewModel.HeadlessTestMode` static flag skips thumbnail generation during GUI tests to avoid file I/O.
+
+## ViewModels
+
+### MainViewModel
+**Properties (all `[ObservableProperty]`):**
+- `Images` (ObservableCollection<ImageItemViewModel>), `IsCancelRequested` (bool), `StatusMessage` (string), `IsConverting` (bool), `OutputPath` (string), `SubfolderName` (string), `IsAllSelected` (bool), `OutputDirectory` (string), `UseSubfolder` (bool), `QualityPreset` (int), `SearchRecursive` (bool), `OutputFormat` (OutputFormat), `ConflictResolution` (ConflictResolution), `ConfirmOverwrite` (bool), `UseCustomOutputDirectory` (bool), `CustomOutputDirectory` (string), `RecentFiles` (ObservableCollection<string>), `SkipMetadata` (bool), `CjxlEffort` (int), `IsAnySelected` (bool), `CompletedCount` (int), `TotalCount` (int)
+
+**Commands (`[RelayCommand]`):**
+- `ConvertSelectedCommand`, `RemoveSelectedCommand`, `SelectAllCommand`, `CancelCommand`, `OpenSettingsCommand`, `OpenFileCommand`, `OpenOutputFolderCommand`, `LoadRecentFilesCommand`, `ClearRecentFilesCommand`
+
+**Nested class:** `BoundedFilePathSet` — memory-bounded deduplication set for added file paths (1 MB limit, FIFO eviction via LinkedList + HashSet).
+
+### SettingsViewModel
+**Properties (all `[ObservableProperty]`):**
+- `UseSubfolder`, `SubfolderName`, `QualityPreset`, `SearchRecursive`, `OutputFormat`, `ConflictResolution`, `ConfirmOverwrite`, `UseCustomOutputDirectory`, `CustomOutputDirectory`, `IsSaving`, `SubfolderNameValidationResult`, `Presets` (ObservableCollection<ConversionPreset>), `SelectedPreset`, `HasSelectedPreset`, `NewPresetName`, `SkipMetadata`, `CjxlEffort`, `SelectedEffortOption`
+
+**Public members:**
+- `OutputFormatOptions` (Array), `ConflictResolutionOptions` (Array), `CjxlEffortOptions` (EffortOption[] with 10 options: Auto -1 through 9)
+- `static ValidateSubfolderName(string)` — validates subfolder name against path characters, reserved names, length limits
+
+**Commands (`[RelayCommand]`):**
+- `BrowseOutputDirectoryCommand`, `AddPresetCommand`, `RemovePresetCommand`, `LoadPresetCommand`, `SaveCommand`, `CancelCommand`
+
+**Nested class:** `EffortOption` — display text and value pair for effort ComboBox items.
+
+### ImageItemViewModel
+**Properties (all `[ObservableProperty]`):**
+- `FilePath`, `FileName`, `Status`, `Thumbnail` (Bitmap?), `ErrorMessage`, `IsSelected`, `QualityOverride` (int?), `IsRemoved`, `SourceFileSize`, `OutputFileSize`, `OutputPath`
+
+**Computed:** `SizeInfoText` — formatted output size with percentage change
+
+**Methods:** `EffectiveQuality(int globalQuality)`, `static FormatBytes(long bytes)`
+
+## Data Models (in SettingsService.cs)
+
+### ConflictResolution (enum)
+- `Overwrite`, `Skip`, `AppendNumber`
+
+### AppSettings
+JSON-serializable settings container: `UseSubfolder`, `SubfolderName`, `QualityPreset`, `SearchRecursive`, `RecentFiles`, `OutputFormat`, `ConflictResolution`, `ConfirmOverwrite`, `UseCustomOutputDirectory`, `CustomOutputDirectory`, `Presets`, `SkipMetadata`, `CjxlEffort`
+
+### ConversionPreset
+Named preset: `Name`, `Quality`, `OutputFormat`, `ConflictResolution`, `UseSubfolder`, `SubfolderName`, `UseCustomOutputDirectory`, `CustomOutputDirectory`, `ConfirmOverwrite`, `SkipMetadata`, `CjxlEffort`
 
 ## Key Dependencies
 
@@ -72,6 +121,7 @@ ARWtoJXL.Avalonia/
 - **Avalonia.Desktop** (12.0.1): Desktop runtime (Windows/Linux/macOS)
 - **Avalonia.Themes.Fluent** (12.0.1): Fluent design theme
 - **Avalonia.Fonts.Inter** (12.0.1): Inter font family
+- **AvaloniaUI.DiagnosticsSupport** (2.2.1): Debug-only diagnostics support (excluded from Release builds)
 - **CommunityToolkit.Mvvm** (8.4.2): MVVM helpers (MIT)
 - **Microsoft.Extensions.DependencyInjection** (8.0.1): DI container (MIT)
 
@@ -91,3 +141,4 @@ ARWtoJXL.Avalonia/
 ### Known Fixes
 - **ViewLocator "Not Found" bug**: `Match()` was returning `true` for all non-Control objects, intercepting button content strings. Fixed to only match `.ViewModels` namespace types.
 - **Command naming**: `[RelayCommand]` method `LoadRecentFilesCommand` renamed to `LoadRecentFiles` to avoid conflict with generated `LoadRecentFilesCommand` property.
+- **Effort ComboBox InvalidCastException**: `SelectedItem` binding to `int` property failed with `ComboBoxItem` items. Fixed with `SelectedValue` + `SelectedValueBinding` + `StringToIntConverter` to convert string `Tag` values to `int`.

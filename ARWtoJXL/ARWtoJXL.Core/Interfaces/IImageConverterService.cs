@@ -1,3 +1,4 @@
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using ARWtoJXL.Core.Models;
@@ -11,5 +12,6 @@ namespace ARWtoJXL.Core.Interfaces
         Task ConvertToJpegAsync(string inputPath, string outputPath, int quality, CancellationToken cancellationToken = default);
         Task<MetadataProfiles> ExtractMetadataProfilesAsync(string filePath, CancellationToken cancellationToken = default);
         Task<byte[]> ExtractToRawRgb16Async(string inputPath, CancellationToken cancellationToken = default);
+        Task StreamPpmToAsync(string inputPath, Stream output, CancellationToken cancellationToken = default);
     }
 }

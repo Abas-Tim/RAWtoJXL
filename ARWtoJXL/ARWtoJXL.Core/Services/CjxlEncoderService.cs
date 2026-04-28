@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -38,8 +39,7 @@ public class CjxlEncoderService : ICjxlEncoder
         CancellationToken cancellationToken = default,
         int timeoutSeconds = DefaultTimeoutSeconds,
         Action<double>? progress = null,
-        int? effort = null,
-        float? rawDistance = null)
+        int? effort = null)
     {
         ValidateInputParameters(inputPath, outputPath, quality);
         cancellationToken.ThrowIfCancellationRequested();
@@ -53,7 +53,7 @@ public class CjxlEncoderService : ICjxlEncoder
 
         string cjxlPath = await ResolveCjxlExecutableAsync(cancellationToken);
 
-        var args = BuildEncodingArguments(quality, metadata, inputPath, outputPath, effort, rawDistance);
+        var args = BuildEncodingArguments(quality, metadata, inputPath, outputPath, effort);
 
         await ExecuteEncodingProcessAsync(cjxlPath, args, cancellationToken, timeoutSeconds, progress);
 
@@ -74,8 +74,7 @@ public class CjxlEncoderService : ICjxlEncoder
         CancellationToken cancellationToken = default,
         int timeoutSeconds = DefaultTimeoutSeconds,
         Action<double>? progress = null,
-        int? effort = null,
-        float? rawDistance = null)
+        int? effort = null)
     {
         if (string.IsNullOrWhiteSpace(outputPath))
         {
@@ -93,9 +92,49 @@ public class CjxlEncoderService : ICjxlEncoder
 
         string cjxlPath = await ResolveCjxlExecutableAsync(cancellationToken);
 
-        var args = BuildStreamEncodingArguments(quality, metadata, outputPath, effort, rawDistance);
+        var args = BuildStreamEncodingArguments(quality, metadata, outputPath, effort);
 
         await ExecuteEncodingProcessFromStreamAsync(cjxlPath, args, inputStream, cancellationToken, timeoutSeconds, progress);
+
+        VerifyOutputFile(outputPath);
+
+        if (metadata != null && metadata.HasAny)
+        {
+            await _exiftoolService.EmbedMetadataAsync(originalArwPath, outputPath, metadata, cancellationToken);
+        }
+    }
+
+    public async Task EncodeFromStreamAsync(
+        string inputPath,
+        string originalArwPath,
+        string outputPath,
+        int quality,
+        MetadataProfiles? metadata,
+        Func<Stream, CancellationToken, Task> ppmWriter,
+        CancellationToken cancellationToken,
+        int timeoutSeconds,
+        Action<double>? progress,
+        int? effort)
+    {
+        if (string.IsNullOrWhiteSpace(outputPath))
+        {
+            throw new ArgumentNullException(nameof(outputPath), "Output path cannot be null or empty.");
+        }
+
+        if (quality < 0 || quality > 100)
+        {
+            throw new ArgumentOutOfRangeException(nameof(quality), "Quality must be between 0 and 100.");
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        EnsureOutputDirectoryExists(outputPath);
+
+        string cjxlPath = await ResolveCjxlExecutableAsync(cancellationToken);
+
+        var args = BuildStreamEncodingArguments(quality, metadata, outputPath, effort);
+
+        await ExecuteEncodingProcessWithWriterAsync(cjxlPath, args, ppmWriter, inputPath, cancellationToken, timeoutSeconds, progress);
 
         VerifyOutputFile(outputPath);
 
@@ -171,12 +210,11 @@ public class CjxlEncoderService : ICjxlEncoder
         MetadataProfiles? metadata,
         string inputPath,
         string outputPath,
-        int? effortOverride = null,
-        float? rawDistance = null)
+        int? effortOverride = null)
     {
         var args = new List<string>(16);
 
-        float distance = rawDistance ?? QualityCalculator.CalculateDistance(quality);
+        float distance = QualityCalculator.CalculateDistance(quality);
         int effort = effortOverride ?? QualityCalculator.CalculateEffort(quality);
         bool isLossless = QualityCalculator.IsLossless(quality);
 
@@ -207,12 +245,11 @@ public class CjxlEncoderService : ICjxlEncoder
         int quality,
         MetadataProfiles? metadata,
         string outputPath,
-        int? effortOverride = null,
-        float? rawDistance = null)
+        int? effortOverride = null)
     {
         var args = new List<string>(16);
 
-        float distance = rawDistance ?? QualityCalculator.CalculateDistance(quality);
+        float distance = QualityCalculator.CalculateDistance(quality);
         int effort = effortOverride ?? QualityCalculator.CalculateEffort(quality);
         bool isLossless = QualityCalculator.IsLossless(quality);
 
@@ -343,6 +380,147 @@ public class CjxlEncoderService : ICjxlEncoder
                 $"cjxl encoding failed with exit code {result.ExitCode}: {errorMessage}",
                 result.ExitCode);
         }
+    }
+
+    private async Task ExecuteEncodingProcessWithWriterAsync(
+        string cjxlPath,
+        List<string> args,
+        Func<Stream, CancellationToken, Task> ppmWriter,
+        string inputPath,
+        CancellationToken cancellationToken,
+        int timeoutSeconds,
+        Action<double>? progress)
+    {
+        var argumentsString = string.Join(" ", args.Select(EscapeArgument));
+
+        _logger.Write($"[CjxlEncoder] Full cjxl command (stdin): {cjxlPath} {argumentsString}");
+        _logger.Write($"[CjxlEncoder] Raw args ({args.Count}): [{string.Join("] [", args)}]");
+
+        var startTime = DateTime.UtcNow;
+        var progressTask = ReportProgressAsync(startTime, TimeSpan.FromSeconds(timeoutSeconds), progress, cancellationToken);
+
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = cjxlPath,
+            Arguments = argumentsString,
+            UseShellExecute = false,
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true
+        };
+
+        using var process = System.Diagnostics.Process.Start(startInfo);
+        if (process == null)
+        {
+            throw new FileNotFoundException($"Failed to start cjxl: {cjxlPath}");
+        }
+
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(TimeSpan.FromSeconds(timeoutSeconds));
+
+        bool timedOut = false;
+
+        try
+        {
+            var stdoutTask = SafeReadStreamAsync(process.StandardOutput, timeoutCts.Token);
+            var stderrTask = SafeReadStreamAsync(process.StandardError, timeoutCts.Token);
+
+            await ppmWriter(process.StandardInput.BaseStream, cancellationToken);
+            process.StandardInput.Close();
+
+            await process.WaitForExitAsync(timeoutCts.Token);
+
+            string stdout = await stdoutTask;
+            string stderr = await stderrTask;
+
+            _logger.Write($"cjxl stdout: {stdout}");
+            _logger.Write($"cjxl stderr: {stderr}");
+
+            if (process.ExitCode != 0)
+            {
+                string errorMessage = string.IsNullOrWhiteSpace(stderr)
+                    ? "Unknown error occurred during encoding"
+                    : stderr.Trim();
+
+                throw new CjxlEncodingException(
+                    $"cjxl encoding failed with exit code {process.ExitCode}: {errorMessage}",
+                    process.ExitCode);
+            }
+        }
+        catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested)
+        {
+            timedOut = !cancellationToken.IsCancellationRequested;
+
+            if (!process.HasExited)
+            {
+                try { process.Kill(); } catch { }
+                process.WaitForExit();
+            }
+
+            try
+            {
+                using var drainCts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+                string stdout = await SafeReadStreamAsync(process.StandardOutput, drainCts.Token);
+                string stderr = await SafeReadStreamAsync(process.StandardError, drainCts.Token);
+                _logger.Write($"cjxl stdout (aborted): {stdout}");
+                _logger.Write($"cjxl stderr (aborted): {stderr}");
+            }
+            catch
+            {
+                // Ignore errors when draining output from a killed process
+            }
+
+            if (timedOut)
+            {
+                throw new TimeoutException(
+                    $"cjxl encoding timed out after {timeoutSeconds} seconds. " +
+                    "Consider increasing the timeout for large files.");
+            }
+            throw;
+        }
+        catch (CjxlEncodingException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            if (!process.HasExited)
+            {
+                try { process.Kill(); } catch { }
+                process.WaitForExit();
+            }
+            throw new Exception($"Failed to encode {Path.GetFileName(inputPath)}: {ex.Message}", ex);
+        }
+    }
+
+   private static async Task<string> SafeReadStreamAsync(System.IO.StreamReader reader, CancellationToken token)
+    {
+        using var drainCts = CancellationTokenSource.CreateLinkedTokenSource(token);
+        drainCts.CancelAfter(TimeSpan.FromSeconds(5));
+
+        var buffer = new char[4096];
+        var result = new System.Text.StringBuilder();
+
+        try
+        {
+            while (true)
+            {
+                int bytesRead = await reader.ReadAsync(buffer.AsMemory(), drainCts.Token);
+                if (bytesRead == 0) break;
+                result.Append(buffer, 0, bytesRead);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Reading timed out or was cancelled; return whatever was captured
+        }
+        catch (IOException)
+        {
+            // Pipe broken (process killed); return whatever was captured
+        }
+
+        return result.ToString();
     }
 
     private static async Task ReportProgressAsync(

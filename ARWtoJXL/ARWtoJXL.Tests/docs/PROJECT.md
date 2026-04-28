@@ -1,12 +1,13 @@
 # ARWtoJXL.Tests
 
-xUnit test suite for ARWtoJXL.Core with DI-based integration tests and unit tests.
+xUnit v3 test suite for ARWtoJXL.Core with DI-based integration tests and unit tests.
 
 ## Project Structure
 
 ```
 ARWtoJXL.Tests/
-├── Startup.cs                    # DI service configuration (Microsoft.Extensions.DependencyInjection)
+├── Startup.cs                    # DI service configuration base class (Microsoft.Extensions.DependencyInjection)
+├── TestAppBuilder.cs             # Avalonia headless app builder ([assembly: AvaloniaTestApplication])
 ├── ConversionTests.cs            # Core conversion tests (inherits Startup, resolves IImageService)
 ├── MetadataPreservationTests.cs  # Metadata transfer test (inherits Startup, resolves IImageConverterService, IImageService)
 ├── MetadataDebugTests.cs         # Diagnostic test for metadata preservation (inherits Startup, manual-only)
@@ -15,6 +16,7 @@ ARWtoJXL.Tests/
 ├── SubfolderValidationTests.cs   # Unit tests for SettingsViewModel.ValidateSubfolderName() (no DI)
 ├── ImageItemViewModelTests.cs    # Unit tests for EffectiveQuality fallback logic (no DI)
 ├── CjxlEncoderArgumentsTests.cs  # Unit tests for BuildEncodingArguments() via protected internal test subclass (Moq)
+├── test1.ARW                     # Test fixture ARW file for integration tests
 ├── GUITests/                     # Avalonia Headless GUI tests (split by category)
 │   ├── GUITestHelpers.cs         # Shared helpers: CreateViewModel, CreateWindow, GetAllControls, FindAll, SettingsScope
 │   ├── MainWindowStructuralTests.cs     # MainWindow structure: title, buttons, ListBox, ProgressBar, status bar, drag-drop, min size
@@ -27,7 +29,8 @@ ARWtoJXL.Tests/
 
 ## Test Configuration
 
-- **Startup**: Central DI configuration — calls `services.AddCoreServices()` from `ARWtoJXL.Core`. Tests inherit from `Startup` and resolve services from `ServiceProvider`. Provides `CreateScope()` for test isolation.
+- **Startup**: Central DI configuration base class — calls `services.AddCoreServices()` from `ARWtoJXL.Core`. Tests inherit from `Startup` and resolve services from `Services` property. Provides `CreateScope()` for test isolation. Locates `test1.ARW` test fixture relative to assembly directory.
+- **TestAppBuilder**: Avalonia headless application builder registered via `[assembly: AvaloniaTestApplication(typeof(TestAppBuilder))]`. Configures `App` with `AvaloniaHeadlessPlatformOptions` for GUI tests.
 
 ## Running Tests
 
@@ -45,19 +48,29 @@ dotnet test --filter "FullyQualifiedName~QualityCalculatorTests|FullyQualifiedNa
 ## Test Suites
 
 ### QualityCalculatorTests
-12 unit tests for quality→distance/effort mappings. No DI needed.
+4 test methods, 14 test cases for quality→distance/effort mappings. No DI needed.
+- `CalculateEffort_ReturnsCorrectEffort` (Theory x6): quality thresholds at 95, 85, 70, 50, and below
+- `IsLossless_ReturnsCorrectValue` (Theory x3): boundary values at 99, 100, 101
+- `CalculateDistance_Quality90_ReturnsApprox1`: verifies quality 90 maps to distance ~1.0
+- `CalculateDistance_Quality0_ReturnsMaxDistance`: verifies quality 0 maps to maximum distance
 
 ### FileLockedExceptionTests
-10 unit tests for `FileLockedException.IsFileLocked()` static method. Tests HResult 32 detection, inner IOException unwrapping, message pattern matching ("process cannot access the file", "being used by another process"), null handling, and constructor behavior. No DI needed.
+10 test methods, 15 test cases for `FileLockedException.IsFileLocked()` static method. Tests HResult 32 detection, inner IOException unwrapping, message pattern matching ("process cannot access the file", "being used by another process"), null handling, and constructor behavior. No DI needed.
 
 ### SubfolderValidationTests
-13 unit tests for `SettingsViewModel.ValidateSubfolderName()` static method. Tests empty/whitespace input, valid names, invalid path characters (platform-aware), leading/trailing whitespace, length limits, dot/dotdot names, and reserved Windows names (CON, PRN, AUX, NUL, COM1-9, LPT1-9). No DI needed.
+8 test methods, 25 test cases for `SettingsViewModel.ValidateSubfolderName()` static method. Tests empty/whitespace input, valid names, invalid path characters (platform-aware), leading/trailing whitespace, length limits, dot/dotdot names, and reserved Windows names (CON, PRN, AUX, NUL, COM1-9, LPT1-9). No DI needed.
 
 ### ImageItemViewModelTests
-6 unit tests for `ImageItemViewModel.EffectiveQuality()` method. Tests global quality fallback, quality override, zero/100 edge cases, and override clearing. Also covers `SizeInfoText` computed property for compression ratio display. No DI needed.
+6 test methods for `ImageItemViewModel.EffectiveQuality()` method. Tests global quality fallback, quality override, zero/100 edge cases, and override clearing. No DI needed.
+- `EffectiveQuality_NoOverride_ReturnsGlobalQuality`
+- `EffectiveQuality_WithOverride_ReturnsOverride`
+- `EffectiveQuality_OverrideZero_ReturnsZero`
+- `EffectiveQuality_OverrideHundred_ReturnsHundred`
+- `EffectiveQuality_GlobalQualityChanged_ReflectsChange`
+- `EffectiveQuality_OverrideSetThenCleared_FallsBackToGlobal`
 
 ### CjxlEncoderArgumentsTests
-13 unit tests for `CjxlEncoderService.BuildEncodingArguments()` via a `protected internal` test subclass. Tests distance/effort argument generation, lossless vs lossy mode flags, metadata argument omission, input/output path positioning, and effort override. Uses Moq for `ILogger`, `IPathResolver`, `IExiftoolService`.
+10 test methods, 15 test cases for `CjxlEncoderService.BuildEncodingArguments()` via a `protected internal` test subclass. Tests distance/effort argument generation, lossless vs lossy mode flags, metadata argument omission, input/output path positioning, and effort override. Uses Moq for `ILogger`, `IPathResolver`, `IExiftoolService`.
 
 ### ConversionTests
 Integration tests with real ARW files (inherits `Startup`):
@@ -140,8 +153,13 @@ Each test follows: open settings → select tab → change UI control → verify
 
 ## Key Dependencies
 
-- **xUnit**: Unit testing framework (Apache-2.0)
-- **Moq**: Mocking framework (BSD-3-Clause)
-- **Avalonia.Headless** (12.0.1): Headless UI testing for Avalonia (MIT)
+- **xunit.v3** (3.2.2): Test framework (Apache-2.0)
+- **xunit.runner.visualstudio** (3.1.5): Visual Studio test runner adapter
+- **Microsoft.NET.Test.Sdk** (17.14.1): Test SDK infrastructure
+- **Moq** (4.20.72): Mocking framework (BSD-3-Clause)
+- **Avalonia** (12.0.1): UI framework for GUI tests (MIT)
+- **Avalonia.Headless.XUnit** (12.0.1): Headless UI testing for Avalonia (MIT)
+- **coverlet.collector** (6.0.4): Code coverage collection
+- **Microsoft.Extensions.DependencyInjection** (8.0.1): DI container for test setup (MIT)
 - Depends on `ARWtoJXL.Core` for services under test
 - Depends on `ARWtoJXL.Avalonia` for GUI test target application

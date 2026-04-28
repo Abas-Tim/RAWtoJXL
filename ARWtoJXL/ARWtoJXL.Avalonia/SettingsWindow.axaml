@@ -7,207 +7,258 @@
         x:Class="ARWtoJXL.Avalonia.SettingsWindow"
         x:DataType="vm:SettingsViewModel"
         Title="Settings"
-        Width="480" Height="680"
+        Width="480" Height="380" MinWidth="400" MinHeight="280"
         WindowStartupLocation="CenterOwner"
-        CanResize="False">
+        CanResize="True">
     <Window.Resources>
         <conv:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
+        <conv:StringToIntConverter x:Key="StringToIntConverter"/>
     </Window.Resources>
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <Grid Margin="15">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
-            <StackPanel Margin="0,0,0,10">
-                <Grid Margin="0,2">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="140"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="Quality:" VerticalAlignment="Center" FontSize="12"/>
-                    <StackPanel Grid.Column="1" Orientation="Vertical">
-                        <TextBlock Text="{Binding QualityPreset}" HorizontalAlignment="Right" FontSize="11" Foreground="Gray"/>
-                        <Slider Minimum="0" Maximum="100" Value="{Binding QualityPreset}" TickFrequency="1" IsSnapToTickEnabled="True" Margin="0,2"/>
-                    </StackPanel>
-                </Grid>
+        <TabControl Grid.Row="0" Margin="12" SelectedIndex="0">
+            <!-- Conversion Tab -->
+            <TabItem Header="Conversion">
+                <StackPanel Margin="8">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Quality:" VerticalAlignment="Center" FontSize="12"
+                                   ToolTip.Tip="Quality target (0-100). Higher values retain more detail and produce larger files. 90 is visually lossless. 100 is fully lossless."/>
+                        <StackPanel Grid.Column="1" Orientation="Vertical">
+                            <TextBlock Text="{Binding QualityPreset}" HorizontalAlignment="Right" FontSize="11" Foreground="Gray"/>
+                            <Slider Minimum="0" Maximum="100" Value="{Binding QualityPreset}" TickFrequency="1" IsSnapToTickEnabled="True" Margin="0,2"/>
+                            <Grid Margin="0,4,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="89*"/>
+                                    <ColumnDefinition Width="10*"/>
+                                    <ColumnDefinition Width="1*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Background="#E57373" CornerRadius="2,0,0,2" Height="8"/>
+                                <Border Grid.Column="1" Background="#FFB74D" Height="8"/>
+                                <Border Grid.Column="2" Background="#81C784" CornerRadius="0,2,2,0" Height="8"/>
+                            </Grid>
+                            <Grid Margin="0,2,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="89*"/>
+                                    <ColumnDefinition Width="10*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Lossy (0-89)" FontSize="9" Foreground="Gray" HorizontalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="Near-lossless (90-99)" FontSize="9" Foreground="Gray" HorizontalAlignment="Center"/>
+                                <TextBlock Grid.Column="2" Text="Lossless (100)" FontSize="9" Foreground="Gray" HorizontalAlignment="Right" Margin="2,0,0,0"/>
+                            </Grid>
+                        </StackPanel>
+                    </Grid>
 
-                <Grid Margin="0,6">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="140"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="Output format:" VerticalAlignment="Center" FontSize="12"/>
-                    <ComboBox Grid.Column="1" Width="120" HorizontalAlignment="Left"
-                              SelectedValue="{Binding OutputFormat}"
-                              SelectedValueBinding="{Binding Tag, RelativeSource={RelativeSource AncestorType=ComboBoxItem}}">
-                        <ComboBoxItem Content="JPEG XL (.jxl)" Tag="{x:Static core:OutputFormat.Jxl}"/>
-                        <ComboBoxItem Content="JPEG (.jpg)" Tag="{x:Static core:OutputFormat.Jpeg}"/>
-                        <ComboBoxItem Content="PNG (.png)" Tag="{x:Static core:OutputFormat.Png}"/>
-                    </ComboBox>
-                </Grid>
+                    <Separator Margin="0,8"/>
 
-                <Grid Margin="0,6">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="140"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="Use subfolder:" VerticalAlignment="Center" FontSize="12"/>
-                    <CheckBox Grid.Column="1" IsChecked="{Binding UseSubfolder}" VerticalAlignment="Center"/>
-                </Grid>
-
-                <Grid Margin="0,4">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="140"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="Subfolder name:" VerticalAlignment="Center" FontSize="12"/>
-                    <TextBox Grid.Column="1" Text="{Binding SubfolderName}" VerticalAlignment="Center"/>
-                </Grid>
-                <TextBlock Text="{Binding SubfolderNameValidationResult}"
-                           Foreground="Red" FontSize="11" Margin="142,2,0,0"
-                           IsVisible="{Binding SubfolderNameValidationResult, Converter={StaticResource StringToVisibilityConverter}}"/>
-
-                <Grid Margin="0,6">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="140"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="Custom output dir:" VerticalAlignment="Center" FontSize="12"/>
-                    <CheckBox Grid.Column="1" IsChecked="{Binding UseCustomOutputDirectory}" VerticalAlignment="Center"/>
-                </Grid>
-
-                <Grid Margin="0,4" IsVisible="{Binding UseCustomOutputDirectory}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="140"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBox Grid.Column="1" Text="{Binding CustomOutputDirectory}" Margin="0,0,4,0" VerticalAlignment="Center"/>
-                    <Button Grid.Column="2" Content="Browse" Command="{Binding BrowseOutputDirectoryCommand}" VerticalAlignment="Center"/>
-                </Grid>
-
-                <Grid Margin="0,6">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="140"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="Recursive folder:" VerticalAlignment="Center" FontSize="12"/>
-                    <CheckBox Grid.Column="1" IsChecked="{Binding SearchRecursive}" VerticalAlignment="Center"/>
-                </Grid>
-
-                <Grid Margin="0,6">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="140"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="File conflict:" VerticalAlignment="Center" FontSize="12"/>
-                    <ComboBox Grid.Column="1" Width="180" HorizontalAlignment="Left"
-                              SelectedValue="{Binding ConflictResolution}"
-                              SelectedValueBinding="{Binding Tag, RelativeSource={RelativeSource AncestorType=ComboBoxItem}}">
-                        <ComboBoxItem Content="Overwrite existing" Tag="{x:Static local:ConflictResolution.Overwrite}"/>
-                        <ComboBoxItem Content="Skip existing" Tag="{x:Static local:ConflictResolution.Skip}"/>
-                        <ComboBoxItem Content="Append number" Tag="{x:Static local:ConflictResolution.AppendNumber}"/>
-                    </ComboBox>
-                </Grid>
-
-                <Grid Margin="0,6">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="140"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="Confirm overwrite:" VerticalAlignment="Center" FontSize="12"/>
-                    <CheckBox Grid.Column="1" IsChecked="{Binding ConfirmOverwrite}" VerticalAlignment="Center"/>
-                </Grid>
-
-                <Grid Margin="0,6">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="140"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="Skip metadata:" VerticalAlignment="Center" FontSize="12"/>
-                    <CheckBox Grid.Column="1" IsChecked="{Binding SkipMetadata}" VerticalAlignment="Center"/>
-                </Grid>
-
-                <Grid Margin="0,6">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="140"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="cjxl effort:" VerticalAlignment="Center" FontSize="12"/>
-                    <StackPanel Grid.Column="1" Orientation="Horizontal">
-                        <ComboBox Width="60" HorizontalAlignment="Left" Margin="0,0,8,0"
-                                  SelectedItem="{Binding CjxlEffort}"
-                                  VerticalAlignment="Center">
-                            <ComboBoxItem Content="Auto" Tag="-1"/>
-                            <ComboBoxItem Content="1" Tag="1"/>
-                            <ComboBoxItem Content="2" Tag="2"/>
-                            <ComboBoxItem Content="3" Tag="3"/>
-                            <ComboBoxItem Content="4" Tag="4"/>
-                            <ComboBoxItem Content="5" Tag="5"/>
-                            <ComboBoxItem Content="6" Tag="6"/>
-                            <ComboBoxItem Content="7" Tag="7"/>
-                            <ComboBoxItem Content="8" Tag="8"/>
-                            <ComboBoxItem Content="9" Tag="9"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Output format:" VerticalAlignment="Center" FontSize="12"
+                                   ToolTip.Tip="JXL (default, best compression), JPEG (widely compatible), PNG (lossless, large files)"/>
+                        <ComboBox Grid.Column="1" Width="140" HorizontalAlignment="Left"
+                                  ItemsSource="{Binding OutputFormatOptions}"
+                                  SelectedItem="{Binding OutputFormat}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="core:OutputFormat">
+                                    <TextBlock Text="{Binding}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
                         </ComboBox>
-                        <TextBlock Text="(1=fastest, 9=best)" FontSize="10" Foreground="Gray" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Grid>
+                    </Grid>
 
-                <Grid Margin="0,6">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="140"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="cjxl raw distance:" VerticalAlignment="Center" FontSize="12"/>
-                    <TextBox Grid.Column="1" Text="{Binding CjxlRawDistance}" Width="80" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                </Grid>
-                <TextBlock Text="{Binding CjxlRawDistanceValidationResult}"
-                           Foreground="Red" FontSize="11" Margin="142,2,0,0"
-                           IsVisible="{Binding CjxlRawDistanceValidationResult, Converter={StaticResource StringToVisibilityConverter}}"/>
+                    <Separator Margin="0,8"/>
 
-                <Separator Margin="0,12,0,8"/>
-                <TextBlock Text="Presets" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,4"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                      <TextBlock Text="cjxl effort:" VerticalAlignment="Center" FontSize="12"
+                                   ToolTip.Tip="Encoding effort (1-9). Higher values produce better compression but take longer. Auto selects based on quality."/>
+                         <StackPanel Grid.Column="1" Orientation="Horizontal">
+                             <ComboBox Width="60" HorizontalAlignment="Left" Margin="0,0,8,0"
+                                       ItemsSource="{Binding CjxlEffortOptions}"
+                                       SelectedItem="{Binding SelectedEffortOption}"
+                                       VerticalAlignment="Center">
+                                 <ComboBox.ItemTemplate>
+                                     <DataTemplate>
+                                         <TextBlock Text="{Binding Display}"/>
+                                     </DataTemplate>
+                                 </ComboBox.ItemTemplate>
+                             </ComboBox>
+                             <TextBlock Text="(1=fastest, 9=best)" FontSize="10" Foreground="Gray" VerticalAlignment="Center"/>
+                         </StackPanel>
+                    </Grid>
 
-                <Grid Margin="0,4">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <ComboBox Grid.Column="0"
-                              ItemsSource="{Binding Presets}"
-                              SelectedItem="{Binding SelectedPreset}"
-                              Width="200" HorizontalAlignment="Left">
-                        <ComboBox.ItemTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding Name}"/>
-                            </DataTemplate>
-                        </ComboBox.ItemTemplate>
-                    </ComboBox>
-                    <Button Grid.Column="1" Content="Load" Command="{Binding LoadPresetCommand}"
-                            Margin="4,0,0,0" IsEnabled="{Binding HasSelectedPreset}"/>
-                </Grid>
+                    <Separator Margin="0,8"/>
 
-                <Grid Margin="0,4">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBox Grid.Column="0" Text="{Binding NewPresetName}"
-                             ToolTip.Tip="Preset name" Width="140" HorizontalAlignment="Left" Margin="0,0,4,0"/>
-                    <Button Grid.Column="1" Content="Save As" Command="{Binding AddPresetCommand}"/>
-                    <Button Grid.Column="2" Content="Delete" Command="{Binding RemovePresetCommand}"
-                            IsEnabled="{Binding HasSelectedPreset}"/>
-                </Grid>
-            </StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Skip metadata:" VerticalAlignment="Center" FontSize="12"
+                                   ToolTip.Tip="When enabled, skips EXIF/XMP/ICC extraction and embedding. Faster conversion but output files will have no metadata."/>
+                        <CheckBox Grid.Column="1" IsChecked="{Binding SkipMetadata}" VerticalAlignment="Center"/>
+                    </Grid>
+                </StackPanel>
+            </TabItem>
 
-            <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
-                <Button Content="Save" Command="{Binding SaveCommand}"/>
-                <Button Content="Cancel" Command="{Binding CancelCommand}"/>
-            </StackPanel>
-        </Grid>
-    </ScrollViewer>
+            <!-- Output Tab -->
+            <TabItem Header="Output">
+                <StackPanel Margin="8">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Use subfolder:" VerticalAlignment="Center" FontSize="12"
+                                   ToolTip.Tip="Place converted files in a subfolder inside the source directory instead of alongside the originals."/>
+                        <CheckBox Grid.Column="1" IsChecked="{Binding UseSubfolder}" VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <Separator Margin="0,8"/>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Subfolder name:" VerticalAlignment="Center" FontSize="12"
+                                   ToolTip.Tip="Name of the subfolder created for output files. Supports standard folder naming rules."/>
+                        <TextBox Grid.Column="1" Text="{Binding SubfolderName}" VerticalAlignment="Center"/>
+                    </Grid>
+                    <TextBlock Text="{Binding SubfolderNameValidationResult}"
+                               Foreground="Red" FontSize="11" Margin="120,2,0,0"
+                               IsVisible="{Binding SubfolderNameValidationResult, Converter={StaticResource StringToVisibilityConverter}}"/>
+
+                    <Separator Margin="0,8"/>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Custom output dir:" VerticalAlignment="Center" FontSize="12"
+                                   ToolTip.Tip="When enabled, save all converted files to a specific directory of your choice instead of the source folder."/>
+                        <CheckBox Grid.Column="1" IsChecked="{Binding UseCustomOutputDirectory}" VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <Grid IsVisible="{Binding UseCustomOutputDirectory}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="1" Text="{Binding CustomOutputDirectory}" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                        <Button Grid.Column="2" Content="Browse" Command="{Binding BrowseOutputDirectoryCommand}" VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <Separator Margin="0,8"/>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Recursive search:" VerticalAlignment="Center" FontSize="12"
+                                   ToolTip.Tip="Search subdirectories for .ARW files when loading a folder. Disabling only scans the selected directory."/>
+                        <CheckBox Grid.Column="1" IsChecked="{Binding SearchRecursive}" VerticalAlignment="Center"/>
+                    </Grid>
+                </StackPanel>
+            </TabItem>
+
+            <!-- Behavior Tab -->
+            <TabItem Header="Behavior">
+                <StackPanel Margin="8">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="File conflict:" VerticalAlignment="Center" FontSize="12"
+                                   ToolTip.Tip="How to handle existing output files: Overwrite replaces them, Skip leaves originals untouched, Append Number adds _1, _2, etc."/>
+                        <ComboBox Grid.Column="1" Width="180" HorizontalAlignment="Left"
+                                  ItemsSource="{Binding ConflictResolutionOptions}"
+                                  SelectedItem="{Binding ConflictResolution}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="local:ConflictResolution">
+                                    <TextBlock Text="{Binding}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </Grid>
+
+                    <Separator Margin="0,8"/>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Confirm overwrite:" VerticalAlignment="Center" FontSize="12"
+                                   ToolTip.Tip="Show a confirmation dialog before overwriting existing files. Only applies when conflict resolution is set to Overwrite."/>
+                        <CheckBox Grid.Column="1" IsChecked="{Binding ConfirmOverwrite}" VerticalAlignment="Center"/>
+                    </Grid>
+                </StackPanel>
+            </TabItem>
+
+            <!-- Presets Tab -->
+            <TabItem Header="Presets">
+                <StackPanel Margin="8">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <ComboBox Grid.Column="0"
+                                  ItemsSource="{Binding Presets}"
+                                  SelectedItem="{Binding SelectedPreset}"
+                                  HorizontalAlignment="Stretch">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Name}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                        <Button Grid.Column="1" Content="Load" Command="{Binding LoadPresetCommand}"
+                                Margin="4,0,0,0" IsEnabled="{Binding HasSelectedPreset}"/>
+                    </Grid>
+
+                    <Separator Margin="0,8"/>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" Text="{Binding NewPresetName}"
+                                 ToolTip.Tip="Preset name" HorizontalAlignment="Stretch" Margin="0,0,4,0"/>
+                        <Button Grid.Column="1" Content="Save As" Command="{Binding AddPresetCommand}" Margin="0,0,4,0"/>
+                        <Button Grid.Column="2" Content="Delete" Command="{Binding RemovePresetCommand}"
+                                IsEnabled="{Binding HasSelectedPreset}"/>
+                    </Grid>
+                </StackPanel>
+            </TabItem>
+        </TabControl>
+
+        <!-- Bottom buttons -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="12,8">
+            <Button Content="Save" Command="{Binding SaveCommand}" Margin="0,0,8,0"/>
+            <Button Content="Cancel" Command="{Binding CancelCommand}"/>
+        </StackPanel>
+    </Grid>
 </Window>

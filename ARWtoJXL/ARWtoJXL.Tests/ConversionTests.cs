@@ -21,7 +21,7 @@ namespace ARWtoJXL.Tests
         [Fact]
         public async Task GetThumbnailAsync_ValidArw_ReturnsBytes()
         {
-            var thumbnail = await _imageService.GetThumbnailAsync(TestArwPath);
+            var thumbnail = await _imageService.GetThumbnailAsync(TestArwPath, TestContext.Current.CancellationToken);
             Assert.NotEmpty(thumbnail);
         }
 
@@ -29,7 +29,7 @@ namespace ARWtoJXL.Tests
         public async Task GetThumbnailAsync_InvalidFile_ThrowsException()
         {
             var invalidPath = "non_existent_file.arw";
-            await Assert.ThrowsAsync<FileNotFoundException>(() => _imageService.GetThumbnailAsync(invalidPath));
+            await Assert.ThrowsAsync<FileNotFoundException>(() => _imageService.GetThumbnailAsync(invalidPath, TestContext.Current.CancellationToken));
         }
 
         [Theory]
@@ -43,7 +43,7 @@ namespace ARWtoJXL.Tests
             var outputPath = GetOutputPath($"quality{quality}");
             await CleanOutputFile(outputPath);
 
-            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, quality, OutputFormat.Jxl, CancellationToken.None);
+            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, quality, OutputFormat.Jxl, TestContext.Current.CancellationToken);
 
             Assert.True(File.Exists(outputPath));
             Assert.True(new FileInfo(outputPath).Length > 0);
@@ -63,7 +63,7 @@ namespace ARWtoJXL.Tests
                 p => { lock (lockObj) progressValues.Add(p); },
                 50,
                 OutputFormat.Jxl,
-                CancellationToken.None);
+                TestContext.Current.CancellationToken);
 
             Assert.True(File.Exists(outputPath));
             Assert.True(progressValues.Count > 2, $"Expected multiple progress updates, got {progressValues.Count}");

@@ -1,9 +1,7 @@
 using System;
 using System.IO;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using ImageMagick;
 using ARWtoJXL.Core.Interfaces;
 using ARWtoJXL.Core.Models;
 
@@ -47,12 +45,11 @@ public class ImageProcessingService : IImageService
         OutputFormat outputFormat = OutputFormat.Jxl,
         CancellationToken cancellationToken = default,
         bool skipMetadata = false,
-        int? effort = null,
-        float? rawDistance = null)
+        int? effort = null)
     {
         if (outputFormat == OutputFormat.Jxl)
         {
-            await ConvertToJxlAsync(inputPath, outputPath, progress, quality, cancellationToken, skipMetadata, effort, rawDistance);
+            await ConvertToJxlAsync(inputPath, outputPath, progress, quality, cancellationToken, skipMetadata, effort);
         }
         else if (outputFormat == OutputFormat.Jpeg)
         {
@@ -71,8 +68,7 @@ public class ImageProcessingService : IImageService
         int quality,
         CancellationToken cancellationToken,
         bool skipMetadata = false,
-        int? effort = null,
-        float? rawDistance = null)
+        int? effort = null)
     {
         MetadataProfiles? metadata = null;
 
@@ -93,29 +89,19 @@ public class ImageProcessingService : IImageService
                 _logger.Write($"[ImageProcessing] Metadata extraction skipped for {Path.GetFileName(inputPath)}");
             }
 
-            // Extract raw 16-bit RGB data
-            var rgbBytes = await _imageConverterService.ExtractToRawRgb16Async(inputPath, cancellationToken);
             progress?.Invoke(0.3);
 
-            // Parse image dimensions from the RGB data (we need width/height for PPM header)
-            // We'll get dimensions by re-opening the image briefly
-            (int width, int height) = await GetImageDimensionsAsync(inputPath, cancellationToken);
-
-            // Build PPM stream: header + raw RGB data
-            var ppmStream = BuildPpmStream(width, height, rgbBytes);
-            progress?.Invoke(0.4);
-
             await _cjxlEncoder.EncodeFromStreamAsync(
-                ppmStream,
+                inputPath,
                 inputPath,
                 outputPath,
                 quality,
                 metadata,
+                async (stream, ct) => await _imageConverterService.StreamPpmToAsync(inputPath, stream, ct),
                 cancellationToken,
                 timeoutSeconds: 300,
-                cjxlProgress => progress?.Invoke(0.4 + cjxlProgress * 0.6),
-                effort,
-                rawDistance);
+                cjxlProgress => progress?.Invoke(0.35 + cjxlProgress * 0.63),
+                effort);
 
             progress?.Invoke(1.0);
 
@@ -130,29 +116,7 @@ public class ImageProcessingService : IImageService
         }
     }
 
-    private async Task<(int Width, int Height)> GetImageDimensionsAsync(string inputPath, CancellationToken cancellationToken)
-    {
-        return await Task.Run(() =>
-        {
-            using var image = new ImageMagick.MagickImage(inputPath);
-            return ((int)image.Width, (int)image.Height);
-        }, cancellationToken);
-    }
-
-    private MemoryStream BuildPpmStream(int width, int height, byte[] rgbBytes)
-    {
-        var ms = new MemoryStream();
-        // PPM P6 binary header
-        var header = $"P6\n{width} {height}\n65535\n";
-        var headerBytes = Encoding.ASCII.GetBytes(header);
-        ms.Write(headerBytes, 0, headerBytes.Length);
-        ms.Write(rgbBytes, 0, rgbBytes.Length);
-        ms.Position = 0;
-        _logger.Write($"[ImageProcessing] Built PPM stream: {width}x{height}, {ms.Length} bytes total");
-        return ms;
-    }
-
-   private async Task ConvertToJpegAsync(
+ private async Task ConvertToJpegAsync(
         string inputPath,
         string outputPath,
         Action<double> progress,

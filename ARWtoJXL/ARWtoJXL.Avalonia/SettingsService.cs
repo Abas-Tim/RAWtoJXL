@@ -47,9 +47,6 @@ namespace ARWtoJXL.Avalonia
 
         [JsonPropertyName("cjxlEffort")]
         public int CjxlEffort { get; set; } = -1;
-
-        [JsonPropertyName("cjxlRawDistance")]
-        public string CjxlRawDistance { get; set; } = string.Empty;
     }
 
     public class AppSettings
@@ -92,9 +89,6 @@ namespace ARWtoJXL.Avalonia
 
         [JsonPropertyName("cjxlEffort")]
         public int CjxlEffort { get; set; } = -1;
-
-        [JsonPropertyName("cjxlRawDistance")]
-        public string CjxlRawDistance { get; set; } = string.Empty;
     }
 
     public static class SettingsService

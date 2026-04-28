@@ -16,7 +16,8 @@ ARWtoJPEGXL/
 └── ARWtoJXL/
     ├── build.ps1                          # Build script (restore, download deps, publish)
     ├── cjxl.exe                           # JPEG XL encoder v0.11.2 (downloaded at build time)
-    ├── exiftool.exe                       # Metadata tool v13.56 (downloaded at build time)
+    ├── exiftool.exe                       # Metadata tool v13.57 (downloaded at build time)
+    ├── exiftool_files/                    # exiftool companion Perl runtime DLLs
     ├── ARWtoJXL.sln
     ├── ARWtoJXL.Core/                     # Business logic layer
     │   └── docs/PROJECT.md               # Core project documentation
@@ -34,18 +35,18 @@ Each project maintains its own documentation with detailed information on archit
   - Services, interfaces, DI registration, conversion pipeline, file lock handling, concurrency model, enums
 
 - **ARWtoJXL.Avalonia** — `ARWtoJXL/ARWtoJXL.Avalonia/docs/PROJECT.md`
-  - UI/UX flow, view models, UI components, settings, keyboard shortcuts, selection logic
+  - UI/UX flow, view models, UI components, settings, selection logic
 
 - **ARWtoJXL.Tests** — `ARWtoJXL/ARWtoJXL.Tests/docs/PROJECT.md`
   - Test configuration, test suites, DI setup for tests
 
 ## Build/Deploy
 
-- `build.ps1` (in `ARWtoJXL/`): checks cjxl.exe, downloads exiftool if missing, copies both to publish dir, then `dotnet restore` + `dotnet publish`
+- `build.ps1` (in `ARWtoJXL/`): checks cjxl.exe exists, downloads exiftool v13.57 if missing (from SourceForge), copies both to publish dir, then `dotnet restore` + `dotnet publish`
 - Single-file publish: `dotnet publish -c Release -r win-x64 --self-contained true -p:DebugType=None -p:DebugSymbols=false`
-- cjxl.exe + exiftool.exe copied to output via `<None Include="..\*.exe" CopyToOutputDirectory="PreserveNewest" />`
+- cjxl.exe + exiftool.exe + exiftool_files/ copied to output via `<None Include="..\*.exe" CopyToOutputDirectory="PreserveNewest" />`
 - Tests: `dotnet test ARWtoJXL.Tests.csproj`
-- Smoke tests: `dotnet test ARWtoJXL.Tests.csproj --filter "category=smoke"`
+- GUI tests: `dotnet test ARWtoJXL.Tests.csproj --filter "category=gui"`
 
 ## Git Ignore Policy
 

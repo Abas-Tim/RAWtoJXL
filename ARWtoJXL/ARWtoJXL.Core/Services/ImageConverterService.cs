@@ -141,28 +141,32 @@ public class ImageConverterService : IImageConverterService
 
     public async Task<MetadataProfiles> ExtractMetadataProfilesAsync(string filePath, CancellationToken cancellationToken = default)
     {
-        var profiles = new MetadataProfiles();
+        var profiles = new MetadataProfiles(_logger);
         var ext = Path.GetExtension(filePath).ToLowerInvariant();
 
-        try
+        if (ext == ".arw")
         {
-            if (ext == ".arw")
+            var exifPath = await _exiftoolService.ExtractExifAsync(filePath, cancellationToken);
+            if (!string.IsNullOrEmpty(exifPath))
             {
-                var exifPath = await _exiftoolService.ExtractExifAsync(filePath, cancellationToken);
-                if (!string.IsNullOrEmpty(exifPath))
-                {
-                    profiles.ExifPath = exifPath;
-                    _logger.Write($"[ImageConverterService] EXIF from exiftool: {profiles.ExifPath}");
-                }
+                profiles.ExifPath = exifPath;
+                _logger.Write($"[ImageConverterService] EXIF from exiftool: {profiles.ExifPath}");
             }
-            else
+        }
+        else
+        {
+            try
             {
                 profiles = await ExtractProfilesFromImageAsync(filePath, profiles, cancellationToken);
             }
-
-            if (string.IsNullOrEmpty(profiles.ExifPath) && ext != ".arw")
+            catch (Exception ex)
             {
-                _logger.Write("[ImageConverterService] Magick.NET EXIF failed, trying exiftool fallback...");
+                _logger.Write($"[ImageConverterService] Magick.NET extraction failed: {ex.Message}");
+            }
+
+            if (string.IsNullOrEmpty(profiles.ExifPath))
+            {
+                _logger.Write("[ImageConverterService] Trying exiftool fallback for EXIF...");
                 var exiftoolPath = await _exiftoolService.ExtractExifAsync(filePath, cancellationToken);
                 if (!string.IsNullOrEmpty(exiftoolPath))
                 {
@@ -170,10 +174,6 @@ public class ImageConverterService : IImageConverterService
                     _logger.Write($"[ImageConverterService] EXIF from exiftool: {profiles.ExifPath}");
                 }
             }
-        }
-        catch (Exception ex)
-        {
-            _logger.Write($"[ImageConverterService] Metadata extraction error: {ex.Message}");
         }
 
         _logger.Write($"[ImageConverterService] Final metadata: Exif={profiles.ExifPath ?? "none"}, Xmp={profiles.XmpPath ?? "none"}, Icc={profiles.IccPath ?? "none"}, Iptc={profiles.IptcPath ?? "none"}");
@@ -237,6 +237,46 @@ public class ImageConverterService : IImageConverterService
             catch (Exception ex)
             {
                 throw new Exception($"Failed to extract RGB16 from {Path.GetFileName(inputPath)}: {ex.Message}", ex);
+            }
+        }, cancellationToken);
+    }
+
+    public async Task StreamPpmToAsync(string inputPath, Stream output, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(inputPath))
+        {
+            throw new ArgumentException("Input path cannot be null or empty.", nameof(inputPath));
+        }
+
+        if (output == null)
+        {
+            throw new ArgumentNullException(nameof(output), "Output stream cannot be null.");
+        }
+
+        if (!File.Exists(inputPath))
+        {
+            throw new FileNotFoundException($"Input file not found: {inputPath}");
+        }
+
+        await Task.Run(() =>
+        {
+            try
+            {
+                using var image = new MagickImage(inputPath);
+                image.Depth = 16;
+                image.ColorSpace = ColorSpace.sRGB;
+                image.Format = MagickFormat.Ppm;
+
+                _logger.Write($"[ImageConverterService] Streaming PPM: {image.Width}x{image.Height}");
+                image.Write(output);
+            }
+            catch (IOException ex) when (FileLockedException.IsFileLocked(ex))
+            {
+                throw new FileLockedException(inputPath, ex);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Failed to stream PPM from {Path.GetFileName(inputPath)}: {ex.Message}", ex);
             }
         }, cancellationToken);
     }

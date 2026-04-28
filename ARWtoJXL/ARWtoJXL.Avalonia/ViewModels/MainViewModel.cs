@@ -27,7 +27,7 @@ namespace ARWtoJXL.Avalonia.ViewModels
         private readonly IDispatcherService _dispatcherService;
         private readonly IFilePickerService _filePickerService;
         private readonly ObservableCollection<ImageItemViewModel> _selectedImages = new();
-        private readonly HashSet<string> _addedFilePaths = new(StringComparer.OrdinalIgnoreCase);
+        private readonly BoundedFilePathSet _addedFilePaths = new(maxBytes: 1 * 1024 * 1024);
         private CancellationTokenSource? _cancellationTokenSource;
 
         [ObservableProperty]
@@ -96,11 +96,26 @@ namespace ARWtoJXL.Avalonia.ViewModels
         [ObservableProperty]
         private bool _searchRecursive;
 
+        partial void OnSearchRecursiveChanged(bool value)
+        {
+            SaveSettings();
+        }
+
         [ObservableProperty]
         private OutputFormat _outputFormat = OutputFormat.Jxl;
 
+        partial void OnOutputFormatChanged(OutputFormat value)
+        {
+            SaveSettings();
+        }
+
         [ObservableProperty]
         private ConflictResolution _conflictResolution = ConflictResolution.Overwrite;
+
+        partial void OnConflictResolutionChanged(ConflictResolution value)
+        {
+            SaveSettings();
+        }
 
         [ObservableProperty]
         private bool _confirmOverwrite = true;
@@ -145,14 +160,6 @@ namespace ARWtoJXL.Avalonia.ViewModels
             SaveSettings();
         }
 
-        [ObservableProperty]
-        private string _cjxlRawDistance = string.Empty;
-
-        partial void OnCjxlRawDistanceChanged(string value)
-        {
-            SaveSettings();
-        }
-
          public void ApplySettings(SettingsViewModel settings)
         {
             UseSubfolder = settings.UseSubfolder;
@@ -166,7 +173,7 @@ namespace ARWtoJXL.Avalonia.ViewModels
             CustomOutputDirectory = settings.CustomOutputDirectory;
             SkipMetadata = settings.SkipMetadata;
             CjxlEffort = settings.CjxlEffort;
-            CjxlRawDistance = settings.CjxlRawDistance;
+            SaveSettings();
         }
 
         [ObservableProperty]
@@ -193,6 +200,9 @@ namespace ARWtoJXL.Avalonia.ViewModels
         {
             var saved = SettingsService.Load();
             RecentFiles = new ObservableCollection<string>(saved.RecentFiles);
+            QualityPreset = saved.QualityPreset;
+            UseSubfolder = saved.UseSubfolder;
+            SubfolderName = saved.SubfolderName;
             SearchRecursive = saved.SearchRecursive;
             OutputFormat = saved.OutputFormat;
             ConflictResolution = saved.ConflictResolution;
@@ -201,7 +211,6 @@ namespace ARWtoJXL.Avalonia.ViewModels
             CustomOutputDirectory = saved.CustomOutputDirectory;
             SkipMetadata = saved.SkipMetadata;
             CjxlEffort = saved.CjxlEffort;
-            CjxlRawDistance = saved.CjxlRawDistance;
         }
 
         [RelayCommand(CanExecute = nameof(CanExecuteConvertSelected))]
@@ -268,12 +277,6 @@ namespace ARWtoJXL.Avalonia.ViewModels
                         long sourceSize = 0;
                         try { sourceSize = new FileInfo(item.FilePath).Length; } catch { }
 
-                        float? rawDistance = null;
-                        if (!string.IsNullOrWhiteSpace(CjxlRawDistance) && float.TryParse(CjxlRawDistance, out float parsedDistance))
-                        {
-                            rawDistance = parsedDistance;
-                        }
-
                         await _imageService.ConvertArwToJxlAsync(
                             item.FilePath,
                             outputPath,
@@ -282,8 +285,7 @@ namespace ARWtoJXL.Avalonia.ViewModels
                             OutputFormat,
                             _cancellationTokenSource.Token,
                             SkipMetadata,
-                            CjxlEffort >= 0 ? CjxlEffort : null,
-                            rawDistance);
+                            CjxlEffort >= 0 ? CjxlEffort : null);
 
                         long outputSize = 0;
                         try { outputSize = new FileInfo(outputPath).Length; } catch { }
@@ -365,6 +367,7 @@ namespace ARWtoJXL.Avalonia.ViewModels
             var itemsToRemove = _selectedImages.ToList();
             foreach (var item in itemsToRemove)
             {
+                item.Thumbnail?.Dispose();
                 item.IsRemoved = true;
                 item.PropertyChanged -= Item_PropertyChanged;
                 Images.Remove(item);
@@ -714,10 +717,54 @@ namespace ARWtoJXL.Avalonia.ViewModels
                 UseCustomOutputDirectory = UseCustomOutputDirectory,
                 CustomOutputDirectory = CustomOutputDirectory,
                 Presets = saved.Presets,
+                RecentFiles = saved.RecentFiles,
                 SkipMetadata = SkipMetadata,
-                CjxlEffort = CjxlEffort,
-                CjxlRawDistance = CjxlRawDistance
+                CjxlEffort = CjxlEffort
             });
+        }
+
+        private sealed class BoundedFilePathSet
+        {
+            private readonly HashSet<string> _set = new(StringComparer.OrdinalIgnoreCase);
+            private readonly LinkedList<string> _order = new();
+            private long _totalBytes;
+            private readonly long _maxBytes;
+
+            public BoundedFilePathSet(long maxBytes)
+            {
+                _maxBytes = maxBytes;
+            }
+
+            public bool Contains(string path) => _set.Contains(path);
+
+            public void Add(string path)
+            {
+                if (_set.Contains(path)) return;
+
+                long entryBytes = EstimateBytes(path);
+                _set.Add(path);
+                _order.AddLast(path);
+                _totalBytes += entryBytes;
+                EvictOld();
+            }
+
+            private void EvictOld()
+            {
+                while (_totalBytes > _maxBytes && _order.Count > 0)
+                {
+                    string? oldest = _order.First?.Value;
+                    if (oldest == null) break;
+
+                    _order.RemoveFirst();
+                    _set.Remove(oldest);
+                    _totalBytes -= EstimateBytes(oldest);
+                }
+            }
+
+            private static long EstimateBytes(string path)
+            {
+                return (long)path.Length * 2 + 88;
+            }
         }
     }
 }

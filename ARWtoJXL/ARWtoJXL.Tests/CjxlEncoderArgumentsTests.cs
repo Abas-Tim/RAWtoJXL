@@ -25,18 +25,6 @@ public class CjxlEncoderArgumentsTests
     }
 
     [Fact]
-    public void BuildEncodingArguments_Quality100_ReturnsLosslessArgs()
-    {
-        var service = CreateTestEncoder();
-        var args = service.BuildEncodingArguments(100, null, @"C:\input.png", @"C:\output.jxl");
-
-        Assert.Contains("--distance=0", args);
-        Assert.Contains("--effort=9", args);
-        Assert.Contains("--modular=1", args);
-        Assert.DoesNotContain("--progressive_dc=1", args);
-    }
-
-    [Fact]
     public void BuildEncodingArguments_Quality0_ReturnsMaxCompressionArgs()
     {
         var service = CreateTestEncoder();
@@ -130,27 +118,6 @@ public class CjxlEncoderArgumentsTests
         var args = service.BuildEncodingArguments(50, null, @"C:\input.png", @"C:\output.jxl", effortOverride: null);
 
         Assert.Contains("--effort=6", args);
-    }
-
-    [Fact]
-    public void BuildEncodingArguments_RawDistanceOverride_UsesCustomDistance()
-    {
-        var service = CreateTestEncoder();
-        var args = service.BuildEncodingArguments(85, null, @"C:\input.png", @"C:\output.jxl", rawDistance: 0.5f);
-
-        Assert.Contains("--distance=0.50", args);
-        float expectedAuto = QualityCalculator.CalculateDistance(85);
-        Assert.DoesNotContain($"--distance={expectedAuto:F2}", args);
-    }
-
-    [Fact]
-    public void BuildEncodingArguments_RawDistanceNull_UsesAutoDistance()
-    {
-        var service = CreateTestEncoder();
-        var args = service.BuildEncodingArguments(85, null, @"C:\input.png", @"C:\output.jxl", rawDistance: null);
-
-        float expectedDistance = QualityCalculator.CalculateDistance(85);
-        Assert.Contains($"--distance={expectedDistance:F2}", args);
     }
 
     private static TestEncoder CreateTestEncoder()

@@ -24,7 +24,7 @@ public class ExiftoolService : IExiftoolService
     {
         await Task.Yield();
 
-        string? exiftoolPath = _processRunner.FindExiftool("ExiftoolService");
+        string? exiftoolPath = await _processRunner.FindExiftoolAsync("ExiftoolService");
         if (string.IsNullOrEmpty(exiftoolPath))
         {
             _logger.Write("[ExiftoolService] exiftool.exe not found - skipping EXIF extraction");
@@ -50,7 +50,7 @@ public class ExiftoolService : IExiftoolService
     {
         await Task.Yield();
 
-        string? exiftoolPath = _processRunner.FindExiftool("ExiftoolService");
+        string? exiftoolPath = await _processRunner.FindExiftoolAsync("ExiftoolService");
         if (string.IsNullOrEmpty(exiftoolPath))
         {
             _logger.Write("[ExiftoolService] exiftool.exe not found - skipping metadata embedding");
@@ -93,8 +93,9 @@ public class ExiftoolService : IExiftoolService
         }
     }
 
-    private static bool IsFileLockError(string stderr, string filePath)
+    private static bool IsFileLockError(string? stderr, string filePath)
     {
+        if (string.IsNullOrEmpty(stderr)) return false;
         var fileName = Path.GetFileName(filePath);
         if (stderr.Contains(fileName, StringComparison.OrdinalIgnoreCase) &&
             (stderr.Contains("cannot open", StringComparison.OrdinalIgnoreCase) ||

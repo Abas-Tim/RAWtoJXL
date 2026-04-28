@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -15,6 +17,42 @@ namespace ARWtoJXL.Avalonia.ViewModels
         public event EventHandler? RequestClose;
 
         private readonly IFilePickerService _filePickerService;
+
+        private static readonly HashSet<string> _noPersistProperties = new()
+        {
+            nameof(IsSaving),
+            nameof(HasSelectedPreset)
+        };
+
+        protected override void OnPropertyChanged(PropertyChangedEventArgs e)
+        {
+            base.OnPropertyChanged(e);
+            if (!string.IsNullOrEmpty(e.PropertyName) && !_noPersistProperties.Contains(e.PropertyName))
+            {
+                Persist();
+            }
+        }
+
+        private void Persist()
+        {
+            var saved = SettingsService.Load();
+            SettingsService.Save(new AppSettings
+            {
+                UseSubfolder = UseSubfolder,
+                SubfolderName = SubfolderName,
+                QualityPreset = QualityPreset,
+                SearchRecursive = SearchRecursive,
+                OutputFormat = OutputFormat,
+                ConflictResolution = ConflictResolution,
+                ConfirmOverwrite = ConfirmOverwrite,
+                UseCustomOutputDirectory = UseCustomOutputDirectory,
+                CustomOutputDirectory = CustomOutputDirectory,
+                Presets = Presets.ToList(),
+                RecentFiles = saved.RecentFiles,
+                SkipMetadata = SkipMetadata,
+                CjxlEffort = CjxlEffort
+            });
+        }
 
         [ObservableProperty]
         private bool _useSubfolder;
@@ -49,6 +87,29 @@ namespace ARWtoJXL.Avalonia.ViewModels
         public Array OutputFormatOptions => Enum.GetValues(typeof(OutputFormat));
         public Array ConflictResolutionOptions => Enum.GetValues(typeof(ConflictResolution));
 
+        public class EffortOption
+        {
+            public string Display { get; }
+            public int Value { get; }
+            public EffortOption(string display, int value) { Display = display; Value = value; }
+        }
+
+       public static readonly EffortOption[] DefaultCjxlEffortOptions = new[]
+        {
+            new EffortOption("Auto", -1),
+            new EffortOption("1", 1),
+            new EffortOption("2", 2),
+            new EffortOption("3", 3),
+            new EffortOption("4", 4),
+            new EffortOption("5", 5),
+            new EffortOption("6", 6),
+            new EffortOption("7", 7),
+            new EffortOption("8", 8),
+            new EffortOption("9", 9),
+        };
+
+        public EffortOption[] CjxlEffortOptions => DefaultCjxlEffortOptions;
+
         [ObservableProperty]
         private string? _subfolderNameValidationResult;
 
@@ -76,14 +137,16 @@ namespace ARWtoJXL.Avalonia.ViewModels
         private int _cjxlEffort = -1;
 
         [ObservableProperty]
-        private string _cjxlRawDistance = string.Empty;
+        private EffortOption? _selectedEffortOption;
 
-        [ObservableProperty]
-        private string? _cjxlRawDistanceValidationResult;
+        private bool _syncingEffort;
 
-        partial void OnCjxlRawDistanceChanged(string value)
+        partial void OnSelectedEffortOptionChanged(EffortOption? value)
         {
-            CjxlRawDistanceValidationResult = ValidateRawDistance(value);
+            if (_syncingEffort || value == null) return;
+            _syncingEffort = true;
+            CjxlEffort = value.Value;
+            _syncingEffort = false;
         }
 
         partial void OnCjxlEffortChanged(int value)
@@ -92,6 +155,11 @@ namespace ARWtoJXL.Avalonia.ViewModels
             {
                 CjxlEffort = -1;
             }
+            if (_syncingEffort) return;
+            _syncingEffort = true;
+            var match = CjxlEffortOptions.FirstOrDefault(e => e.Value == CjxlEffort);
+            SelectedEffortOption = match;
+            _syncingEffort = false;
         }
 
         public SettingsViewModel(IFilePickerService filePickerService)
@@ -110,7 +178,6 @@ namespace ARWtoJXL.Avalonia.ViewModels
             Presets = new ObservableCollection<ConversionPreset>(saved.Presets);
             SkipMetadata = saved.SkipMetadata;
             CjxlEffort = saved.CjxlEffort;
-            CjxlRawDistance = saved.CjxlRawDistance;
         }
 
         partial void OnSubfolderNameChanged(string value)
@@ -151,17 +218,6 @@ namespace ARWtoJXL.Avalonia.ViewModels
             return null;
         }
 
-        internal static string? ValidateRawDistance(string value)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-                return null;
-            if (!float.TryParse(value, out float distance))
-                return "Must be a valid number.";
-            if (distance < 0.0 || distance > 150.0)
-                return "Must be between 0.0 and 150.0.";
-            return null;
-        }
-
         [RelayCommand]
         private async Task BrowseOutputDirectory()
         {
@@ -190,8 +246,7 @@ namespace ARWtoJXL.Avalonia.ViewModels
                 CustomOutputDirectory = CustomOutputDirectory,
                 ConfirmOverwrite = ConfirmOverwrite,
                 SkipMetadata = SkipMetadata,
-                CjxlEffort = CjxlEffort,
-                CjxlRawDistance = CjxlRawDistance
+                CjxlEffort = CjxlEffort
             };
 
             if (Presets.Any(p => p.Name.Equals(preset.Name, StringComparison.OrdinalIgnoreCase)))
@@ -234,12 +289,12 @@ namespace ARWtoJXL.Avalonia.ViewModels
             ConfirmOverwrite = SelectedPreset.ConfirmOverwrite;
             SkipMetadata = SelectedPreset.SkipMetadata;
             CjxlEffort = SelectedPreset.CjxlEffort;
-            CjxlRawDistance = SelectedPreset.CjxlRawDistance;
         }
 
         [RelayCommand]
         private void Save()
         {
+            var saved = SettingsService.Load();
             SettingsService.Save(new AppSettings
             {
                 UseSubfolder = UseSubfolder,
@@ -252,9 +307,9 @@ namespace ARWtoJXL.Avalonia.ViewModels
                 UseCustomOutputDirectory = UseCustomOutputDirectory,
                 CustomOutputDirectory = CustomOutputDirectory,
                 Presets = Presets.ToList(),
+                RecentFiles = saved.RecentFiles,
                 SkipMetadata = SkipMetadata,
-                CjxlEffort = CjxlEffort,
-                CjxlRawDistance = CjxlRawDistance
+                CjxlEffort = CjxlEffort
             });
             IsSaving = false;
             RequestClose?.Invoke(this, EventArgs.Empty);

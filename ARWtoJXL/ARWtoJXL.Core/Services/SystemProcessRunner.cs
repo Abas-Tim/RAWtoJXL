@@ -21,13 +21,13 @@ public class SystemProcessRunner : IProcessRunner
         _logger = logger;
     }
 
-    public string? FindExiftool(string? logPrefix = null)
+    public async Task<string?> FindExiftoolAsync(string? logPrefix = null)
     {
         string prefix = $"[{logPrefix ?? "SystemProcessRunner"}]";
 
         foreach (var path in CommonExiftoolPaths)
         {
-            if (File.Exists(path) && IsExiftoolWorking(path, prefix))
+            if (File.Exists(path) && await IsExiftoolWorkingAsync(path, prefix))
             {
                 _logger.Write($"{prefix} Found exiftool at: {path}");
                 return path;
@@ -38,7 +38,7 @@ public class SystemProcessRunner : IProcessRunner
         foreach (var dir in pathEnv.Split(';'))
         {
             var candidate = Path.Combine(dir, "exiftool.exe");
-            if (File.Exists(candidate) && IsExiftoolWorking(candidate, prefix))
+            if (File.Exists(candidate) && await IsExiftoolWorkingAsync(candidate, prefix))
             {
                 _logger.Write($"{prefix} Using PATH exiftool: {candidate}");
                 return candidate;
@@ -49,7 +49,7 @@ public class SystemProcessRunner : IProcessRunner
         if (!string.IsNullOrEmpty(appDir))
         {
             var local = Path.Combine(appDir, "exiftool.exe");
-            if (File.Exists(local) && IsExiftoolWorking(local, prefix))
+            if (File.Exists(local) && await IsExiftoolWorkingAsync(local, prefix))
             {
                 _logger.Write($"{prefix} Using local exiftool: {local}");
                 return local;
@@ -59,38 +59,19 @@ public class SystemProcessRunner : IProcessRunner
         return null;
     }
 
-    public bool IsExiftoolWorking(string exiftoolPath, string? logPrefix = null)
+    public async Task<bool> IsExiftoolWorkingAsync(string exiftoolPath, string? logPrefix = null)
     {
         string prefix = $"[{logPrefix ?? "SystemProcessRunner"}]";
 
         try
         {
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = exiftoolPath,
-                Arguments = "-ver",
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = true
-            };
+            var (exitCode, output, error) = await RunProcessAsync(exiftoolPath, "-ver");
 
-            using var process = Process.Start(startInfo);
-            if (process == null) return false;
-
-            var output = process.StandardOutput.ReadToEnd();
-            var error = process.StandardError.ReadToEnd();
-            process.WaitForExit();
-
-            var success = process.ExitCode == 0 && !string.IsNullOrWhiteSpace(output) && output[0] switch
-            {
-                >= '0' and <= '9' => true,
-                _ => false
-            };
+            bool success = exitCode == 0 && output?.TrimStart() is string trimmed && trimmed.Length > 0 && trimmed[0] is >= '0' and <= '9';
 
             if (!success)
             {
-                _logger.Write($"{prefix} exiftool version check failed: exit={process.ExitCode}, stdout='{output?.Trim()}', stderr='{error?.Trim()}'");
+                _logger.Write($"{prefix} exiftool version check failed: exit={exitCode}, stdout='{output?.Trim()}', stderr='{error?.Trim()}'");
             }
             else
             {
@@ -219,7 +200,12 @@ public class SystemProcessRunner : IProcessRunner
         });
 
         using var ms = new MemoryStream();
-        await process.StandardOutput.BaseStream.CopyToAsync(ms, cancellationToken);
+        using var stderrMs = new MemoryStream();
+
+        var stdoutTask = process.StandardOutput.BaseStream.CopyToAsync(ms, cancellationToken);
+        var stderrTask = process.StandardError.BaseStream.CopyToAsync(stderrMs, cancellationToken);
+
+        await Task.WhenAll(stdoutTask, stderrTask);
         await process.WaitForExitAsync(cancellationToken);
 
         byte[]? result = ms.ToArray();

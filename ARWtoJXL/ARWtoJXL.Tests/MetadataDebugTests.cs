@@ -21,7 +21,7 @@ namespace ARWtoJXL.Tests
             var imageConverterService = Services.GetRequiredService<IImageConverterService>();
             var imageService = Services.GetRequiredService<IImageService>();
 
-            var metadata = await imageConverterService.ExtractMetadataProfilesAsync(TestArwPath);
+            var metadata = await imageConverterService.ExtractMetadataProfilesAsync(TestArwPath, TestContext.Current.CancellationToken);
             Console.WriteLine($"=== Extraction Result ===");
             Console.WriteLine($"HasAny: {metadata.HasAny}");
             Console.WriteLine($"ExifPath: {metadata.ExifPath ?? "null"}");
@@ -50,13 +50,13 @@ namespace ARWtoJXL.Tests
             var outputPath = GetOutputPath("metadata_verify");
             await CleanOutputFile(outputPath);
 
-            await imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 90, OutputFormat.Jxl, System.Threading.CancellationToken.None);
+            await imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 90, OutputFormat.Jxl, TestContext.Current.CancellationToken);
 
             Console.WriteLine($"\n=== Output File ===");
             Console.WriteLine($"JXL exists: {File.Exists(outputPath)}");
             Console.WriteLine($"JXL size: {new FileInfo(outputPath).Length} bytes");
 
-            var outputMetadata = await imageConverterService.ExtractMetadataProfilesAsync(outputPath);
+            var outputMetadata = await imageConverterService.ExtractMetadataProfilesAsync(outputPath, TestContext.Current.CancellationToken);
             Console.WriteLine($"\n=== Output Metadata (MagickService) ===");
             Console.WriteLine($"HasAny: {outputMetadata.HasAny}");
             Console.WriteLine($"ExifPath: {outputMetadata.ExifPath ?? "null"}");

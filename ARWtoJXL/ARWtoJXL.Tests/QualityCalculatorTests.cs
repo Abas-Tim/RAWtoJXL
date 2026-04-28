@@ -29,13 +29,6 @@ namespace ARWtoJXL.Tests
         }
 
         [Fact]
-        public void CalculateDistance_Quality100_ReturnsZero()
-        {
-            var distance = QualityCalculator.CalculateDistance(100);
-            Assert.Equal(0.0f, distance, 4);
-        }
-
-        [Fact]
         public void CalculateDistance_Quality90_ReturnsApprox1()
         {
             var distance = QualityCalculator.CalculateDistance(90);

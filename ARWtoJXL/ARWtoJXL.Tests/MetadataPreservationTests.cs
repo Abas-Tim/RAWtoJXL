@@ -21,7 +21,7 @@ namespace ARWtoJXL.Tests
         [Fact]
         public async Task ConvertArwToJxlAsync_Metadata_PreservesExifAndIccProfiles()
         {
-            using var inputMetadata = await _imageConverterService.ExtractMetadataProfilesAsync(TestArwPath);
+            using var inputMetadata = await _imageConverterService.ExtractMetadataProfilesAsync(TestArwPath, TestContext.Current.CancellationToken);
 
             Assert.NotNull(inputMetadata);
             Assert.True(inputMetadata.HasAny, "Input ARW should have metadata");
@@ -29,11 +29,11 @@ namespace ARWtoJXL.Tests
             var outputPath = GetOutputPath("metadata_preserved");
             await CleanOutputFile(outputPath);
 
-            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 90, OutputFormat.Jxl, CancellationToken.None);
+            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, 90, OutputFormat.Jxl, TestContext.Current.CancellationToken);
 
             Assert.True(File.Exists(outputPath));
 
-             using var outputMetadata = await _imageConverterService.ExtractMetadataProfilesAsync(outputPath);
+             using var outputMetadata = await _imageConverterService.ExtractMetadataProfilesAsync(outputPath, TestContext.Current.CancellationToken);
             Assert.NotNull(outputMetadata);
             Assert.True(outputMetadata.HasAny, "Output JXL should have metadata");
 

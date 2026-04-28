@@ -13,7 +13,11 @@ namespace ARWtoJXL.Avalonia
         public MainWindow()
         {
             InitializeComponent();
-            this.FindControl<ListBox>("ImagesListBox").SelectionMode = SelectionMode.Multiple;
+            var listBox = this.FindControl<ListBox>("ImagesListBox");
+            if (listBox != null)
+            {
+                listBox.SelectionMode = SelectionMode.Multiple;
+            }
         }
 
         public void OpenSettings()
@@ -36,7 +40,6 @@ namespace ARWtoJXL.Avalonia
                 _settingsWindow.Settings.CustomOutputDirectory = viewModel.CustomOutputDirectory;
                 _settingsWindow.Settings.SkipMetadata = viewModel.SkipMetadata;
                 _settingsWindow.Settings.CjxlEffort = viewModel.CjxlEffort;
-                _settingsWindow.Settings.CjxlRawDistance = viewModel.CjxlRawDistance;
 
                 _settingsWindow.Closed += (s, args) =>
                 {
