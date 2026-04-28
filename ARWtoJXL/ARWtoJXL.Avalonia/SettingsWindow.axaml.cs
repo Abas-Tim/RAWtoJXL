@@ -1,7 +1,7 @@
 using Avalonia.Controls;
-using Avalonia.Markup.Xaml;
 using ARWtoJXL.Avalonia.Services;
 using ARWtoJXL.Avalonia.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ARWtoJXL.Avalonia
 {
@@ -11,11 +11,12 @@ namespace ARWtoJXL.Avalonia
 
         public SettingsWindow()
         {
-            AvaloniaXamlLoader.Load(this);
-            var filePicker = new FilePickerService();
+            InitializeComponent();
+            var filePicker = App.Services!.GetRequiredService<IFilePickerService>();
             Settings = new SettingsViewModel(filePicker);
             Settings.RequestClose += (s, e) => this.Close();
             DataContext = Settings;
+            Closing += (_, _) => Settings.Dispose();
         }
     }
 }

@@ -12,11 +12,13 @@ using ARWtoJXL.Avalonia.Services;
 
 namespace ARWtoJXL.Avalonia.ViewModels
 {
-    public partial class SettingsViewModel : ObservableObject
+    public partial class SettingsViewModel : ObservableObject, IDisposable
     {
         public event EventHandler? RequestClose;
 
         private readonly IFilePickerService _filePickerService;
+        private readonly System.Timers.Timer _persistTimer;
+        private readonly List<string> _recentFiles;
 
         private static readonly HashSet<string> _noPersistProperties = new()
         {
@@ -24,18 +26,39 @@ namespace ARWtoJXL.Avalonia.ViewModels
             nameof(HasSelectedPreset)
         };
 
+        public SettingsViewModel(IFilePickerService filePickerService)
+        {
+            _filePickerService = filePickerService;
+            _persistTimer = new System.Timers.Timer(500) { AutoReset = false };
+            _persistTimer.Elapsed += (_, _) => Persist();
+            var saved = SettingsService.Load();
+            _recentFiles = saved.RecentFiles;
+            UseSubfolder = saved.UseSubfolder;
+            SubfolderName = saved.SubfolderName;
+            QualityPreset = saved.QualityPreset;
+            SearchRecursive = saved.SearchRecursive;
+            OutputFormat = saved.OutputFormat;
+            ConflictResolution = saved.ConflictResolution;
+            ConfirmOverwrite = saved.ConfirmOverwrite;
+            UseCustomOutputDirectory = saved.UseCustomOutputDirectory;
+            CustomOutputDirectory = saved.CustomOutputDirectory;
+            Presets = new ObservableCollection<ConversionPreset>(saved.Presets);
+            SkipMetadata = saved.SkipMetadata;
+            CjxlEffort = saved.CjxlEffort;
+        }
+
         protected override void OnPropertyChanged(PropertyChangedEventArgs e)
         {
             base.OnPropertyChanged(e);
             if (!string.IsNullOrEmpty(e.PropertyName) && !_noPersistProperties.Contains(e.PropertyName))
             {
-                Persist();
+                _persistTimer.Stop();
+                _persistTimer.Start();
             }
         }
 
-        private void Persist()
+        public void Persist()
         {
-            var saved = SettingsService.Load();
             SettingsService.Save(new AppSettings
             {
                 UseSubfolder = UseSubfolder,
@@ -48,10 +71,17 @@ namespace ARWtoJXL.Avalonia.ViewModels
                 UseCustomOutputDirectory = UseCustomOutputDirectory,
                 CustomOutputDirectory = CustomOutputDirectory,
                 Presets = Presets.ToList(),
-                RecentFiles = saved.RecentFiles,
+                RecentFiles = _recentFiles,
                 SkipMetadata = SkipMetadata,
                 CjxlEffort = CjxlEffort
             });
+        }
+
+        public void Dispose()
+        {
+            _persistTimer.Stop();
+            Persist();
+            _persistTimer.Dispose();
         }
 
         [ObservableProperty]
@@ -160,24 +190,6 @@ namespace ARWtoJXL.Avalonia.ViewModels
             var match = CjxlEffortOptions.FirstOrDefault(e => e.Value == CjxlEffort);
             SelectedEffortOption = match;
             _syncingEffort = false;
-        }
-
-        public SettingsViewModel(IFilePickerService filePickerService)
-        {
-            _filePickerService = filePickerService;
-            var saved = SettingsService.Load();
-            UseSubfolder = saved.UseSubfolder;
-            SubfolderName = saved.SubfolderName;
-            QualityPreset = saved.QualityPreset;
-            SearchRecursive = saved.SearchRecursive;
-            OutputFormat = saved.OutputFormat;
-            ConflictResolution = saved.ConflictResolution;
-            ConfirmOverwrite = saved.ConfirmOverwrite;
-            UseCustomOutputDirectory = saved.UseCustomOutputDirectory;
-            CustomOutputDirectory = saved.CustomOutputDirectory;
-            Presets = new ObservableCollection<ConversionPreset>(saved.Presets);
-            SkipMetadata = saved.SkipMetadata;
-            CjxlEffort = saved.CjxlEffort;
         }
 
         partial void OnSubfolderNameChanged(string value)

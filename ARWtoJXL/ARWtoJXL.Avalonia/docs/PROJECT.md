@@ -36,7 +36,7 @@ ARWtoJXL.Avalonia/
 ├── ViewModels/
 │   ├── ImageItemViewModel.cs                # View model for image items (ObservableProperty, Bitmap thumbnail, QualityOverride)
 │   ├── MainViewModel.cs                     # Main view model with IFilePickerService injection, auto-persists settings on change
-│   └── SettingsViewModel.cs                 # Settings view model with presets, validation, auto-persists on every property change via OnPropertyChanged
+│   └── SettingsViewModel.cs                 # Settings view model with presets, validation, debounced auto-persist (500ms) via OnPropertyChanged
 └── docs/
     └── PROJECT.md                           # This file
 ```
@@ -52,6 +52,7 @@ ARWtoJXL.Avalonia/
 - `IDialogService` → `DialogService` (singleton)
 - `IFilePickerService` → `FilePickerService` (singleton)
 - ViewModels resolved per-instance with injected services
+- `App.Services` exposes the `IServiceProvider` as a static property for runtime resolution (e.g., `SettingsWindow` resolves `IFilePickerService` from it)
 
 **XAML Loading**: Uses `InitializeComponent()` in constructors. `AvaloniaXamlLoader.Load(this)` replaced for Avalonia 12 compatibility.
 
@@ -68,7 +69,7 @@ ARWtoJXL.Avalonia/
 - **File Picker**: Avalonia storage APIs (`StorageProvider.OpenFilePickerAsync`, `OpenFolderPickerAsync`)
 - **Presets**: Named conversion presets with quality, effort, raw distance settings
 - **Confirmation Dialogs**: Custom `ConfirmDialog` window with `MessageText`/`TitleText` properties. Yes button (`IsDefault`) closes with `true`, No button (`IsCancel`) closes with `false`.
-- **Settings Persistence**: Both `MainViewModel` and `SettingsViewModel` auto-save to disk on every property change via `OnPropertyChanged` partial methods. `MainViewModel` loads all settings from disk on startup. Settings stored in `%APPDATA%\ARWtoJXL\settings.json`.
+- **Settings Persistence**: Both `MainViewModel` and `SettingsViewModel` auto-save to disk on property change via `OnPropertyChanged`. `SettingsViewModel` uses a 500ms debounce timer to batch rapid edits — avoids synchronous I/O on UI thread and race conditions. `Dispose()` flushes pending persist. `MainViewModel` loads all settings from disk on startup. Settings stored in `%APPDATA%\ARWtoJXL\settings.json`. Settings window syncs through shared persistence — `SettingsViewModel` loads current state from disk on open, `MainViewModel.RefreshSettings()` reloads from disk on close.
 - **Quality Scale Segments**: The quality slider in SettingsWindow displays a three-segment color bar below the track: Lossy (0-89, red), Near-lossless (90-99, amber), Lossless (100, green) with labeled captions aligned to each segment.
 - **HeadlessTestMode**: `MainViewModel.HeadlessTestMode` static flag skips thumbnail generation during GUI tests to avoid file I/O.
 
@@ -81,11 +82,17 @@ ARWtoJXL.Avalonia/
 **Commands (`[RelayCommand]`):**
 - `ConvertSelectedCommand`, `RemoveSelectedCommand`, `SelectAllCommand`, `CancelCommand`, `OpenSettingsCommand`, `OpenFileCommand`, `OpenOutputFolderCommand`, `LoadRecentFilesCommand`, `ClearRecentFilesCommand`
 
+**Public methods:** `RefreshSettings()` — reloads settings from disk (called when SettingsWindow closes).
+
 **Nested class:** `BoundedFilePathSet` — memory-bounded deduplication set for added file paths (1 MB limit, FIFO eviction via LinkedList + HashSet).
 
 ### SettingsViewModel
+Implements `IDisposable` — `Dispose()` stops debounce timer, flushes pending persist, and disposes timer resources. Called from `SettingsWindow.Closing`.
+
 **Properties (all `[ObservableProperty]`):**
 - `UseSubfolder`, `SubfolderName`, `QualityPreset`, `SearchRecursive`, `OutputFormat`, `ConflictResolution`, `ConfirmOverwrite`, `UseCustomOutputDirectory`, `CustomOutputDirectory`, `IsSaving`, `SubfolderNameValidationResult`, `Presets` (ObservableCollection<ConversionPreset>), `SelectedPreset`, `HasSelectedPreset`, `NewPresetName`, `SkipMetadata`, `CjxlEffort`, `SelectedEffortOption`
+
+**Public methods:** `Persist()` — forces immediate save (flushes debounce). Used in tests to verify persistence without waiting for timer.
 
 **Public members:**
 - `OutputFormatOptions` (Array), `ConflictResolutionOptions` (Array), `CjxlEffortOptions` (EffortOption[] with 10 options: Auto -1 through 9)
