@@ -32,6 +32,21 @@ namespace ARWtoJXL.Avalonia.ViewModels
         [ObservableProperty]
         private int? _qualityOverride;
 
+        public double QualitySliderValue
+        {
+            get => QualityOverride ?? 90;
+            set
+            {
+                int clamped = Math.Max(0, Math.Min(100, (int)value));
+                QualityOverride = clamped;
+            }
+        }
+
+        partial void OnQualityOverrideChanged(int? value)
+        {
+            OnPropertyChanged(nameof(QualitySliderValue));
+        }
+
         [ObservableProperty]
         private bool _isRemoved;
 

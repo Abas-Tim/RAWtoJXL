@@ -8,7 +8,7 @@ Avalonia UI presentation layer implementing the desktop app with MVVM pattern, d
 ARWtoJXL.Avalonia/
 ├── App.axaml + App.cs                       # Application entry point with DI container setup
 ├── AppStrings.cs                            # Shared string resource constants (26 string constants)
-├── MainWindow.axaml + MainWindow.axaml.cs   # Main window with toolbar, tiles grid, recent files, status bar
+├── MainWindow.axaml + MainWindow.axaml.cs   # Main window with toolbar, file cards (per-file quality slider), recent files, status bar
 ├── SettingsWindow.axaml + SettingsWindow.axaml.cs # Resizable tabbed settings dialog (Conversion, Output, Behavior, Presets tabs)
 ├── SettingsService.cs                       # Settings persistence (JSON-based), AppSettings/ConversionPreset models, ConflictResolution enum
 ├── ViewLocator.cs                           # IDataTemplate implementation for MVVM view-model to view mapping
@@ -22,6 +22,7 @@ ARWtoJXL.Avalonia/
 │   ├── BooleanToValueConverter.cs           # Bool to value converter (supports "Invert", "InvertContent", "DefaultIfZero" parameters)
 │   ├── ImageStatusToStringConverter.cs      # ImageStatus enum to string converter
 │   ├── ImageStatusToVisibilityConverter.cs  # ImageStatus to bool (IsVisible) converter
+│   ├── IntToDoubleConverter.cs              # int? to double converter (slider binding)
 │   ├── NullableIntConverter.cs              # Nullable int converter
 │   ├── StringToIntConverter.cs              # String to int converter (ComboBox Tag binding)
 │   └── StringToVisibilityConverter.cs       # String to bool (IsVisible) converter
@@ -113,6 +114,8 @@ Implements `IDisposable` — `Dispose()` stops debounce timer, flushes pending p
 - `FilePath`, `FileName`, `Status`, `Thumbnail` (Bitmap?), `ErrorMessage`, `IsSelected`, `QualityOverride` (int?), `IsRemoved`, `SourceFileSize`, `OutputFileSize`, `OutputPath`
 
 **Computed:** `SizeInfoText` — formatted output size with percentage change
+
+**Slider binding:** `QualitySliderValue` (double) — two-way property for per-file quality slider; maps null `QualityOverride` to default 90, clamps 0-100 on set. Fires `OnPropertyChanged` when `QualityOverride` changes.
 
 **Methods:** `EffectiveQuality(int globalQuality)`, `static FormatBytes(long bytes)`
 
