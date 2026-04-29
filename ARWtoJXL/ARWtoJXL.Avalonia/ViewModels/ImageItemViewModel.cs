@@ -41,7 +41,10 @@ namespace ARWtoJXL.Avalonia.ViewModels
         partial void OnSourceFileSizeChanged(long value)
         {
             OnPropertyChanged(nameof(SizeInfoText));
+            OnPropertyChanged(nameof(SourceFileSizeText));
         }
+
+        public string SourceFileSizeText => SourceFileSize > 0 ? FormatBytes(SourceFileSize) : string.Empty;
 
         [ObservableProperty]
         private long _outputFileSize;

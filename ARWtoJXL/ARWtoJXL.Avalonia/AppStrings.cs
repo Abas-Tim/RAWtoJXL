@@ -19,11 +19,8 @@ namespace ARWtoJXL.Avalonia
         public const string OpenFileDialogFilter = "Sony RAW Files|*.ARW|JPEG XL Files|*.JXL|All Files|*.*";
         public const string ThumbnailFailedPrefix = "Thumbnail failed: ";
         public const string FileLockedPrefix = "File locked: ";
-        public const string FilesLoaded = "Files loaded.";
-        public const string ItemsSingular = "item(s)";
         public const string ItemsRemoved = "Removed ";
         public const string ItemsSuffix = " item(s).";
-        public const string DuplicatesSkipped = " duplicate(s) skipped.";
         public const string ConvertingProgress = "Converting ";
         public const string OfSuffix = " of ";
         public const string SubfolderNameDefault = "jxl_output";

@@ -221,9 +221,10 @@ namespace ARWtoJXL.Avalonia.ViewModels
 
             _cancellationTokenSource = new CancellationTokenSource();
             _completedCountField = 0;
+            _currentFileProgress = 0;
             CompletedCount = 0;
             TotalCount = readySelected.Count;
-            StatusMessage = $"{AppStrings.ConvertingProgress}{0}{AppStrings.OfSuffix}{readySelected.Count}...";
+            StatusMessage = $"{AppStrings.ConvertingProgress}{0}{AppStrings.OfSuffix}{readySelected.Count} (0%)";
             IsConverting = true;
             IsCancelRequested = false;
             RefreshAllCommands();
@@ -240,6 +241,7 @@ namespace ARWtoJXL.Avalonia.ViewModels
                         return;
                     }
 
+                    _currentFileProgress = 0;
                     item.Status = ImageStatus.Converting;
 
                     string? outputPath = ResolveOutputPath(item.FilePath);
@@ -280,7 +282,7 @@ namespace ARWtoJXL.Avalonia.ViewModels
                         await _imageService.ConvertArwToJxlAsync(
                             item.FilePath,
                             outputPath,
-                            _ => { },
+                            p => _ = OnUiAsync(() => OnFileProgress(p)),
                             quality,
                             OutputFormat,
                             _cancellationTokenSource.Token,
@@ -347,15 +349,14 @@ namespace ARWtoJXL.Avalonia.ViewModels
             await OnUiAsync(() =>
             {
                 OutputDirectory = lastOutputDir;
+                IsConverting = false;
+                IsCancelRequested = false;
+                _cancellationTokenSource = null;
+                StatusMessage = AppStrings.ConversionComplete;
+                CompletedCount = 0;
+                TotalCount = 0;
+                RefreshAllCommands();
             });
-
-            IsConverting = false;
-            IsCancelRequested = false;
-            _cancellationTokenSource = null;
-            StatusMessage = AppStrings.ConversionComplete;
-            CompletedCount = 0;
-            TotalCount = 0;
-            RefreshAllCommands();
         }
 
         private bool CanExecuteConvertSelected() =>
@@ -398,7 +399,7 @@ namespace ARWtoJXL.Avalonia.ViewModels
             StatusMessage = AppStrings.Cancelling;
         }
 
-        private bool CanExecuteCancel() => IsCancelRequested;
+        private bool CanExecuteCancel() => IsConverting;
 
         [RelayCommand]
         private void OpenSettings()
@@ -462,13 +463,28 @@ namespace ARWtoJXL.Avalonia.ViewModels
             RecentFiles = new ObservableCollection<string>();
         }
 
-          private int _completedCountField;
+       private int _completedCountField;
+        private double _currentFileProgress;
 
         private void UpdateProgress(int total)
         {
             int completed = Interlocked.Increment(ref _completedCountField);
             CompletedCount = completed;
-            StatusMessage = $"{AppStrings.ConvertingProgress}{completed}{AppStrings.OfSuffix}{total}...";
+            double overallPercent = total > 0 ? (completed - 1 + _currentFileProgress) / total * 100 : 0;
+            StatusMessage = $"{AppStrings.ConvertingProgress}{completed}{AppStrings.OfSuffix}{total} ({overallPercent:F0}%)";
+        }
+
+        private void UpdateProgressDisplay(int total)
+        {
+            int completed = Volatile.Read(ref _completedCountField);
+            double overallPercent = total > 0 ? (completed + _currentFileProgress) / total * 100 : 0;
+            StatusMessage = $"{AppStrings.ConvertingProgress}{completed}{AppStrings.OfSuffix}{total} ({overallPercent:F0}%)";
+        }
+
+        private void OnFileProgress(double progress)
+        {
+            _currentFileProgress = progress;
+            UpdateProgressDisplay(TotalCount);
         }
 
         private void Item_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -580,7 +596,8 @@ namespace ARWtoJXL.Avalonia.ViewModels
             {
                 FilePath = path,
                 FileName = Path.GetFileName(path),
-                Status = ImageStatus.Ready
+                Status = ImageStatus.Ready,
+                SourceFileSize = new FileInfo(path).Length
             }).ToList();
 
             await OnUiAsync(() =>
@@ -597,10 +614,6 @@ namespace ARWtoJXL.Avalonia.ViewModels
                 _ = Task.Run(() => GenerateThumbnailsAsync(newItems));
             }
 
-            string msg = skipped > 0
-                ? $"{AppStrings.FilesLoaded}{Images.Count}{AppStrings.ItemsSingular}{AppStrings.OfSuffix}{skipped}{AppStrings.DuplicatesSkipped}"
-                : $"{AppStrings.FilesLoaded}{Images.Count}{AppStrings.ItemsSingular}";
-            StatusMessage = msg;
             UpdateSelectionState();
             RefreshViewCommands();
         }

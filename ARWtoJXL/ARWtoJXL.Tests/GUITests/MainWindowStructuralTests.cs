@@ -39,14 +39,13 @@ public class MainWindowStructuralTests
         Assert.False(cancelButton!.IsVisible);
     }
 
-    [AvaloniaFact]
-    public void MainWindow_HasGalleryListBox()
-    {
-        var window = GUITestHelpers.CreateWindow();
-        var listBox = window.FindControl<ListBox>("ImagesListBox");
-        Assert.NotNull(listBox);
-        Assert.Equal(SelectionMode.Multiple, listBox!.SelectionMode);
-    }
+   [AvaloniaFact]
+     public void MainWindow_HasGalleryItemsControl()
+     {
+         var window = GUITestHelpers.CreateWindow();
+         var itemsControl = window.FindControl<ItemsControl>("ImagesListBox");
+         Assert.NotNull(itemsControl);
+     }
 
     [AvaloniaFact]
     public void MainWindow_HasProgressBar()

@@ -13,11 +13,6 @@ namespace ARWtoJXL.Avalonia
         public MainWindow()
         {
             InitializeComponent();
-            var listBox = this.FindControl<ListBox>("ImagesListBox");
-            if (listBox != null)
-            {
-                listBox.SelectionMode = SelectionMode.Multiple;
-            }
         }
 
         public void OpenSettings()

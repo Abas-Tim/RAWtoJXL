@@ -27,10 +27,10 @@ public class MainWindowBehavioralTests
             vm.AddFilesAsync(new[] { tempFile1, tempFile2 }).Wait();
 
             var window = GUITestHelpers.CreateWindow(vm);
-            var listBox = window.FindControl<ListBox>("ImagesListBox")!;
+            var itemsControl = window.FindControl<ItemsControl>("ImagesListBox")!;
             window.UpdateLayout();
 
-            Assert.Equal(2, listBox.Items.Count);
+            Assert.Equal(2, itemsControl.Items.Count);
             Assert.Equal(2, vm.Images.Count);
         }
         finally
@@ -55,10 +55,10 @@ public class MainWindowBehavioralTests
             vm.AddFilesAsync(new[] { tempFile }).Wait();
 
             var window = GUITestHelpers.CreateWindow(vm);
-            var listBox = window.FindControl<ListBox>("ImagesListBox")!;
+            var itemsControl = window.FindControl<ItemsControl>("ImagesListBox")!;
             window.UpdateLayout();
 
-            var items = listBox.Items.ToList();
+            var items = itemsControl.Items.ToList();
             Assert.Single(items);
             Assert.IsType<ImageItemViewModel>(items[0]);
         }

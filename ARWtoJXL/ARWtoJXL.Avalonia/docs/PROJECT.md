@@ -8,7 +8,7 @@ Avalonia UI presentation layer implementing the desktop app with MVVM pattern, d
 ARWtoJXL.Avalonia/
 ├── App.axaml + App.cs                       # Application entry point with DI container setup
 ├── AppStrings.cs                            # Shared string resource constants (26 string constants)
-├── MainWindow.axaml + MainWindow.axaml.cs   # Main window with toolbar, image list, recent files, status bar
+├── MainWindow.axaml + MainWindow.axaml.cs   # Main window with toolbar, tiles grid, recent files, status bar
 ├── SettingsWindow.axaml + SettingsWindow.axaml.cs # Resizable tabbed settings dialog (Conversion, Output, Behavior, Presets tabs)
 ├── SettingsService.cs                       # Settings persistence (JSON-based), AppSettings/ConversionPreset models, ConflictResolution enum
 ├── ViewLocator.cs                           # IDataTemplate implementation for MVVM view-model to view mapping
@@ -79,8 +79,13 @@ ARWtoJXL.Avalonia/
 **Properties (all `[ObservableProperty]`):**
 - `Images` (ObservableCollection<ImageItemViewModel>), `IsCancelRequested` (bool), `StatusMessage` (string), `IsConverting` (bool), `OutputPath` (string), `SubfolderName` (string), `IsAllSelected` (bool), `OutputDirectory` (string), `UseSubfolder` (bool), `QualityPreset` (int), `SearchRecursive` (bool), `OutputFormat` (OutputFormat), `ConflictResolution` (ConflictResolution), `ConfirmOverwrite` (bool), `UseCustomOutputDirectory` (bool), `CustomOutputDirectory` (string), `RecentFiles` (ObservableCollection<string>), `SkipMetadata` (bool), `CjxlEffort` (int), `IsAnySelected` (bool), `CompletedCount` (int), `TotalCount` (int)
 
+**Private fields:** `_currentFileProgress` (double) — tracks per-file progress (0.0-1.0) from conversion pipeline for smooth overall progress display.
+
 **Commands (`[RelayCommand]`):**
 - `ConvertSelectedCommand`, `RemoveSelectedCommand`, `SelectAllCommand`, `CancelCommand`, `OpenSettingsCommand`, `OpenFileCommand`, `OpenOutputFolderCommand`, `LoadRecentFilesCommand`, `ClearRecentFilesCommand`
+- `CancelCommand.CanExecute` returns `IsConverting` — enabled throughout conversion for immediate cancellation.
+
+**Progress tracking:** `UpdateProgressDisplay()` computes overall percentage from completed count + current file progress. `OnFileProgress()` receives per-file progress from `IImageService.ConvertArwToJxlAsync` callback and updates status message with live percentage.
 
 **Public methods:** `RefreshSettings()` — reloads settings from disk (called when SettingsWindow closes).
 
