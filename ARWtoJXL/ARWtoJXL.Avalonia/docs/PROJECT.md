@@ -8,7 +8,7 @@ Avalonia UI presentation layer implementing the desktop app with MVVM pattern, d
 ARWtoJXL.Avalonia/
 ├── App.axaml + App.cs                       # Application entry point with DI container setup
 ├── AppStrings.cs                            # Shared string resource constants (26 string constants)
-├── MainWindow.axaml + MainWindow.axaml.cs   # Main window with toolbar, file cards (per-file quality slider), recent files, status bar
+├── MainWindow.axaml + MainWindow.axaml.cs   # Main window with File/List dropdown menus, toolbar (Convert, Cancel, Open Output Folder), Settings, file cards (per-file quality slider), status bar
 ├── SettingsWindow.axaml + SettingsWindow.axaml.cs # Resizable tabbed settings dialog (Conversion, Output, Behavior, Presets tabs)
 ├── SettingsService.cs                       # Settings persistence (JSON-based), AppSettings/ConversionPreset models, ConflictResolution enum
 ├── ViewLocator.cs                           # IDataTemplate implementation for MVVM view-model to view mapping
@@ -18,7 +18,7 @@ ARWtoJXL.Avalonia/
 │   └── DragDropBehavior.cs                  # Avalonia attached property for drag-drop file/folder handling
 ├── Converters/
 │   ├── BooleanToBrushConverter.cs           # Bool to SolidColorBrush converter (declared in XAML, currently unused)
-│   ├── BooleanToTextConverter.cs            # Bool to text converter (declared in XAML, currently unused)
+│   ├── BooleanToTextConverter.cs            # Bool to text converter (used for Select All/Deselect All menu item toggle)
 │   ├── BooleanToValueConverter.cs           # Bool to value converter (supports "Invert", "InvertContent", "DefaultIfZero" parameters)
 │   ├── ImageStatusToStringConverter.cs      # ImageStatus enum to string converter
 │   ├── ImageStatusToVisibilityConverter.cs  # ImageStatus to bool (IsVisible) converter
@@ -66,7 +66,7 @@ ARWtoJXL.Avalonia/
 ## Key Features
 
 - **Drag-Drop**: Single attached property `DragDropBehavior.EnableDragDrop` on root Grid. Internally wires `DragDrop.SetAllowDrop`, `AddDragEnterHandler`, `AddDragOverHandler`, `AddDropHandler`. Drop handler finds ancestor `MainViewModel` via `DataContext` chain, reads `SearchRecursive` for recursive folder enumeration. Supports both structured file data (`DataFormat.File`) and plain text paths (`DataFormat.Text`) for Windows Explorer compatibility.
-- **Recent Files**: Clickable list of recently used files/folders in the main window. `SettingsService.AddRecentFile()` maintains max 50 entries.
+- **Recent Files**: Scrollable list in the File menu with Load All and Clear Recent actions. `SettingsService.AddRecentFile()` maintains max 50 entries.
 - **File Picker**: Avalonia storage APIs (`StorageProvider.OpenFilePickerAsync`, `OpenFolderPickerAsync`)
 - **Presets**: Named conversion presets with quality, effort, raw distance settings
 - **Confirmation Dialogs**: Custom `ConfirmDialog` window with `MessageText`/`TitleText` properties. Yes button (`IsDefault`) closes with `true`, No button (`IsCancel`) closes with `false`.
@@ -83,7 +83,7 @@ ARWtoJXL.Avalonia/
 **Private fields:** `_currentFileProgress` (double) — tracks per-file progress (0.0-1.0) from conversion pipeline for smooth overall progress display.
 
 **Commands (`[RelayCommand]`):**
-- `ConvertSelectedCommand`, `RemoveSelectedCommand`, `SelectAllCommand`, `CancelCommand`, `OpenSettingsCommand`, `OpenFileCommand`, `OpenOutputFolderCommand`, `LoadRecentFilesCommand`, `ClearRecentFilesCommand`
+- `ConvertSelectedCommand`, `RemoveSelectedCommand`, `SelectAllCommand`, `CancelCommand`, `OpenSettingsCommand`, `OpenFileCommand`, `OpenFolderCommand`, `OpenOutputFolderCommand`, `LoadRecentFilesCommand`, `ClearRecentFilesCommand`
 - `CancelCommand.CanExecute` returns `IsConverting` — enabled throughout conversion for immediate cancellation.
 
 **Progress tracking:** `UpdateProgressDisplay()` computes overall percentage from completed count + current file progress. `OnFileProgress()` receives per-file progress from `IImageService.ConvertArwToJxlAsync` callback and updates status message with live percentage.

@@ -421,6 +421,23 @@ namespace ARWtoJXL.Avalonia.ViewModels
             }
         }
 
+        [RelayCommand(CanExecute = nameof(CanExecuteSelectAll))]
+        private async Task OpenFolder()
+        {
+            var folder = await _filePickerService.PickFolderAsync(string.Empty);
+            if (!string.IsNullOrEmpty(folder))
+            {
+                var searchOption = SearchRecursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
+                var files = Directory.GetFiles(folder, "*.*", searchOption)
+                    .Where(f => Path.GetExtension(f).ToLower() is ".arw" or ".jxl")
+                    .ToList();
+                if (files.Any())
+                {
+                    await AddFilesAsync(files);
+                }
+            }
+        }
+
         [RelayCommand(CanExecute = nameof(CanExecuteOpenOutputFolder))]
         private void OpenOutputFolder()
         {

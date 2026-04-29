@@ -25,7 +25,6 @@
     <Grid behaviors:DragDropBehavior.EnableDragDrop="True" DragDrop.AllowDrop="True">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
@@ -42,19 +41,44 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" Orientation="Horizontal">
-                    <Button Content="Open File"
-                            Command="{Binding OpenFileCommand}"
-                            Margin="0,0,8,0"/>
-                    <Button Content="Select All"
-                            Command="{Binding SelectAllCommand}"
-                            Margin="0,0,8,0"/>
+                    <Menu>
+                        <MenuItem Header="_File">
+                            <MenuItem Header="_Open File" Command="{Binding OpenFileCommand}"/>
+                            <MenuItem Header="Open _Folder" Command="{Binding OpenFolderCommand}"/>
+                            <MenuItem>
+                                <MenuItem.Header>
+                                    <ScrollViewer MaxHeight="200" Width="350">
+                                        <ItemsControl ItemsSource="{Binding RecentFiles}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding}"
+                                                               FontSize="10"
+                                                               Foreground="Blue"
+                                                               Margin="4,1"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               ToolTip.Tip="{Binding}"/>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </MenuItem.Header>
+                            </MenuItem>
+                            <MenuItem Header="_Load All" Command="{Binding LoadRecentFilesCommand}"/>
+                            <MenuItem Header="C_lear Recent" Command="{Binding ClearRecentFilesCommand}"/>
+                        </MenuItem>
+                        <MenuItem Header="_List">
+                            <MenuItem Command="{Binding SelectAllCommand}">
+                                <MenuItem.Header>
+                                    <TextBlock Text="{Binding IsAllSelected, Converter={StaticResource BooleanToTextConverter}}"/>
+                                </MenuItem.Header>
+                            </MenuItem>
+                            <MenuItem Header="_Remove" Command="{Binding RemoveSelectedCommand}"/>
+                        </MenuItem>
+                    </Menu>
                     <Button Content="Convert"
                             Command="{Binding ConvertSelectedCommand}"
                             Margin="0,0,8,0"
                             Classes="accent"/>
-                    <Button Content="Remove"
-                            Command="{Binding RemoveSelectedCommand}"
-                            Margin="0,0,8,0"/>
                     <Button Content="Cancel"
                             Command="{Binding CancelCommand}"
                             Margin="0,0,8,0"
@@ -73,42 +97,7 @@
             </Grid>
         </Border>
 
-        <Border Grid.Row="1"
-                Background="Transparent"
-                BorderBrush="Gray"
-                BorderThickness="0,0,0,1"
-                Padding="15,6">
-            <StackPanel Orientation="Horizontal">
-                <TextBlock Text="Recent:" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                <ItemsControl ItemsSource="{Binding RecentFiles}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <StackPanel Orientation="Horizontal"/>
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding}"
-                                       FontSize="10"
-                                       Foreground="Blue"
-                                       Margin="0,0,8,0"
-                                       Cursor="Hand"
-                                       ToolTip.Tip="{Binding}"
-                                       Classes="recent-file"/>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-                <Button Content="Load All"
-                        Command="{Binding LoadRecentFilesCommand}"
-                        FontSize="10"
-                        Margin="4,0,4,0"/>
-                <Button Content="Clear"
-                        Command="{Binding ClearRecentFilesCommand}"
-                        FontSize="10"/>
-            </StackPanel>
-        </Border>
-
-       <ScrollViewer Grid.Row="2" Margin="15">
+        <ScrollViewer Grid.Row="1" Margin="15">
             <ItemsControl ItemsSource="{Binding Images}" x:Name="ImagesListBox">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
@@ -182,7 +171,7 @@
             </ItemsControl>
         </ScrollViewer>
 
-        <Border Grid.Row="3"
+        <Border Grid.Row="2"
                 Background="Transparent"
                 BorderBrush="Gray"
                 BorderThickness="0,1,0,0"

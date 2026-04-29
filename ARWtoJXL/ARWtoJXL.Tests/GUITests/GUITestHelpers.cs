@@ -59,6 +59,16 @@ public static class GUITestHelpers
             if (control is T tCtrl) result.Add(tCtrl);
 
             if (control is Window win && win.Content is Control wc) Traverse(wc);
+            else if (control is Menu menu)
+            {
+                foreach (var item in menu.Items.OfType<MenuItem>())
+                    Traverse(item);
+            }
+            else if (control is MenuItem menuItem)
+            {
+                foreach (var item in menuItem.Items.OfType<MenuItem>())
+                    Traverse(item);
+            }
             else if (control is Panel panel)
             {
                 foreach (var child in panel.Children.OfType<Control>())
@@ -85,6 +95,16 @@ public static class GUITestHelpers
         {
             if (control is T match) results.Add(match);
             if (control is Window win && win.Content is Control wc) Traverse(wc);
+            else if (control is Menu menu)
+            {
+                foreach (var item in menu.Items.OfType<MenuItem>())
+                    Traverse(item);
+            }
+            else if (control is MenuItem menuItem)
+            {
+                foreach (var item in menuItem.Items.OfType<MenuItem>())
+                    Traverse(item);
+            }
             else if (control is Panel panel)
             {
                 foreach (var child in panel.Children.OfType<Control>())
@@ -116,6 +136,17 @@ public static class GUITestHelpers
     public static List<string?> GetButtonContents(Window window)
     {
         return GetAllControls<Button>(window).Select(b => b.Content?.ToString()).ToList();
+    }
+
+    public static List<string?> GetMenuItemHeaders(Window window)
+    {
+        return GUITestHelpers.GetAllControls<MenuItem>(window).Select(m => m.Header?.ToString()).ToList();
+    }
+
+    public static MenuItem? FindMenuItem(Window window, string headerText)
+    {
+        return GUITestHelpers.GetAllControls<MenuItem>(window)
+            .FirstOrDefault(m => m.Header?.ToString() == headerText);
     }
 
     public static TabItem SelectTab(SettingsWindow window, string header)

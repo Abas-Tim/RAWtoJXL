@@ -82,27 +82,28 @@ public class MainWindowBehavioralTests
     }
 
     [AvaloniaFact]
-    public void MainWindow_RemoveButton_Command_BoundToRemoveSelectedCommand()
+    public void MainWindow_RemoveMenuItem_Command_BoundToRemoveSelectedCommand()
     {
         var vm = GUITestHelpers.CreateViewModel();
         var window = GUITestHelpers.CreateWindow(vm);
 
-        var removeButton = GUITestHelpers.GetAllControls<Button>(window)
-            .First(b => b.Content?.ToString() == "Remove");
+        var removeMenuItem = GUITestHelpers.GetAllControls<MenuItem>(window)
+            .FirstOrDefault(m => m.Command == vm.RemoveSelectedCommand);
+        Assert.NotNull(removeMenuItem);
 
-        Assert.Same(vm.RemoveSelectedCommand, removeButton.Command);
+        Assert.Same(vm.RemoveSelectedCommand, removeMenuItem!.Command);
     }
 
     [AvaloniaFact]
-    public void MainWindow_SelectAllButton_Command_BoundToSelectAllCommand()
+    public void MainWindow_SelectAllMenuItem_Command_BoundToSelectAllCommand()
     {
         var vm = GUITestHelpers.CreateViewModel();
         var window = GUITestHelpers.CreateWindow(vm);
 
-        var selectAllButton = GUITestHelpers.GetAllControls<Button>(window)
-            .First(b => b.Content?.ToString() == "Select All");
+        var selectAllMenuItem = GUITestHelpers.GetAllControls<MenuItem>(window)
+            .First(m => m.Command == vm.SelectAllCommand);
 
-        Assert.Same(vm.SelectAllCommand, selectAllButton.Command);
+        Assert.Same(vm.SelectAllCommand, selectAllMenuItem.Command);
     }
 
     [AvaloniaFact]

@@ -22,10 +22,22 @@ public class MainWindowStructuralTests
     {
         var window = GUITestHelpers.CreateWindow();
         var buttonContents = GUITestHelpers.GetButtonContents(window);
-        var expectedButtons = new[] { "Open File", "Select All", "Convert", "Remove", "Cancel", "Open Output Folder", "Settings", "Load All", "Clear" };
+        var expectedButtons = new[] { "Convert", "Cancel", "Open Output Folder", "Settings" };
         foreach (var expected in expectedButtons)
         {
             Assert.Contains(expected, buttonContents, StringComparer.OrdinalIgnoreCase);
+        }
+    }
+
+    [AvaloniaFact]
+    public void MainWindow_HasFileMenuItems()
+    {
+        var window = GUITestHelpers.CreateWindow();
+        var menuHeaders = GUITestHelpers.GetMenuItemHeaders(window)?.Select(h => h?.Replace("_", "")).Where(h => h != null && !h.Contains("Controls")).Cast<string>().ToList() ?? new();
+        var expectedMenuItems = new[] { "File", "Open File", "Open Folder", "Load All", "Clear Recent", "List", "Remove" };
+        foreach (var expected in expectedMenuItems)
+        {
+            Assert.Contains(expected, menuHeaders, StringComparer.OrdinalIgnoreCase);
         }
     }
 
@@ -64,11 +76,12 @@ public class MainWindowStructuralTests
     }
 
     [AvaloniaFact]
-    public void MainWindow_HasRecentFilesSection()
+    public void MainWindow_HasRecentFilesInMenu()
     {
         var window = GUITestHelpers.CreateWindow();
-        var texts = GUITestHelpers.GetAllControls<TextBlock>(window).Select(t => t.Text).Where(t => t != null).Cast<string>().ToList();
-        Assert.Contains(texts, t => t.Contains("Recent", StringComparison.OrdinalIgnoreCase));
+        var menuHeaders = GUITestHelpers.GetMenuItemHeaders(window)?.Select(h => h?.Replace("_", "")).Where(h => h != null && !h.Contains("Controls")).Cast<string>().ToList() ?? new();
+        Assert.Contains("Load All", menuHeaders, StringComparer.OrdinalIgnoreCase);
+        Assert.Contains("Clear Recent", menuHeaders, StringComparer.OrdinalIgnoreCase);
     }
 
     [AvaloniaFact]
