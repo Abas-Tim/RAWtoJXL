@@ -7,8 +7,8 @@ Avalonia UI presentation layer implementing the desktop app with MVVM pattern, d
 ```
 ARWtoJXL.Avalonia/
 ├── App.axaml + App.cs                       # Application entry point with DI container setup
-├── AppStrings.cs                            # Shared string resource constants (26 string constants)
-├── MainWindow.axaml + MainWindow.axaml.cs   # Main window with File/List dropdown menus, toolbar (Convert, Cancel, Open Output Folder), Settings, file cards (per-file quality slider), status bar
+├── AppStrings.cs                            # Shared string resource constants
+├── MainWindow.axaml + MainWindow.axaml.cs   # Main window with File/List menus, toolbar (Convert, Cancel, Open Output Folder, Settings), file cards with per-file quality slider, "Open folder" per-item button, status bar
 ├── SettingsWindow.axaml + SettingsWindow.axaml.cs # Resizable tabbed settings dialog (Conversion, Output, Behavior, Presets tabs)
 ├── SettingsService.cs                       # Settings persistence (JSON-based), AppSettings/ConversionPreset models, ConflictResolution enum
 ├── ViewLocator.cs                           # IDataTemplate implementation for MVVM view-model to view mapping
@@ -85,6 +85,7 @@ ARWtoJXL.Avalonia/
 **Commands (`[RelayCommand]`):**
 - `ConvertSelectedCommand`, `RemoveSelectedCommand`, `SelectAllCommand`, `CancelCommand`, `OpenSettingsCommand`, `OpenFileCommand`, `OpenFolderCommand`, `OpenOutputFolderCommand`, `LoadRecentFilesCommand`, `ClearRecentFilesCommand`
 - `CancelCommand.CanExecute` returns `IsConverting` — enabled throughout conversion for immediate cancellation.
+- `OpenOutputFolderCommand` becomes enabled as soon as the first file converts successfully (`OutputDirectory` is set incrementally on each successful conversion, not only after all complete).
 
 **Progress tracking:** `UpdateProgressDisplay()` computes overall percentage from completed count + current file progress. `OnFileProgress()` receives per-file progress from `IImageService.ConvertArwToJxlAsync` callback and updates status message with live percentage.
 
@@ -112,6 +113,9 @@ Implements `IDisposable` — `Dispose()` stops debounce timer, flushes pending p
 ### ImageItemViewModel
 **Properties (all `[ObservableProperty]`):**
 - `FilePath`, `FileName`, `Status`, `Thumbnail` (Bitmap?), `ErrorMessage`, `IsSelected`, `QualityOverride` (int?), `IsRemoved`, `SourceFileSize`, `OutputFileSize`, `OutputPath`
+
+**Commands (`[RelayCommand]`):**
+- `OpenOutputFolderCommand` — opens the output directory of the converted file in Windows Explorer via `Process.Start`. Visible per-item only when `OutputPath` is non-empty (i.e., conversion succeeded).
 
 **Computed:** `SizeInfoText` — formatted output size with percentage change
 

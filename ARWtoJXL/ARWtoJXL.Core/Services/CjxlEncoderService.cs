@@ -466,9 +466,17 @@ public class CjxlEncoderService : ICjxlEncoder
                 _logger.Write($"cjxl stdout (aborted): {stdout}");
                 _logger.Write($"cjxl stderr (aborted): {stderr}");
             }
-            catch
+            catch (OperationCanceledException)
             {
-                // Ignore errors when draining output from a killed process
+                // Drain timeout is expected when process was killed
+            }
+            catch (IOException)
+            {
+                // Pipe broken after process kill is expected
+            }
+            catch (Exception ex)
+            {
+                _logger.Write($"[CjxlEncoder] Error draining killed process output: {ex.Message}");
             }
 
             if (timedOut)

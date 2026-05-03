@@ -129,6 +129,7 @@ High-performance Windows desktop app for converting Sony RAW (.ARW) to JPEG-XL (
 
 ```
 ARWtoJPEGXL/
+├── .gitattributes                         # Git LFS tracking rules
 ├── .gitignore
 ├── ARWtoJXL.slnx                          # Solution matrix
 ├── docs/
@@ -156,3 +157,7 @@ Excluded via `.gitignore`:
 - `MediaCache/` — ImageMagick cache
 - `*.pdb` — debug symbols
 - `cjxl_help_*.txt`, `debug_metadata.csx` — temp debug files
+
+## Git LFS
+
+`.ARW` files tracked via Git LFS (`.gitattributes`). Run `git lfs install` before clone/pull.

@@ -289,7 +289,7 @@ public class ImageConverterService : IImageConverterService
             {
                 using var image = new MagickImage(filePath);
 
-                object? exifProfile = image.GetExifProfile();
+                IImageProfile? exifProfile = image.GetExifProfile();
                 _logger.Write($"[ImageConverterService] GetExifProfile: {(exifProfile == null ? "null" : "found")}");
                 if (exifProfile == null)
                 {
@@ -333,7 +333,7 @@ public class ImageConverterService : IImageConverterService
                     }
                 }
 
-                object? iptcProfile = image.GetIptcProfile();
+                IImageProfile? iptcProfile = image.GetIptcProfile();
                 _logger.Write($"[ImageConverterService] IPTC profile: {(iptcProfile == null ? "null" : "found")}");
                 if (iptcProfile == null)
                 {
@@ -359,39 +359,9 @@ public class ImageConverterService : IImageConverterService
         }, cancellationToken);
     }
 
-    private static byte[]? GetProfileBytes(object profile)
+    private byte[]? GetProfileBytes(IImageProfile profile)
     {
-        try
-        {
-            var type = profile.GetType();
-
-            var valueProp = type.GetProperty("Value", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-            if (valueProp != null)
-            {
-                var value = valueProp.GetValue(profile) as byte[];
-                if (value != null && value.Length > 0) return value;
-            }
-
-            var getBytesMethod = type.GetMethod("GetBytes", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-            if (getBytesMethod != null)
-            {
-                var result = getBytesMethod.Invoke(profile, null) as byte[];
-                if (result != null && result.Length > 0) return result;
-            }
-
-            var dataField = type.GetField("_data", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            if (dataField != null)
-            {
-                var data = dataField.GetValue(profile) as byte[];
-                if (data != null && data.Length > 0) return data;
-            }
-
-            return null;
-        }
-        catch
-        {
-            return null;
-        }
+        return profile.ToByteArray();
     }
 
 }

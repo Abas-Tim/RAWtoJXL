@@ -155,6 +155,15 @@
                                                VerticalAlignment="Center"
                                                IsVisible="{Binding SizeInfoText, Converter={StaticResource StringToVisibilityConverter}}"/>
 
+                                <Button Content="Open folder"
+                                        Command="{Binding OpenOutputFolderCommand}"
+                                        FontSize="10"
+                                        Padding="4,2"
+                                        Margin="0,2,0,0"
+                                        HorizontalAlignment="Left"
+                                        Classes="link"
+                                        IsVisible="{Binding OutputPath, Converter={StaticResource StringToVisibilityConverter}}"/>
+
                                  <ProgressBar Height="3"
                                              IsIndeterminate="True"
                                              IsVisible="{Binding Status, Converter={StaticResource ImageStatusToVisibilityConverter}, ConverterParameter='Converting'}"

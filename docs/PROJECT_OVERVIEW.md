@@ -60,6 +60,15 @@ Excluded via root `.gitignore`:
 - `cjxl_help_*.txt`, `debug_metadata.csx` — temp debug files
 - `cjxl.exe` — bundled binary (downloaded at build time)
 
+## Git LFS
+
+Git LFS manages large binary test fixtures. Required to clone or pull this repository.
+
+- **Setup:** `git lfs install` (once per user), then `git clone` / `git pull`
+- **Tracked patterns** (`.gitattributes`): `*.ARW`
+- **Files:** `ARWtoJXL/ARWtoJXL.Tests/test1.ARW` (~47 MB test fixture)
+- **Migrate existing files to LFS:** `git lfs migrate import --include="*.ARW" --include-ref=refs/heads/<branch>`
+
 ## License Compliance
 
 - `THIRD-PARTY-NOTICES.md` contains license texts for all dependencies

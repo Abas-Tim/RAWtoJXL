@@ -167,8 +167,14 @@ public class SystemProcessRunner : IProcessRunner
 
         string? stdout = null;
         string? stderr = null;
-        try { stdout = await stdoutTask; } catch { }
-        try { stderr = await stderrTask; } catch { }
+        try { stdout = await stdoutTask; }
+        catch (OperationCanceledException) { }
+        catch (IOException) { }
+        catch (Exception ex) { _logger.Write($"[SystemProcessRunner] Failed to read stdout: {ex.Message}"); }
+        try { stderr = await stderrTask; }
+        catch (OperationCanceledException) { }
+        catch (IOException) { }
+        catch (Exception ex) { _logger.Write($"[SystemProcessRunner] Failed to read stderr: {ex.Message}"); }
 
         return (process.ExitCode, stdout, stderr, timedOut);
     }
@@ -268,8 +274,14 @@ public class SystemProcessRunner : IProcessRunner
 
         string? stdout = null;
         string? stderr = null;
-        try { stdout = await stdoutTask; } catch { }
-        try { stderr = await stderrTask; } catch { }
+        try { stdout = await stdoutTask; }
+        catch (OperationCanceledException) { }
+        catch (IOException) { }
+        catch (Exception ex) { _logger.Write($"[SystemProcessRunner] Failed to read stdout: {ex.Message}"); }
+        try { stderr = await stderrTask; }
+        catch (OperationCanceledException) { }
+        catch (IOException) { }
+        catch (Exception ex) { _logger.Write($"[SystemProcessRunner] Failed to read stderr: {ex.Message}"); }
 
         return (process.ExitCode, stdout, stderr, timedOut);
     }

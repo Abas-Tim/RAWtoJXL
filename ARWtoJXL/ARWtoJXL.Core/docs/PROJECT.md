@@ -94,6 +94,7 @@ public ImageProcessingService(
   - **ARW files:** Awaits `IExiftoolService.ExtractExifAsync()` for EXIF extraction (Magick.NET cannot reliably read EXIF from Sony ARW files). Much faster (~1s) than the previous Magick.NET fallback chain (~10s). Exceptions propagate to caller.
   - **Non-ARW files:** Offloads Magick.NET profile extraction to `Task.Run` (CPU-bound). Magick.NET failures are caught and logged, then exiftool fallback is attempted for EXIF. Other exceptions propagate to caller.
   - **Helper:** `ExtractProfilesFromImageAsync()` runs Magick.NET profile extraction on a thread-pool thread via `Task.Run`.
+- **Helper:** `GetProfileBytes()` extracts raw bytes from a Magick.NET profile via the stable `IImageProfile.ToByteArray()` public API.
 - **Constructor:** `ImageConverterService(IExiftoolService exiftoolService, IFileService fileService, ILogger logger)` — all required (non-nullable)
 
 ### IExiftoolService / ExiftoolService
@@ -117,7 +118,7 @@ public ImageProcessingService(
 - **Metadata embedding:** Delegates to `IExiftoolService.EmbedMetadataAsync()` for post-encoding metadata embedding via exiftool.
 - **BuildEncodingArguments:** `protected internal` method for constructing cjxl CLI arguments. Accepts optional effort override and raw distance. Testable via subclass in test project (covered by `CjxlEncoderArgumentsTests`).
 - **BuildStreamEncodingArguments:** `protected internal` method for constructing cjxl CLI arguments for stdin pipe encoding (input arg is `-`).
-- **Safe stream reading:** `ExecuteEncodingProcessWithWriterAsync` uses `SafeReadStreamAsync` for stdout/stderr capture — bounded 5s read timeout per stream, catches `OperationCanceledException` and `IOException` (broken pipe on process kill), returns partial output instead of hanging. On cancellation/timeout, a separate 2s drain window captures any remaining output from the killed process.
+- **Safe stream reading:** `ExecuteEncodingProcessWithWriterAsync` uses `SafeReadStreamAsync` for stdout/stderr capture — bounded 5s read timeout per stream, catches `OperationCanceledException` and `IOException` (broken pipe on process kill), returns partial output instead of hanging. On cancellation/timeout, a separate 2s drain window captures any remaining output from the killed process; drain errors catch `OperationCanceledException` and `IOException` silently, log unexpected exceptions.
 - **Constructor:** `CjxlEncoderService(IPathResolver pathResolver, IExiftoolService exiftoolService, ILogger logger, IProcessRunner processRunner)` — all required (non-nullable)
 
 ### CjxlEncodingException
@@ -144,8 +145,8 @@ Interface + implementation for process execution (replaces static `ProcessHelper
 - `IsExiftoolWorkingAsync(exiftoolPath, logPrefix)`: Runs `exiftool -ver` via `RunProcessAsync` to verify functionality — no synchronous `Process.WaitForExit()` blocking
 - `RunProcessAsync(fileName, arguments, cancellationToken)`: Generic async process launcher with stdout/stderr capture and cancellation support
 - `RunProcessBinaryAsync(fileName, arguments, cancellationToken)`: Async process runner returning raw binary stdout; respects CancellationToken via process kill on cancellation
-- `RunProcessWithTimeoutAsync(fileName, arguments, timeoutSeconds, cancellationToken)`: Runs process with timeout, returns `(ExitCode, Stdout, Stderr, TimedOut)`. Kills orphan process on timeout via linked `CancellationTokenSource`. Injected into `CjxlEncoderService` for cjxl encoding with timeout protection.
-- `RunProcessWithStdinAsync(fileName, arguments, stdinStream, timeoutSeconds, cancellationToken)`: Runs process with a Stream piped to stdin. Used by `CjxlEncoderService.ExecuteEncodingProcessFromStreamAsync` for PPM→JXL encoding without intermediate files.
+- `RunProcessWithTimeoutAsync(fileName, arguments, timeoutSeconds, cancellationToken)`: Runs process with timeout, returns `(ExitCode, Stdout, Stderr, TimedOut)`. Kills orphan process on timeout via linked `CancellationTokenSource`. Post-timeout stdout/stderr drain catches `OperationCanceledException` and `IOException` silently; unexpected exceptions are logged. Injected into `CjxlEncoderService` for cjxl encoding with timeout protection.
+- `RunProcessWithStdinAsync(fileName, arguments, stdinStream, timeoutSeconds, cancellationToken)`: Runs process with a Stream piped to stdin. Post-timeout drain uses same exception handling as `RunProcessWithTimeoutAsync`. Used by `CjxlEncoderService.ExecuteEncodingProcessFromStreamAsync` for PPM→JXL encoding without intermediate files.
 - Injected into `ExiftoolService` for testability
 
 ### ILogger / FileLogger

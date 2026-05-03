@@ -300,6 +300,11 @@ namespace ARWtoJXL.Avalonia.ViewModels
                             item.OutputPath = outputPath;
                             SettingsService.AddRecentFile(item.FilePath);
                             RefreshRecentFiles();
+
+                            if (string.IsNullOrEmpty(OutputDirectory))
+                            {
+                                OutputDirectory = Path.GetDirectoryName(outputPath) ?? string.Empty;
+                            }
                         });
                     }
                     catch (OperationCanceledException)

@@ -1,6 +1,9 @@
+using System.Diagnostics;
+using System.IO;
 using ARWtoJXL.Core.Interfaces;
 using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 
 namespace ARWtoJXL.Avalonia.ViewModels
 {
@@ -88,6 +91,24 @@ namespace ARWtoJXL.Avalonia.ViewModels
         public int EffectiveQuality(int globalQuality)
         {
             return QualityOverride ?? globalQuality;
+        }
+
+        [RelayCommand]
+        private void OpenOutputFolder()
+        {
+            var dir = Path.GetDirectoryName(OutputPath);
+            if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
+            {
+                try
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = dir,
+                        UseShellExecute = true
+                    });
+                }
+                catch { }
+            }
         }
 
         private static string FormatBytes(long bytes)
