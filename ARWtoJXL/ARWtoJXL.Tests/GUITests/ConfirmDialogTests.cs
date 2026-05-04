@@ -41,7 +41,7 @@ public class ConfirmDialogTests
     public void ConfirmDialog_DataContext_IsItself()
     {
         var dialog = new ConfirmDialog();
-        Assert.Same(dialog, dialog.DataContext);
+        Assert.IsType<ConfirmDialog.ConfirmDialogViewModel>(dialog.DataContext);
     }
 
     [AvaloniaFact]

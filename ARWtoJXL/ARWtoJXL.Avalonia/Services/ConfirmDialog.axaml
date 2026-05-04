@@ -1,8 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:local="using:ARWtoJXL.Avalonia.Services"
         x:Class="ARWtoJXL.Avalonia.Services.ConfirmDialog"
-        x:DataType="local:ConfirmDialog"
         Title="{Binding TitleText}"
         SizeToContent="WidthAndHeight"
         WindowStartupLocation="CenterOwner"

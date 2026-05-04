@@ -84,9 +84,6 @@
                             Margin="0,0,8,0"
                             Classes="danger"
                             IsVisible="{Binding IsConverting}"/>
-                    <Button Content="Open Output Folder"
-                            Command="{Binding OpenOutputFolderCommand}"
-                            Margin="0,0,8,0"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal">

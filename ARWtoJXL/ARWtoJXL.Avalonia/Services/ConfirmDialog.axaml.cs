@@ -1,32 +1,35 @@
-using System.ComponentModel;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace ARWtoJXL.Avalonia.Services
 {
-    public partial class ConfirmDialog : Window, INotifyPropertyChanged
+    public partial class ConfirmDialog : Window
     {
-        public new event PropertyChangedEventHandler? PropertyChanged;
+        private readonly ConfirmDialogViewModel _viewModel;
 
-        private string _messageText = string.Empty;
         public string MessageText
         {
-            get => _messageText;
-            set { _messageText = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MessageText))); }
+            get => _viewModel.MessageText;
+            set => _viewModel.MessageText = value;
         }
 
-        private string _titleText = string.Empty;
         public string TitleText
         {
-            get => _titleText;
-            set { _titleText = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TitleText))); }
+            get => _viewModel.TitleText;
+            set
+            {
+                _viewModel.TitleText = value;
+                Title = value;
+            }
         }
 
         public ConfirmDialog()
         {
+            _viewModel = new ConfirmDialogViewModel();
             AvaloniaXamlLoader.Load(this);
-            DataContext = this;
+            DataContext = _viewModel;
         }
 
         private void YesButton_Click(object? sender, RoutedEventArgs e)
@@ -37,6 +40,15 @@ namespace ARWtoJXL.Avalonia.Services
         private void NoButton_Click(object? sender, RoutedEventArgs e)
         {
             Close(false);
+        }
+
+        public partial class ConfirmDialogViewModel : ObservableObject
+        {
+            [ObservableProperty]
+            private string _messageText = string.Empty;
+
+            [ObservableProperty]
+            private string _titleText = string.Empty;
         }
     }
 }

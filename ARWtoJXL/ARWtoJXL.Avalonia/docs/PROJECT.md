@@ -27,7 +27,7 @@ ARWtoJXL.Avalonia/
 │   ├── StringToIntConverter.cs              # String to int converter (ComboBox Tag binding)
 │   └── StringToVisibilityConverter.cs       # String to bool (IsVisible) converter
 ├── Services/
-│   ├── ConfirmDialog.axaml + ConfirmDialog.axaml.cs # Confirmation dialog window (MessageText, TitleText properties)
+│   ├── ConfirmDialog.axaml + ConfirmDialog.axaml.cs # Confirmation dialog window (MessageText, TitleText proxy properties, nested ConfirmDialogViewModel with CommunityToolkit.Mvvm ObservableObject)
 │   ├── DialogService.cs                     # IDialogService implementation
 │   ├── DispatcherService.cs                 # IDispatcherService implementation (Avalonia Dispatcher.UIThread)
 │   ├── FilePickerService.cs                 # IFilePickerService implementation (Avalonia storage APIs)
@@ -69,7 +69,7 @@ ARWtoJXL.Avalonia/
 - **Recent Files**: Scrollable list in the File menu with Load All and Clear Recent actions. `SettingsService.AddRecentFile()` maintains max 50 entries.
 - **File Picker**: Avalonia storage APIs (`StorageProvider.OpenFilePickerAsync`, `OpenFolderPickerAsync`)
 - **Presets**: Named conversion presets with quality, effort, raw distance settings
-- **Confirmation Dialogs**: Custom `ConfirmDialog` window with `MessageText`/`TitleText` properties. Yes button (`IsDefault`) closes with `true`, No button (`IsCancel`) closes with `false`.
+- **Confirmation Dialogs**: Custom `ConfirmDialog` window with `MessageText`/`TitleText` proxy properties delegating to a nested `ConfirmDialogViewModel` (`ObservableObject`). DataContext is the viewmodel. `TitleText` setter also updates `Window.Title` for immediate effect. Yes button (`IsDefault`) closes with `true`, No button (`IsCancel`) closes with `false`.
 - **Settings Persistence**: Both `MainViewModel` and `SettingsViewModel` auto-save to disk on property change via `OnPropertyChanged`. `SettingsViewModel` uses a 500ms debounce timer to batch rapid edits — avoids synchronous I/O on UI thread and race conditions. `Dispose()` flushes pending persist. `MainViewModel` loads all settings from disk on startup. Settings stored in `%APPDATA%\ARWtoJXL\settings.json`. Settings window syncs through shared persistence — `SettingsViewModel` loads current state from disk on open, `MainViewModel.RefreshSettings()` reloads from disk on close.
 - **Quality Scale Segments**: The quality slider in SettingsWindow displays a three-segment color bar below the track: Lossy (0-89, red), Near-lossless (90-99, amber), Lossless (100, green) with labeled captions aligned to each segment.
 - **HeadlessTestMode**: `MainViewModel.HeadlessTestMode` static flag skips thumbnail generation during GUI tests to avoid file I/O.
