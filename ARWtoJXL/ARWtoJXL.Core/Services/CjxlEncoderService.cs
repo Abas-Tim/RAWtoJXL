@@ -39,7 +39,8 @@ public class CjxlEncoderService : ICjxlEncoder
         CancellationToken cancellationToken = default,
         int timeoutSeconds = DefaultTimeoutSeconds,
         Action<double>? progress = null,
-        int? effort = null)
+        int? effort = null,
+        int? threads = null)
     {
         ValidateInputParameters(inputPath, outputPath, quality);
         cancellationToken.ThrowIfCancellationRequested();
@@ -53,7 +54,7 @@ public class CjxlEncoderService : ICjxlEncoder
 
         string cjxlPath = await ResolveCjxlExecutableAsync(cancellationToken);
 
-        var args = BuildEncodingArguments(quality, metadata, inputPath, outputPath, effort);
+        var args = BuildEncodingArguments(quality, metadata, inputPath, outputPath, effort, threads);
 
         await ExecuteEncodingProcessAsync(cjxlPath, args, cancellationToken, timeoutSeconds, progress);
 
@@ -74,7 +75,8 @@ public class CjxlEncoderService : ICjxlEncoder
         CancellationToken cancellationToken = default,
         int timeoutSeconds = DefaultTimeoutSeconds,
         Action<double>? progress = null,
-        int? effort = null)
+        int? effort = null,
+        int? threads = null)
     {
         if (string.IsNullOrWhiteSpace(outputPath))
         {
@@ -92,7 +94,7 @@ public class CjxlEncoderService : ICjxlEncoder
 
         string cjxlPath = await ResolveCjxlExecutableAsync(cancellationToken);
 
-        var args = BuildStreamEncodingArguments(quality, metadata, outputPath, effort);
+        var args = BuildStreamEncodingArguments(quality, metadata, outputPath, effort, threads);
 
         await ExecuteEncodingProcessFromStreamAsync(cjxlPath, args, inputStream, cancellationToken, timeoutSeconds, progress);
 
@@ -114,7 +116,8 @@ public class CjxlEncoderService : ICjxlEncoder
         CancellationToken cancellationToken,
         int timeoutSeconds,
         Action<double>? progress,
-        int? effort)
+        int? effort,
+        int? threads = null)
     {
         if (string.IsNullOrWhiteSpace(outputPath))
         {
@@ -132,7 +135,7 @@ public class CjxlEncoderService : ICjxlEncoder
 
         string cjxlPath = await ResolveCjxlExecutableAsync(cancellationToken);
 
-        var args = BuildStreamEncodingArguments(quality, metadata, outputPath, effort);
+        var args = BuildStreamEncodingArguments(quality, metadata, outputPath, effort, threads);
 
         await ExecuteEncodingProcessWithWriterAsync(cjxlPath, args, ppmWriter, inputPath, cancellationToken, timeoutSeconds, progress);
 
@@ -210,17 +213,19 @@ public class CjxlEncoderService : ICjxlEncoder
         MetadataProfiles? metadata,
         string inputPath,
         string outputPath,
-        int? effortOverride = null)
+        int? effortOverride = null,
+        int? threadsOverride = null)
     {
         var args = new List<string>(16);
 
         float distance = QualityCalculator.CalculateDistance(quality);
         int effort = effortOverride ?? QualityCalculator.CalculateEffort(quality);
         bool isLossless = QualityCalculator.IsLossless(quality);
+        int threads = threadsOverride ?? Environment.ProcessorCount;
 
         args.Add(isLossless ? "--distance=0" : $"--distance={distance:F2}");
         args.Add($"--effort={effort}");
-        args.Add($"--num_threads={Environment.ProcessorCount}");
+        args.Add($"--num_threads={threads}");
         args.Add("--container=1");
 
         if (isLossless)
@@ -245,17 +250,19 @@ public class CjxlEncoderService : ICjxlEncoder
         int quality,
         MetadataProfiles? metadata,
         string outputPath,
-        int? effortOverride = null)
+        int? effortOverride = null,
+        int? threadsOverride = null)
     {
         var args = new List<string>(16);
 
         float distance = QualityCalculator.CalculateDistance(quality);
         int effort = effortOverride ?? QualityCalculator.CalculateEffort(quality);
         bool isLossless = QualityCalculator.IsLossless(quality);
+        int threads = threadsOverride ?? Environment.ProcessorCount;
 
         args.Add(isLossless ? "--distance=0" : $"--distance={distance:F2}");
         args.Add($"--effort={effort}");
-        args.Add($"--num_threads={Environment.ProcessorCount}");
+        args.Add($"--num_threads={threads}");
         args.Add("--container=1");
 
         if (isLossless)
@@ -292,7 +299,13 @@ public class CjxlEncoderService : ICjxlEncoder
         var startTime = DateTime.UtcNow;
         var progressTask = ReportProgressAsync(startTime, TimeSpan.FromSeconds(timeoutSeconds), progress, cancellationToken, _logger);
 
-        var result = await _processRunner.RunProcessWithStdinAsync(cjxlPath, argumentsString, inputStream, timeoutSeconds, cancellationToken);
+        var encodeTask = _processRunner.RunProcessWithStdinAsync(cjxlPath, argumentsString, inputStream, timeoutSeconds, cancellationToken);
+        var result = await encodeTask;
+
+        if (progressTask != null)
+        {
+            try { await progressTask; } catch { /* Progress reporting is best-effort */ }
+        }
 
         _logger.Write($"cjxl stdout: {result.Stdout}");
         _logger.Write($"cjxl stderr: {result.Stderr}");
@@ -358,7 +371,13 @@ public class CjxlEncoderService : ICjxlEncoder
         var startTime = DateTime.UtcNow;
         var progressTask = ReportProgressAsync(startTime, TimeSpan.FromSeconds(timeoutSeconds), progress, cancellationToken, _logger);
 
-        var result = await _processRunner.RunProcessWithTimeoutAsync(cjxlPath, argumentsString, timeoutSeconds, cancellationToken);
+        var encodeTask = _processRunner.RunProcessWithTimeoutAsync(cjxlPath, argumentsString, timeoutSeconds, cancellationToken);
+        var result = await encodeTask;
+
+        if (progressTask != null)
+        {
+            try { await progressTask; } catch { /* Progress reporting is best-effort */ }
+        }
 
         _logger.Write($"cjxl stdout: {result.Stdout}");
         _logger.Write($"cjxl stderr: {result.Stderr}");
@@ -433,6 +452,11 @@ public class CjxlEncoderService : ICjxlEncoder
 
             string stdout = await stdoutTask;
             string stderr = await stderrTask;
+
+            if (progressTask != null)
+            {
+                try { await progressTask; } catch { /* Progress reporting is best-effort */ }
+            }
 
             _logger.Write($"cjxl stdout: {stdout}");
             _logger.Write($"cjxl stderr: {stderr}");

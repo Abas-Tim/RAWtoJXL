@@ -45,6 +45,7 @@ namespace ARWtoJXL.Avalonia.ViewModels
             Presets = new ObservableCollection<ConversionPreset>(saved.Presets);
             SkipMetadata = saved.SkipMetadata;
             CjxlEffort = saved.CjxlEffort;
+            CjxlThreads = saved.CjxlThreads;
         }
 
         protected override void OnPropertyChanged(PropertyChangedEventArgs e)
@@ -57,7 +58,7 @@ namespace ARWtoJXL.Avalonia.ViewModels
             }
         }
 
-        public void Persist()
+         public void Persist()
         {
             SettingsService.Save(new AppSettings
             {
@@ -73,7 +74,8 @@ namespace ARWtoJXL.Avalonia.ViewModels
                 Presets = Presets.ToList(),
                 RecentFiles = _recentFiles,
                 SkipMetadata = SkipMetadata,
-                CjxlEffort = CjxlEffort
+                CjxlEffort = CjxlEffort,
+                CjxlThreads = CjxlThreads
             });
         }
 
@@ -124,6 +126,13 @@ namespace ARWtoJXL.Avalonia.ViewModels
             public EffortOption(string display, int value) { Display = display; Value = value; }
         }
 
+        public class ThreadOption
+        {
+            public string Display { get; }
+            public int Value { get; }
+            public ThreadOption(string display, int value) { Display = display; Value = value; }
+        }
+
        public static readonly EffortOption[] DefaultCjxlEffortOptions = new[]
         {
             new EffortOption("Auto", -1),
@@ -171,14 +180,6 @@ namespace ARWtoJXL.Avalonia.ViewModels
 
         private bool _syncingEffort;
 
-        partial void OnSelectedEffortOptionChanged(EffortOption? value)
-        {
-            if (_syncingEffort || value == null) return;
-            _syncingEffort = true;
-            CjxlEffort = value.Value;
-            _syncingEffort = false;
-        }
-
         partial void OnCjxlEffortChanged(int value)
         {
             if (value < -1 || value > 9)
@@ -189,6 +190,58 @@ namespace ARWtoJXL.Avalonia.ViewModels
             _syncingEffort = true;
             var match = CjxlEffortOptions.FirstOrDefault(e => e.Value == CjxlEffort);
             SelectedEffortOption = match;
+            _syncingEffort = false;
+        }
+
+        [ObservableProperty]
+        private int _cjxlThreads = -1;
+
+        [ObservableProperty]
+        private ThreadOption? _selectedThreadsOption;
+
+        private bool _syncingThreads;
+
+        public ThreadOption[] CjxlThreadsOptions
+        {
+            get
+            {
+                int maxThreads = Environment.ProcessorCount;
+                var options = new ThreadOption[maxThreads + 1];
+                options[0] = new ThreadOption("Auto", -1);
+                for (int i = 1; i <= maxThreads; i++)
+                {
+                    options[i] = new ThreadOption(i.ToString(), i);
+                }
+                return options;
+            }
+        }
+
+        partial void OnSelectedThreadsOptionChanged(ThreadOption? value)
+        {
+            if (_syncingThreads || value == null) return;
+            _syncingThreads = true;
+            CjxlThreads = value.Value;
+            _syncingThreads = false;
+        }
+
+        partial void OnCjxlThreadsChanged(int value)
+        {
+            if (value < -1 || value > Environment.ProcessorCount)
+            {
+                CjxlThreads = -1;
+            }
+            if (_syncingThreads) return;
+            _syncingThreads = true;
+            var match = CjxlThreadsOptions.FirstOrDefault(e => e.Value == CjxlThreads);
+            SelectedThreadsOption = match;
+            _syncingThreads = false;
+        }
+
+        partial void OnSelectedEffortOptionChanged(EffortOption? value)
+        {
+            if (_syncingEffort || value == null) return;
+            _syncingEffort = true;
+            CjxlEffort = value.Value;
             _syncingEffort = false;
         }
 
@@ -258,7 +311,8 @@ namespace ARWtoJXL.Avalonia.ViewModels
                 CustomOutputDirectory = CustomOutputDirectory,
                 ConfirmOverwrite = ConfirmOverwrite,
                 SkipMetadata = SkipMetadata,
-                CjxlEffort = CjxlEffort
+                CjxlEffort = CjxlEffort,
+                CjxlThreads = CjxlThreads
             };
 
             if (Presets.Any(p => p.Name.Equals(preset.Name, StringComparison.OrdinalIgnoreCase)))
@@ -301,6 +355,7 @@ namespace ARWtoJXL.Avalonia.ViewModels
             ConfirmOverwrite = SelectedPreset.ConfirmOverwrite;
             SkipMetadata = SelectedPreset.SkipMetadata;
             CjxlEffort = SelectedPreset.CjxlEffort;
+            CjxlThreads = SelectedPreset.CjxlThreads;
         }
 
         [RelayCommand]
@@ -321,7 +376,8 @@ namespace ARWtoJXL.Avalonia.ViewModels
                 Presets = Presets.ToList(),
                 RecentFiles = saved.RecentFiles,
                 SkipMetadata = SkipMetadata,
-                CjxlEffort = CjxlEffort
+                CjxlEffort = CjxlEffort,
+                CjxlThreads = CjxlThreads
             });
             IsSaving = false;
             RequestClose?.Invoke(this, EventArgs.Empty);

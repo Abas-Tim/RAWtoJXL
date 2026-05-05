@@ -160,6 +160,14 @@ namespace ARWtoJXL.Avalonia.ViewModels
             SaveSettings();
         }
 
+        [ObservableProperty]
+        private int _cjxlThreads = -1;
+
+        partial void OnCjxlThreadsChanged(int value)
+        {
+            SaveSettings();
+        }
+
          public void RefreshSettings()
         {
             var saved = SettingsService.Load();
@@ -174,6 +182,7 @@ namespace ARWtoJXL.Avalonia.ViewModels
             CustomOutputDirectory = saved.CustomOutputDirectory;
             SkipMetadata = saved.SkipMetadata;
             CjxlEffort = saved.CjxlEffort;
+            CjxlThreads = saved.CjxlThreads;
         }
 
         [ObservableProperty]
@@ -211,6 +220,7 @@ namespace ARWtoJXL.Avalonia.ViewModels
             CustomOutputDirectory = saved.CustomOutputDirectory;
             SkipMetadata = saved.SkipMetadata;
             CjxlEffort = saved.CjxlEffort;
+            CjxlThreads = saved.CjxlThreads;
         }
 
         [RelayCommand(CanExecute = nameof(CanExecuteConvertSelected))]
@@ -279,15 +289,28 @@ namespace ARWtoJXL.Avalonia.ViewModels
                         long sourceSize = 0;
                         try { sourceSize = new FileInfo(item.FilePath).Length; } catch { }
 
-                        await _imageService.ConvertArwToJxlAsync(
-                            item.FilePath,
-                            outputPath,
-                            p => _ = OnUiAsync(() => OnFileProgress(p)),
-                            quality,
-                            OutputFormat,
-                            _cancellationTokenSource.Token,
-                            SkipMetadata,
-                            CjxlEffort >= 0 ? CjxlEffort : null);
+    await _imageService.ConvertArwToJxlAsync(
+                             item.FilePath,
+                             outputPath,
+                             p =>
+                             {
+                                 var t = OnUiAsync(() => OnFileProgress(p));
+                                 _ = t.ContinueWith(
+                                     errorTask =>
+                                     {
+                                         _ = OnUiAsync(() =>
+                                             StatusMessage = $"{AppStrings.ProgressErrorPrefix}{errorTask.Exception?.GetBaseException().Message}");
+                                     },
+                                     CancellationToken.None,
+                                     TaskContinuationOptions.OnlyOnFaulted,
+                                     TaskScheduler.Default);
+                             },
+                             quality,
+                             OutputFormat,
+                             _cancellationTokenSource.Token,
+                             SkipMetadata,
+                             CjxlEffort >= 0 ? CjxlEffort : null,
+                             CjxlThreads > 0 ? CjxlThreads : null);
 
                         long outputSize = 0;
                         try { outputSize = new FileInfo(outputPath).Length; } catch { }
@@ -633,7 +656,12 @@ namespace ARWtoJXL.Avalonia.ViewModels
 
             if (!HeadlessTestMode)
             {
-                _ = Task.Run(() => GenerateThumbnailsAsync(newItems));
+                var thumbnailTask = Task.Run(() => GenerateThumbnailsAsync(newItems));
+                _ = thumbnailTask.ContinueWith(
+                    t => StatusMessage = $"{AppStrings.ThumbnailFailedPrefix}{t.Exception!.GetBaseException().Message}",
+                    CancellationToken.None,
+                    TaskContinuationOptions.OnlyOnFaulted,
+                    TaskScheduler.Default);
             }
 
             UpdateSelectionState();
@@ -754,7 +782,8 @@ namespace ARWtoJXL.Avalonia.ViewModels
                 Presets = saved.Presets,
                 RecentFiles = saved.RecentFiles,
                 SkipMetadata = SkipMetadata,
-                CjxlEffort = CjxlEffort
+                CjxlEffort = CjxlEffort,
+                CjxlThreads = CjxlThreads
             });
         }
 

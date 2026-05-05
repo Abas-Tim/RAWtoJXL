@@ -60,8 +60,9 @@ Defines two async operations:
   - `outputFormat = OutputFormat.Jpeg`: ARW→JPEG via IImageConverterService with quality setting + exiftool metadata embedding
   - `outputFormat = OutputFormat.Png`: Direct ARW→PNG via Magick.NET (16-bit lossless)
   - `skipMetadata`: When true, skips EXIF extraction and metadata embedding for faster conversion
-  - `effort`: Optional cjxl encoding effort override (1-9)
-  - All formats support optional metadata embedding via exiftool post-processing
+   - `effort`: Optional cjxl encoding effort override (1-9)
+   - `threads`: Optional cjxl thread count override. Null uses `Environment.ProcessorCount`
+   - All formats support optional metadata embedding via exiftool post-processing
 
 Also defines two enums in the same file:
 - **ImageStatus**: `Pending`, `Ready`, `Converting`, `Converted`, `Failed`
@@ -109,7 +110,8 @@ public ImageProcessingService(
   - `originalArwPath`: Path to the original ARW file (used for exiftool metadata embedding)
   - `progress`: Optional `Action<double>?` callback (0.0→1.0 relative to cjxl stage only)
   - `timeoutSeconds`: Default 300 (`DefaultTimeoutSeconds` constant)
-- `effort`: Optional effort override (1-9). Null uses auto based on quality
+  - `effort`: Optional effort override (1-9). Null uses auto based on quality
+- `threads`: Optional thread count override. Null uses `Environment.ProcessorCount`
 - `EncodeFromStreamAsync(Stream inputStream, ...)`: Encodes from a PPM stream piped to cjxl stdin via `IProcessRunner.RunProcessWithStdinAsync`
 - `EncodeFromStreamAsync(inputPath, originalArwPath, outputPath, quality, metadata, ppmWriter, cancellationToken, timeoutSeconds, progress, effort)`: Encodes from a PPM writer delegate — `ppmWriter(Stream, CancellationToken)` writes PPM directly to cjxl stdin via `ExecuteEncodingProcessWithWriterAsync`, zero intermediate buffering. All parameters except `progress` and `effort` are required (no defaults).
 - Uses `QualityCalculator` for distance/effort mapping when overrides not provided
@@ -188,8 +190,8 @@ Centralized quality calculations to avoid duplication:
 3. **Post-processing:** exiftool metadata embedding
 
 **cjxl arguments:**
-- Lossless: `--distance=0.0 --effort={1-9} --num_threads={CPU} --container=1 --modular=1`
-- Lossy: `--distance={0.1-150.0} --effort={1-9} --num_threads={CPU} --container=1 --progressive_dc=1`
+  - Lossless: `--distance=0.0 --effort={1-9} --num_threads={threads} --container=1 --modular=1`
+- Lossy: `--distance={0.1-150.0} --effort={1-9} --num_threads={threads} --container=1 --progressive_dc=1`
 - Metadata: `-x exif={path}`, `-x xmp={path}`, `-x icc_pathname={path}`, `-x jumbf={path}` (when available)
 - Stdin pipe: Input arg is `-` instead of file path
 

@@ -18,6 +18,7 @@ namespace ARWtoJXL.Avalonia
         public const string OpenFileDialogTitle = "Open Image Files";
         public const string OpenFileDialogFilter = "Sony RAW Files|*.ARW|JPEG XL Files|*.JXL|All Files|*.*";
         public const string ThumbnailFailedPrefix = "Thumbnail failed: ";
+        public const string ProgressErrorPrefix = "Progress error: ";
         public const string FileLockedPrefix = "File locked: ";
         public const string ItemsRemoved = "Removed ";
         public const string ItemsSuffix = " item(s).";

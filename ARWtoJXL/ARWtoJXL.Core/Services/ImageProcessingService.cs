@@ -45,11 +45,12 @@ public class ImageProcessingService : IImageService
         OutputFormat outputFormat = OutputFormat.Jxl,
         CancellationToken cancellationToken = default,
         bool skipMetadata = false,
-        int? effort = null)
+        int? effort = null,
+        int? threads = null)
     {
         if (outputFormat == OutputFormat.Jxl)
         {
-            await ConvertToJxlAsync(inputPath, outputPath, progress, quality, cancellationToken, skipMetadata, effort);
+            await ConvertToJxlAsync(inputPath, outputPath, progress, quality, cancellationToken, skipMetadata, effort, threads);
         }
         else if (outputFormat == OutputFormat.Jpeg)
         {
@@ -68,7 +69,8 @@ public class ImageProcessingService : IImageService
         int quality,
         CancellationToken cancellationToken,
         bool skipMetadata = false,
-        int? effort = null)
+        int? effort = null,
+        int? threads = null)
     {
         MetadataProfiles? metadata = null;
 
@@ -101,7 +103,8 @@ public class ImageProcessingService : IImageService
                 cancellationToken,
                 timeoutSeconds: 300,
                 cjxlProgress => ReportProgress(progress, 0.35 + cjxlProgress * 0.63),
-                effort);
+                effort,
+                threads);
 
             ReportProgress(progress, 1.0);
 

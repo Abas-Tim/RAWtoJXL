@@ -9,7 +9,7 @@ ARWtoJXL.Avalonia/
 ├── App.axaml + App.cs                       # Application entry point with DI container setup
 ├── AppStrings.cs                            # Shared string resource constants
 ├── MainWindow.axaml + MainWindow.axaml.cs   # Main window with File/List menus, toolbar (Convert, Cancel, Open Output Folder, Settings), file cards with per-file quality slider, "Open folder" per-item button, status bar
-├── SettingsWindow.axaml + SettingsWindow.axaml.cs # Resizable tabbed settings dialog (Conversion, Output, Behavior, Presets tabs)
+├── SettingsWindow.axaml + SettingsWindow.axaml.cs # Resizable tabbed settings dialog (Conversion, Output, Behavior, Hardware, Presets tabs)
 ├── SettingsService.cs                       # Settings persistence (JSON-based), AppSettings/ConversionPreset models, ConflictResolution enum
 ├── ViewLocator.cs                           # IDataTemplate implementation for MVVM view-model to view mapping
 ├── Program.cs                               # App bootstrap with Avalonia app builder
@@ -78,7 +78,7 @@ ARWtoJXL.Avalonia/
 
 ### MainViewModel
 **Properties (all `[ObservableProperty]`):**
-- `Images` (ObservableCollection<ImageItemViewModel>), `IsCancelRequested` (bool), `StatusMessage` (string), `IsConverting` (bool), `OutputPath` (string), `SubfolderName` (string), `IsAllSelected` (bool), `OutputDirectory` (string), `UseSubfolder` (bool), `QualityPreset` (int), `SearchRecursive` (bool), `OutputFormat` (OutputFormat), `ConflictResolution` (ConflictResolution), `ConfirmOverwrite` (bool), `UseCustomOutputDirectory` (bool), `CustomOutputDirectory` (string), `RecentFiles` (ObservableCollection<string>), `SkipMetadata` (bool), `CjxlEffort` (int), `IsAnySelected` (bool), `CompletedCount` (int), `TotalCount` (int)
+- `Images` (ObservableCollection<ImageItemViewModel>), `IsCancelRequested` (bool), `StatusMessage` (string), `IsConverting` (bool), `OutputPath` (string), `SubfolderName` (string), `IsAllSelected` (bool), `OutputDirectory` (string), `UseSubfolder` (bool), `QualityPreset` (int), `SearchRecursive` (bool), `OutputFormat` (OutputFormat), `ConflictResolution` (ConflictResolution), `ConfirmOverwrite` (bool), `UseCustomOutputDirectory` (bool), `CustomOutputDirectory` (string), `RecentFiles` (ObservableCollection<string>), `SkipMetadata` (bool), `CjxlEffort` (int), `CjxlThreads` (int), `IsAnySelected` (bool), `CompletedCount` (int), `TotalCount` (int)
 
 **Private fields:** `_currentFileProgress` (double) — tracks per-file progress (0.0-1.0) from conversion pipeline for smooth overall progress display.
 
@@ -97,12 +97,12 @@ ARWtoJXL.Avalonia/
 Implements `IDisposable` — `Dispose()` stops debounce timer, flushes pending persist, and disposes timer resources. Called from `SettingsWindow.Closing`.
 
 **Properties (all `[ObservableProperty]`):**
-- `UseSubfolder`, `SubfolderName`, `QualityPreset`, `SearchRecursive`, `OutputFormat`, `ConflictResolution`, `ConfirmOverwrite`, `UseCustomOutputDirectory`, `CustomOutputDirectory`, `IsSaving`, `SubfolderNameValidationResult`, `Presets` (ObservableCollection<ConversionPreset>), `SelectedPreset`, `HasSelectedPreset`, `NewPresetName`, `SkipMetadata`, `CjxlEffort`, `SelectedEffortOption`
+- `UseSubfolder`, `SubfolderName`, `QualityPreset`, `SearchRecursive`, `OutputFormat`, `ConflictResolution`, `ConfirmOverwrite`, `UseCustomOutputDirectory`, `CustomOutputDirectory`, `IsSaving`, `SubfolderNameValidationResult`, `Presets` (ObservableCollection<ConversionPreset>), `SelectedPreset`, `HasSelectedPreset`, `NewPresetName`, `SkipMetadata`, `CjxlEffort`, `SelectedEffortOption`, `CjxlThreads`, `SelectedThreadsOption`
 
 **Public methods:** `Persist()` — forces immediate save (flushes debounce). Used in tests to verify persistence without waiting for timer.
 
 **Public members:**
-- `OutputFormatOptions` (Array), `ConflictResolutionOptions` (Array), `CjxlEffortOptions` (EffortOption[] with 10 options: Auto -1 through 9)
+- `OutputFormatOptions` (Array), `ConflictResolutionOptions` (Array), `CjxlEffortOptions` (EffortOption[] with 10 options: Auto -1 through 9), `CjxlThreadsOptions` (ThreadOption[] dynamically generated: Auto -1 through ProcessorCount)
 - `static ValidateSubfolderName(string)` — validates subfolder name against path characters, reserved names, length limits
 
 **Commands (`[RelayCommand]`):**
@@ -129,10 +129,10 @@ Implements `IDisposable` — `Dispose()` stops debounce timer, flushes pending p
 - `Overwrite`, `Skip`, `AppendNumber`
 
 ### AppSettings
-JSON-serializable settings container: `UseSubfolder`, `SubfolderName`, `QualityPreset`, `SearchRecursive`, `RecentFiles`, `OutputFormat`, `ConflictResolution`, `ConfirmOverwrite`, `UseCustomOutputDirectory`, `CustomOutputDirectory`, `Presets`, `SkipMetadata`, `CjxlEffort`
+JSON-serializable settings container: `UseSubfolder`, `SubfolderName`, `QualityPreset`, `SearchRecursive`, `RecentFiles`, `OutputFormat`, `ConflictResolution`, `ConfirmOverwrite`, `UseCustomOutputDirectory`, `CustomOutputDirectory`, `Presets`, `SkipMetadata`, `CjxlEffort`, `CjxlThreads`
 
 ### ConversionPreset
-Named preset: `Name`, `Quality`, `OutputFormat`, `ConflictResolution`, `UseSubfolder`, `SubfolderName`, `UseCustomOutputDirectory`, `CustomOutputDirectory`, `ConfirmOverwrite`, `SkipMetadata`, `CjxlEffort`
+Named preset: `Name`, `Quality`, `OutputFormat`, `ConflictResolution`, `UseSubfolder`, `SubfolderName`, `UseCustomOutputDirectory`, `CustomOutputDirectory`, `ConfirmOverwrite`, `SkipMetadata`, `CjxlEffort`, `CjxlThreads`
 
 ## Key Dependencies
 

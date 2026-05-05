@@ -17,13 +17,13 @@ public class SettingsWindowTests
     }
 
     [AvaloniaFact]
-    public void SettingsWindow_HasFourTabs()
+    public void SettingsWindow_HasFiveTabs()
     {
         using var _ = new GUITestHelpers.SettingsScope();
         var sw = new SettingsWindow();
         var tabControl = GUITestHelpers.FindAll<TabControl>(sw).First();
         var headers = tabControl.Items.Cast<TabItem>().Select(t => t.Header?.ToString()).ToList();
-        Assert.Equal(new[] { "Conversion", "Output", "Behavior", "Presets" }, headers);
+        Assert.Equal(new[] { "Conversion", "Output", "Behavior", "Hardware", "Presets" }, headers);
     }
 
     [AvaloniaFact]

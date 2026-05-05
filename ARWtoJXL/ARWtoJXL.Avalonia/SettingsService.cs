@@ -47,6 +47,9 @@ namespace ARWtoJXL.Avalonia
 
         [JsonPropertyName("cjxlEffort")]
         public int CjxlEffort { get; set; } = -1;
+
+        [JsonPropertyName("cjxlThreads")]
+        public int CjxlThreads { get; set; } = -1;
     }
 
     public class AppSettings
@@ -89,6 +92,9 @@ namespace ARWtoJXL.Avalonia
 
         [JsonPropertyName("cjxlEffort")]
         public int CjxlEffort { get; set; } = -1;
+
+        [JsonPropertyName("cjxlThreads")]
+        public int CjxlThreads { get; set; } = -1;
     }
 
     public static class SettingsService

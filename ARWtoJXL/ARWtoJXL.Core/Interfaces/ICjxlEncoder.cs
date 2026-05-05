@@ -23,6 +23,7 @@ namespace ARWtoJXL.Core.Interfaces
         /// <param name="timeoutSeconds">Optional timeout in seconds (default: 300).</param>
         /// <param name="progress">Optional progress callback (0.0 to 1.0).</param>
         /// <param name="effort">Optional encoding effort override (1-9). Null uses auto based on quality.</param>
+        /// <param name="threads">Optional thread count override. Null uses OS processor count.</param>
         Task EncodeAsync(
             string inputPath,
             string originalArwPath,
@@ -32,7 +33,8 @@ namespace ARWtoJXL.Core.Interfaces
             CancellationToken cancellationToken = default,
             int timeoutSeconds = 300,
             Action<double>? progress = null,
-            int? effort = null);
+            int? effort = null,
+            int? threads = null);
 
         /// <summary>
         /// Asynchronously encodes an image from a PPM stream to JPEG XL format.
@@ -46,6 +48,7 @@ namespace ARWtoJXL.Core.Interfaces
         /// <param name="timeoutSeconds">Optional timeout in seconds (default: 300).</param>
         /// <param name="progress">Optional progress callback (0.0 to 1.0).</param>
         /// <param name="effort">Optional encoding effort override (1-9). Null uses auto based on quality.</param>
+        /// <param name="threads">Optional thread count override. Null uses OS processor count.</param>
         Task EncodeFromStreamAsync(
             Stream inputStream,
             string originalArwPath,
@@ -55,7 +58,8 @@ namespace ARWtoJXL.Core.Interfaces
             CancellationToken cancellationToken = default,
             int timeoutSeconds = 300,
             Action<double>? progress = null,
-            int? effort = null);
+            int? effort = null,
+            int? threads = null);
 
         /// <summary>
         /// Asynchronously encodes an image by writing PPM data directly to cjxl stdin via a delegate.
@@ -69,6 +73,7 @@ namespace ARWtoJXL.Core.Interfaces
         /// <param name="timeoutSeconds">Optional timeout in seconds (default: 300).</param>
         /// <param name="progress">Optional progress callback (0.0 to 1.0).</param>
         /// <param name="effort">Optional encoding effort override (1-9). Null uses auto based on quality.</param>
+        /// <param name="threads">Optional thread count override. Null uses OS processor count.</param>
         Task EncodeFromStreamAsync(
             string inputPath,
             string originalArwPath,
@@ -79,6 +84,7 @@ namespace ARWtoJXL.Core.Interfaces
             CancellationToken cancellationToken,
             int timeoutSeconds,
             Action<double>? progress,
-            int? effort);
+            int? effort,
+            int? threads = null);
     }
 }

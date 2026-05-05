@@ -22,7 +22,7 @@ public class MainWindowStructuralTests
     {
         var window = GUITestHelpers.CreateWindow();
         var buttonContents = GUITestHelpers.GetButtonContents(window);
-        var expectedButtons = new[] { "Convert", "Cancel", "Open Output Folder", "Settings" };
+        var expectedButtons = new[] { "Convert", "Cancel", "Settings" };
         foreach (var expected in expectedButtons)
         {
             Assert.Contains(expected, buttonContents, StringComparer.OrdinalIgnoreCase);

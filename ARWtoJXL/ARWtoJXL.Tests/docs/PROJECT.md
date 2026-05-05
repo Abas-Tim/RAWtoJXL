@@ -124,7 +124,7 @@ Avalonia Headless GUI tests (no DI, mocks services). Split into `GUITests/` fold
 
 **SettingsWindowTests** (5 tests):
 - **SettingsWindow_CreatesSuccessfully**: Verifies window title is "Settings"
-- **SettingsWindow_HasFourTabs**: Verifies Conversion/Output/Behavior/Presets tabs exist
+- **SettingsWindow_HasFiveTabs**: Verifies Conversion/Output/Behavior/Hardware/Presets tabs exist
 - **SettingsWindow_HasSaveAndCancelButton**: Verifies Save and Cancel buttons exist
 - **SettingsWindow_SubfolderValidation_HidesWhenValid**: Verifies valid subfolder names pass validation
 - **SettingsWindow_SubfolderValidation_ShowsWhenInvalid**: Verifies invalid chars, reserved names, whitespace fail validation

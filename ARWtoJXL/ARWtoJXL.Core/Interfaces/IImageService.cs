@@ -34,6 +34,7 @@ namespace ARWtoJXL.Core.Interfaces
             OutputFormat outputFormat = OutputFormat.Jxl,
             CancellationToken cancellationToken = default,
             bool skipMetadata = false,
-            int? effort = null);
+            int? effort = null,
+            int? threads = null);
     }
 }
