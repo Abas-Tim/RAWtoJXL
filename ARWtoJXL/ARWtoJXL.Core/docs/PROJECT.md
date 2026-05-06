@@ -165,8 +165,7 @@ Centralized quality calculations to avoid duplication:
   - quality ≥ 100 → distance 0.0 (lossless)
   - quality ≥ 30 → linear: `0.1f + (100 - quality) * 0.09f`
   - quality < 30 → quadratic: `53.0f/3000.0f * q² - 23.0f/20.0f * q + 25.0f`
-- `CalculateEffort(int quality)`: Maps quality to encoding effort (5-9)
-  - ≥95 → 9, ≥85 → 8, ≥70 → 7, ≥50 → 6, else → 5
+- `CalculateEffort(int quality)`: Always returns 7 (default cjxl effort). Quality-based auto-mapping removed — effort 9 ("tortoise") added 2-4x encoding time with negligible visual gain at high quality. Users can override via settings (1-9).
 - `IsLossless(int quality)`: Returns true if quality ≥ 100
 
 **Quality→Distance mapping:** quality 100 → distance 0.0 (lossless), quality 90 → distance 1.0 (visually lossless), quality 68-96 recommended

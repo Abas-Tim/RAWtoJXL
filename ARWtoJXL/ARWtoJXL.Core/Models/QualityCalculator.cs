@@ -15,11 +15,7 @@ namespace ARWtoJXL.Core.Models
 
         public static int CalculateEffort(int quality)
         {
-            if (quality >= 95) return 9;
-            if (quality >= 85) return 8;
-            if (quality >= 70) return 7;
-            if (quality >= 50) return 6;
-            return 5;
+            return 7;
         }
 
         public static bool IsLossless(int quality)

@@ -6,12 +6,12 @@ namespace ARWtoJXL.Tests
     public class QualityCalculatorTests
     {
         [Theory]
-        [InlineData(0, 5)]
-        [InlineData(50, 6)]
+        [InlineData(0, 7)]
+        [InlineData(50, 7)]
         [InlineData(70, 7)]
-        [InlineData(85, 8)]
-        [InlineData(95, 9)]
-        [InlineData(100, 9)]
+        [InlineData(85, 7)]
+        [InlineData(95, 7)]
+        [InlineData(100, 7)]
         public void CalculateEffort_ReturnsCorrectEffort(int quality, int expectedEffort)
         {
             var effort = QualityCalculator.CalculateEffort(quality);

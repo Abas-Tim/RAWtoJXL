@@ -15,7 +15,7 @@ public class CjxlEncoderArgumentsTests
 
         float expectedDistance = QualityCalculator.CalculateDistance(50);
         Assert.Contains($"--distance={expectedDistance:F2}", args);
-        Assert.Contains("--effort=6", args);
+        Assert.Contains("--effort=7", args);
         Assert.Contains($"--num_threads={Environment.ProcessorCount}", args);
         Assert.Contains("--container=1", args);
         Assert.Contains("--progressive_dc=1", args);
@@ -30,18 +30,18 @@ public class CjxlEncoderArgumentsTests
         var service = CreateTestEncoder();
         var args = service.BuildEncodingArguments(0, null, @"C:\input.png", @"C:\output.jxl");
 
-        Assert.Contains("--effort=5", args);
+        Assert.Contains("--effort=7", args);
         Assert.DoesNotContain("--modular=1", args);
         Assert.Contains("--progressive_dc=1", args);
     }
 
     [Theory]
-    [InlineData(0, 5)]
-    [InlineData(50, 6)]
+    [InlineData(0, 7)]
+    [InlineData(50, 7)]
     [InlineData(70, 7)]
-    [InlineData(85, 8)]
-    [InlineData(95, 9)]
-    [InlineData(100, 9)]
+    [InlineData(85, 7)]
+    [InlineData(95, 7)]
+    [InlineData(100, 7)]
     public void BuildEncodingArguments_EffortMatchesCalculator(int quality, int expectedEffort)
     {
         var service = CreateTestEncoder();
@@ -108,7 +108,7 @@ public class CjxlEncoderArgumentsTests
         var args = service.BuildEncodingArguments(50, null, @"C:\input.png", @"C:\output.jxl", effortOverride: 3);
 
         Assert.Contains("--effort=3", args);
-        Assert.DoesNotContain("--effort=6", args);
+        Assert.DoesNotContain("--effort=7", args);
     }
 
     [Fact]
@@ -117,7 +117,7 @@ public class CjxlEncoderArgumentsTests
         var service = CreateTestEncoder();
         var args = service.BuildEncodingArguments(50, null, @"C:\input.png", @"C:\output.jxl", effortOverride: null);
 
-        Assert.Contains("--effort=6", args);
+        Assert.Contains("--effort=7", args);
     }
 
     private static TestEncoder CreateTestEncoder()
