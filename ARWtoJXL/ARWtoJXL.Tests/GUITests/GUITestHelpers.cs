@@ -149,6 +149,28 @@ public static class GUITestHelpers
             .FirstOrDefault(m => m.Header?.ToString() == headerText);
     }
 
+    public static void AddTestFiles(MainViewModel vm, int count)
+    {
+        MainViewModel.HeadlessTestMode = true;
+        var tmpDir = Path.Combine(Path.GetTempPath(), "ARWtoJXL_TestImages");
+        Directory.CreateDirectory(tmpDir);
+        var files = new List<string>();
+        try
+        {
+            for (int i = 0; i < count; i++)
+            {
+                var tmpFile = Path.Combine(tmpDir, $"test_img_{Guid.NewGuid():N}.arw");
+                File.WriteAllText(tmpFile, "");
+                files.Add(tmpFile);
+            }
+            vm.AddFilesAsync(files).Wait();
+        }
+        finally
+        {
+            MainViewModel.HeadlessTestMode = false;
+        }
+    }
+
     public static TabItem SelectTab(SettingsWindow window, string header)
     {
         var tabControl = FindAll<TabControl>(window).First();

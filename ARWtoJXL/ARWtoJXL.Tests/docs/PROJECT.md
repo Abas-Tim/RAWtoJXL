@@ -18,12 +18,12 @@ ARWtoJXL.Tests/
 ├── CjxlEncoderArgumentsTests.cs  # Unit tests for BuildEncodingArguments() via protected internal test subclass (Moq)
 ├── test1.ARW                     # Test fixture ARW file for integration tests
 ├── GUITests/                     # Avalonia Headless GUI tests (split by category)
-│   ├── GUITestHelpers.cs         # Shared helpers: CreateViewModel, CreateWindow, GetAllControls, FindAll, SettingsScope
-│   ├── MainWindowStructuralTests.cs     # MainWindow structure: title, buttons, ListBox, ProgressBar, status bar, drag-drop, min size
-│   ├── MainWindowBehavioralTests.cs     # MainWindow behavior: ListBox item display, command bindings, drag-drop behavior
-│   ├── SettingsWindowTests.cs          # SettingsWindow structure: tabs, buttons, subfolder validation
+│   ├── GUITestHelpers.cs         # Shared helpers: CreateViewModel, CreateWindow, GetAllControls, FindAll, SettingsScope, AddTestFiles
+│   ├── MainWindowStructuralTests.cs     # MainWindow structure + functional structural checks: title, buttons, ItemsRepeater binding, ProgressBar binding, drag-drop, min size, layout
+│   ├── MainWindowBehavioralTests.cs     # MainWindow functional behavior: SelectAll toggling, RemoveSelected removal, Settings event, Convert pipeline with mock, StatusMessage→UI binding, Cancel visibility, gallery rendering, drag-drop infrastructure, CheckBox→selection binding, quality slider
+│   ├── SettingsWindowTests.cs          # SettingsWindow structure and behavior: tabs, buttons, Save/Cancel commands, quality slider, output format, subfolder validation, tab switching, cjxl effort, skip metadata
 │   ├── SettingsPersistenceTests.cs     # Settings persistence round-trip: quality, format, effort, metadata, subfolder, conflict, presets
-│   └── ConfirmDialogTests.cs           # ConfirmDialog structure and behavior: buttons, message, data context, title binding
+│   └── ConfirmDialogTests.cs           # ConfirmDialog structure and behavior: Yes/No click closes dialog, message binding, data context, title binding
 └── Services/                     # Empty directory (reserved for future service tests)
 ```
 
@@ -98,36 +98,57 @@ Diagnostic test tagged with `[Trait("category", "manual")]` — does NOT run by 
 ### GUITests
 Avalonia Headless GUI tests (no DI, mocks services). Split into `GUITests/` folder by category. Shared utilities in `GUITestHelpers.cs` (`CreateViewModel`, `CreateWindow`, `GetAllControls`, `FindAll`, `SettingsScope`). All tagged `[Trait("category", "gui")]`.
 
-**MainWindowStructuralTests** (10 tests):
+**MainWindowStructuralTests** (15 tests):
 - **MainWindow_Opens_And_HasExpectedTitle**: Verifies title is "ARW to JXL Converter"
 - **MainWindow_HasToolbarButtons**: Verifies all toolbar buttons exist
+- **MainWindow_HasFileMenuItems**: Verifies menu headers: File, Open File, Open Folder, Load All, Clear Recent, List, Remove
 - **MainWindow_CancelButton_Hidden_WhenNotConverting**: Verifies cancel button hidden by default
-- **MainWindow_HasGalleryListBox**: Verifies `ImagesListBox` with `SelectionMode.Multiple`
+- **MainWindow_HasGalleryRepeater**: Verifies `ImagesRepeater` is an `ItemsRepeater` with `UniformGridLayout`
+- **MainWindow_GalleryRepeater_HasItemsSourceBinding**: Verifies ItemsRepeater renders items from Images collection via TryGetElement
 - **MainWindow_HasProgressBar**: Verifies at least one progress bar exists
+- **MainWindow_ProgressBar_BoundToViewModel**: Verifies Main progress bar Maximum/Value reflects TotalCount/CompletedCount
 - **MainWindow_HasStatusBarText**: Verifies "Ready" status text
-- **MainWindow_HasRecentFilesSection**: Verifies "Recent" section label
+- **MainWindow_HasRecentFilesInMenu**: Verifies Load All and Clear Recent menu items
 - **MainWindow_HasDragDropEnabled**: Verifies root Grid has `DragDrop.AllowDrop=true`
 - **MainWindow_DataContext_IsMainViewModel**: Verifies data context type
 - **MainWindow_MinSize_IsSet**: Verifies min width 800, min height 600
+- **MainWindow_InitialLayout_DoesNotThrow**: Verifies window layouts without exceptions
+- **MainWindow_ConvertButton_HasAccentClass**: Verifies Convert button has `accent` CSS class
+- **MainWindow_SelectAllMenuHeader_CommandBound**: Verifies SelectAll menu item is bound to command
 
-**MainWindowBehavioralTests** (10 tests):
-- **MainWindow_ListBox_DisplaysItemsFromViewModel**: Verifies ListBox reflects ViewModel Images collection
-- **MainWindow_ListBox_Items_AreImageItemViewModels**: Verifies ListBox items are `ImageItemViewModel` instances
-- **MainWindow_ConvertButton_Command_BoundToConvertSelectedCommand**: Verifies Convert button binding
-- **MainWindow_RemoveButton_Command_BoundToRemoveSelectedCommand**: Verifies Remove button binding
-- **MainWindow_SelectAllButton_Command_BoundToSelectAllCommand**: Verifies Select All button binding
-- **MainWindow_SettingsButton_Command_BoundToOpenSettingsCommand**: Verifies Settings button binding
-- **MainWindow_CancelButton_Command_BoundToCancelCommand**: Verifies Cancel button binding
-- **MainWindow_StatusBar_BindsToStatusMessage**: Verifies status bar binds to ViewModel StatusMessage
-- **MainWindow_DragDropBehavior_EnabledOnRootGrid**: Verifies `DragDropBehavior.EnableDragDrop` and `AllowDrop`
-- **MainWindow_DragDropBehavior_HasDropHandlerAttached**: Verifies drag-drop behavior infrastructure
+**MainWindowBehavioralTests** (14 tests):
+- **MainWindow_SelectAll_TogglesItemSelection**: Executes SelectAll command, verifies IsAllSelected becomes true and all items selected
+- **MainWindow_RemoveSelected_RemovesItems**: Selects items, executes RemoveSelected, verifies Images count decreases
+- **MainWindow_SettingsButton_RaisesRequestOpenSettings**: Executes OpenSettings command, verifies RequestOpenSettings event fires
+- **MainWindow_ConvertButton_InvokesConversion**: Creates temp ARW file with mock IImageService, executes ConvertSelected, verifies ConvertArwToJxlAsync called and status becomes Converted
+- **MainWindow_StatusMessage_UpdatesUI**: Sets StatusMessage on VM, verifies TextBlock in UI reflects the new text
+- **MainWindow_CancelButton_VisibleWhenConverting**: Sets IsConverting=true on VM, verifies Cancel button becomes visible
+- **MainWindow_Gallery_RendersItemElements**: Adds images to VM, verifies ItemsRepeater.TryGetElement returns non-null for multiple indices
+- **MainWindow_Gallery_RenderedItemsHaveCorrectDataContext**: Verifies rendered ItemsRepeater elements have ImageItemViewModel DataContext matching VM collection
+- **MainWindow_Gallery_UpdatesWhenImagesAddedOrRemoved**: Removes item from Images, verifies ItemsRepeater TryGetElement still returns correct elements
+- **MainWindow_ConvertButton_DisabledWithoutSelection**: Verifies ConvertSelectedCommand.CanExecute returns false with no selection; returns true after selecting an item
+- **MainWindow_DragDropBehavior_EnabledOnRootGrid**: Verifies DragDropBehavior.EnableDragDrop and AllowDrop attached properties are true on root Grid
+- **MainWindow_PerItemCheckBox_UpdatesSelectionState**: Sets CheckBox.IsChecked in ItemsRepeater item template, verifies VM.Image.IsSelected and IsAnySelected update
+- **MainWindow_QualitySlider_UpdatesQualityOverride**: Sets Slider.Value in ItemsRepeater item template, verifies VM.Image.QualityOverride updates
+- **MainWindow_ItemOpenFolderButton_VisibilityUpdatesWithOutputPath**: Verifies "Open folder" button hidden when OutputPath empty, visible when set
 
-**SettingsWindowTests** (5 tests):
+**SettingsWindowTests** (16 tests):
 - **SettingsWindow_CreatesSuccessfully**: Verifies window title is "Settings"
 - **SettingsWindow_HasFiveTabs**: Verifies Conversion/Output/Behavior/Hardware/Presets tabs exist
 - **SettingsWindow_HasSaveAndCancelButton**: Verifies Save and Cancel buttons exist
-- **SettingsWindow_SubfolderValidation_HidesWhenValid**: Verifies valid subfolder names pass validation
+- **SettingsWindow_SaveCommand_PersistsAndCloses**: Executes SaveCommand, verifies QualityPreset persisted and window closes
+- **SettingsWindow_CancelCommand_ClosesWindow**: Executes CancelCommand, verifies window closes
+- **SettingsWindow_QualitySlider_UpdatesQualityPreset**: Sets slider.Value, verifies QualityPreset updates
+- **SettingsWindow_QualitySlider_ClampedBySliderRange**: Verifies slider Minimum=0, Maximum=100
+- **SettingsWindow_OutputFormat_UpdatesOnSelection**: Selects OutputFormat.Png in ComboBox, verifies VM.OutputFormat changes
+- **SettingsWindow_OutputFormat_HasAllOptions**: Verifies ComboBox contains Jxl, Jpeg, Png
+- **SettingsWindow_SubfolderValidation_HidesWhenValid**: Verifies valid subfolder names pass validation (return null)
 - **SettingsWindow_SubfolderValidation_ShowsWhenInvalid**: Verifies invalid chars, reserved names, whitespace fail validation
+- **SettingsWindow_SubfolderValidation_UpdatesThroughBinding**: Sets TextBox.Text to valid name, verifies ValidationResult is null
+- **SettingsWindow_TabSwitch_LoadsDifferentContent**: Switches between Conversion and Output tabs, verifies different controls present
+- **SettingsWindow_CjxlEffort_UpdatesOnSelection**: Selects effort=7 in ComboBox, verifies VM.CjxlEffort = 7
+- **SettingsWindow_CjxlEffort_HasCorrectOptions**: Verifies effort ComboBox has Auto, 1-9 options
+- **SettingsWindow_SkipMetadata_TogglesOnVM**: Toggles SkipMetadata property, verifies value changes
 
 **SettingsPersistenceTests** (10 tests):
 Each test follows: open settings → select tab → change UI control → verify settings file → close → reopen → verify value persisted. Uses `SettingsScope` to isolate `settings.json` per test.
@@ -142,14 +163,17 @@ Each test follows: open settings → select tab → change UI control → verify
 - **SettingsWindow_ConfirmOverwrite_PersistsAcrossReopens**: Behavior tab — confirm overwrite CheckBox
 - **SettingsWindow_Preset_SavesAndPersists**: Presets tab — create preset via Save As button
 
-**ConfirmDialogTests** (7 tests):
+**ConfirmDialogTests** (10 tests):
 - **ConfirmDialog_CreatesSuccessfully**: Verifies dialog can be created
 - **ConfirmDialog_HasYesAndNoButtons**: Verifies Yes/No buttons exist
-- **ConfirmDialog_HasMessageTextBlock**: Verifies message TextBlock with bound text
-- **ConfirmDialog_DataContext_IsItself**: Verifies data context is the dialog itself
-- **ConfirmDialog_YesButton_HasClickHandler**: Verifies Yes button is `IsDefault`
-- **ConfirmDialog_NoButton_HasClickHandler**: Verifies No button is `IsCancel`
-- **ConfirmDialog_TitleText_BindsToWindowTitle**: Verifies `TitleText` property binds to window `Title`
+- **ConfirmDialog_HasMessageTextBlock**: Verifies message TextBlock renders MessageText
+- **ConfirmDialog_DataContext_IsItself**: Verifies data context is ConfirmDialogViewModel
+- **ConfirmDialog_YesButton_Click_ClosesDialog**: Clicks Yes button (RaiseEvent on ClickEvent), verifies dialog Closed event fires
+- **ConfirmDialog_NoButton_Click_ClosesDialog**: Clicks No button (RaiseEvent on ClickEvent), verifies dialog Closed event fires
+- **ConfirmDialog_YesButton_IsDefault**: Verifies Yes button IsDefault = true
+- **ConfirmDialog_NoButton_IsCancel**: Verifies No button IsCancel = true
+- **ConfirmDialog_TitleText_BindsToWindowTitle**: Verifies TitleText property propagates to dialog Title
+- **ConfirmDialog_MessageText_BindsToDataContext**: Verifies MessageText property propagates to inner ViewModel.MessageText
 
 ## Key Dependencies
 

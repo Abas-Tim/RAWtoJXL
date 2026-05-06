@@ -1,10 +1,12 @@
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using ARWtoJXL.Avalonia;
 using ARWtoJXL.Avalonia.Behaviors;
+using ARWtoJXL.Avalonia.Services;
 using ARWtoJXL.Avalonia.ViewModels;
+using ARWtoJXL.Core.Interfaces;
+using Moq;
 
 namespace ARWtoJXL.Tests.GUITests;
 
@@ -12,150 +14,222 @@ namespace ARWtoJXL.Tests.GUITests;
 public class MainWindowBehavioralTests
 {
     [AvaloniaFact]
-    public void MainWindow_ListBox_DisplaysItemsFromViewModel()
+    public void MainWindow_SelectAll_TogglesItemSelection()
     {
-        var tempDir = Path.Combine(Path.GetTempPath(), "ARWtoJXL_Test_" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(tempDir);
-        var tempFile1 = Path.Combine(tempDir, "test1.arw");
-        var tempFile2 = Path.Combine(tempDir, "test2.arw");
-        File.WriteAllText(tempFile1, "");
-        File.WriteAllText(tempFile2, "");
+        var vm = GUITestHelpers.CreateViewModel();
+        GUITestHelpers.AddTestFiles(vm, 3);
 
+        foreach (var item in vm.Images)
+            item.IsSelected = false;
+
+        Assert.False(vm.IsAllSelected);
+
+        vm.SelectAllCommand.Execute(null);
+
+        Assert.True(vm.IsAllSelected);
+        Assert.All(vm.Images, item => Assert.True(item.IsSelected));
+    }
+
+    [AvaloniaFact]
+    public void MainWindow_RemoveSelected_RemovesItems()
+    {
+        var vm = GUITestHelpers.CreateViewModel();
+        GUITestHelpers.AddTestFiles(vm, 3);
+
+        vm.Images[0].IsSelected = true;
+        vm.Images[1].IsSelected = true;
+
+        Assert.Equal(3, vm.Images.Count);
+
+        vm.RemoveSelectedCommand.Execute(null);
+
+        Assert.Single(vm.Images);
+    }
+
+    [AvaloniaFact]
+    public void MainWindow_SettingsButton_RaisesRequestOpenSettings()
+    {
+        var vm = GUITestHelpers.CreateViewModel();
+
+        var received = false;
+        vm.RequestOpenSettings += () => received = true;
+
+        vm.OpenSettingsCommand.Execute(null);
+
+        Assert.True(received, "RequestOpenSettings event should have been raised");
+    }
+
+    [AvaloniaFact]
+    public void MainWindow_ConvertButton_InvokesConversion()
+    {
+        MainViewModel.HeadlessTestMode = true;
         try
         {
-            var vm = GUITestHelpers.CreateViewModel();
-            vm.AddFilesAsync(new[] { tempFile1, tempFile2 }).Wait();
+            var tempDir = Path.Combine(Path.GetTempPath(), "ARWtoJXL_Test_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempDir);
+            var arwFile = Path.Combine(tempDir, "test.arw");
+            File.WriteAllText(arwFile, "");
 
-            var window = GUITestHelpers.CreateWindow(vm);
-            var itemsControl = window.FindControl<ItemsControl>("ImagesListBox")!;
-            window.UpdateLayout();
+            try
+            {
+                var mockImageService = new Mock<IImageService>();
+                mockImageService
+                    .Setup(x => x.ConvertArwToJxlAsync(
+                        It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Action<double>>(),
+                        It.IsAny<int>(), It.IsAny<OutputFormat>(), It.IsAny<CancellationToken>(),
+                        It.IsAny<bool>(), It.IsAny<int?>(), It.IsAny<int?>()))
+                    .Returns(Task.CompletedTask);
 
-            Assert.Equal(2, itemsControl.Items.Count);
-            Assert.Equal(2, vm.Images.Count);
+                mockImageService
+                    .Setup(x => x.GetThumbnailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(Array.Empty<byte>());
+
+                var mockDialog = new Mock<IDialogService>();
+                mockDialog
+                    .Setup(x => x.ShowConfirmAsync(It.IsAny<string>(), It.IsAny<string>()))
+                    .ReturnsAsync(true);
+
+                var vm = GUITestHelpers.CreateViewModel(
+                    imageService: mockImageService,
+                    dialogService: mockDialog);
+                vm.UseSubfolder = false;
+                vm.OutputDirectory = tempDir;
+
+                vm.AddFilesAsync(new[] { arwFile }).Wait();
+                vm.Images[0].IsSelected = true;
+
+                Assert.True(vm.ConvertSelectedCommand.CanExecute(null));
+
+                vm.ConvertSelectedCommand.Execute(null);
+
+                Assert.Equal(ImageStatus.Converted, vm.Images[0].Status);
+
+                mockImageService.Verify(
+                    x => x.ConvertArwToJxlAsync(
+                        arwFile, It.IsAny<string>(), It.IsAny<Action<double>>(),
+                        It.IsAny<int>(), It.IsAny<OutputFormat>(), It.IsAny<CancellationToken>(),
+                        It.IsAny<bool>(), It.IsAny<int?>(), It.IsAny<int?>()),
+                    Times.Once);
+            }
+            finally
+            {
+                try { File.Delete(arwFile); } catch { }
+                try { Directory.Delete(tempDir, true); } catch { }
+            }
         }
         finally
         {
-            try { File.Delete(tempFile1); } catch { }
-            try { File.Delete(tempFile2); } catch { }
-            try { Directory.Delete(tempDir, false); } catch { }
+            MainViewModel.HeadlessTestMode = false;
         }
     }
 
     [AvaloniaFact]
-    public void MainWindow_ListBox_Items_AreImageItemViewModels()
-    {
-        var tempDir = Path.Combine(Path.GetTempPath(), "ARWtoJXL_Test_" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(tempDir);
-        var tempFile = Path.Combine(tempDir, "test1.arw");
-        File.WriteAllText(tempFile, "");
-
-        try
-        {
-            var vm = GUITestHelpers.CreateViewModel();
-            vm.AddFilesAsync(new[] { tempFile }).Wait();
-
-            var window = GUITestHelpers.CreateWindow(vm);
-            var itemsControl = window.FindControl<ItemsControl>("ImagesListBox")!;
-            window.UpdateLayout();
-
-            var items = itemsControl.Items.ToList();
-            Assert.Single(items);
-            Assert.IsType<ImageItemViewModel>(items[0]);
-        }
-        finally
-        {
-            try { File.Delete(tempFile); } catch { }
-            try { Directory.Delete(tempDir, false); } catch { }
-        }
-    }
-
-    [AvaloniaFact]
-    public void MainWindow_ConvertButton_Command_BoundToConvertSelectedCommand()
+    public void MainWindow_StatusMessage_UpdatesUI()
     {
         var vm = GUITestHelpers.CreateViewModel();
         var window = GUITestHelpers.CreateWindow(vm);
 
-        var convertButton = GUITestHelpers.GetAllControls<Button>(window)
-            .First(b => b.Content?.ToString() == "Convert");
+        vm.StatusMessage = "Processing 1/3 (33%)";
 
-        Assert.Same(vm.ConvertSelectedCommand, convertButton.Command);
+        var textBlocks = GUITestHelpers.GetAllControls<TextBlock>(window)
+            .Select(t => t.Text)
+            .ToList();
+
+        Assert.Contains("Processing 1/3 (33%)", textBlocks);
     }
 
     [AvaloniaFact]
-    public void MainWindow_RemoveMenuItem_Command_BoundToRemoveSelectedCommand()
-    {
-        var vm = GUITestHelpers.CreateViewModel();
-        var window = GUITestHelpers.CreateWindow(vm);
-
-        var removeMenuItem = GUITestHelpers.GetAllControls<MenuItem>(window)
-            .FirstOrDefault(m => m.Command == vm.RemoveSelectedCommand);
-        Assert.NotNull(removeMenuItem);
-
-        Assert.Same(vm.RemoveSelectedCommand, removeMenuItem!.Command);
-    }
-
-    [AvaloniaFact]
-    public void MainWindow_SelectAllMenuItem_Command_BoundToSelectAllCommand()
-    {
-        var vm = GUITestHelpers.CreateViewModel();
-        var window = GUITestHelpers.CreateWindow(vm);
-
-        var selectAllMenuItem = GUITestHelpers.GetAllControls<MenuItem>(window)
-            .First(m => m.Command == vm.SelectAllCommand);
-
-        Assert.Same(vm.SelectAllCommand, selectAllMenuItem.Command);
-    }
-
-    [AvaloniaFact]
-    public void MainWindow_SettingsButton_Command_BoundToOpenSettingsCommand()
-    {
-        var vm = GUITestHelpers.CreateViewModel();
-        var window = GUITestHelpers.CreateWindow(vm);
-
-        var settingsButton = GUITestHelpers.GetAllControls<Button>(window)
-            .First(b => b.Content?.ToString() == "Settings");
-
-        Assert.Same(vm.OpenSettingsCommand, settingsButton.Command);
-    }
-
-    [AvaloniaFact]
-    public void MainWindow_CancelButton_Command_BoundToCancelCommand()
+    public void MainWindow_CancelButton_VisibleWhenConverting()
     {
         var vm = GUITestHelpers.CreateViewModel();
         var window = GUITestHelpers.CreateWindow(vm);
 
         var cancelButton = GUITestHelpers.GetAllControls<Button>(window)
-            .FirstOrDefault(b => b.Content?.ToString() == "Cancel");
+            .FirstOrDefault(b => b.Content?.ToString() == "Cancel" && b.Classes.Contains("danger"));
         Assert.NotNull(cancelButton);
+        Assert.False(cancelButton!.IsVisible, "Cancel button should be hidden when not converting");
 
-        Assert.Same(vm.CancelCommand, cancelButton!.Command);
+        vm.IsConverting = true;
+
+        Assert.True(cancelButton.IsVisible, "Cancel button should be visible when converting");
     }
 
     [AvaloniaFact]
-    public void MainWindow_StatusBar_BindsToStatusMessage()
+    public void MainWindow_Gallery_RendersItemElements()
     {
         var vm = GUITestHelpers.CreateViewModel();
-        var window = GUITestHelpers.CreateWindow(vm);
+        GUITestHelpers.AddTestFiles(vm, 3);
 
-        var textBlocks = GUITestHelpers.GetAllControls<TextBlock>(window)
-            .Where(t => t.Text != null && t.Text == AppStrings.Ready)
-            .ToList();
-        Assert.True(textBlocks.Count >= 1, "Expected status bar to show the StatusMessage from ViewModel");
+        var window = GUITestHelpers.CreateWindow(vm);
+        window.UpdateLayout();
+
+        var repeater = window.FindControl<ItemsRepeater>("ImagesRepeater");
+        Assert.NotNull(repeater);
+
+        var firstElement = repeater!.TryGetElement(0);
+        Assert.NotNull(firstElement);
+
+        var secondElement = repeater.TryGetElement(1);
+        Assert.NotNull(secondElement);
+    }
+
+    [AvaloniaFact]
+    public void MainWindow_Gallery_RenderedItemsHaveCorrectDataContext()
+    {
+        var vm = GUITestHelpers.CreateViewModel();
+        GUITestHelpers.AddTestFiles(vm, 2);
+
+        var window = GUITestHelpers.CreateWindow(vm);
+        window.UpdateLayout();
+
+        var repeater = window.FindControl<ItemsRepeater>("ImagesRepeater");
+        Assert.NotNull(repeater);
+
+        var firstElement = repeater!.TryGetElement(0);
+        Assert.NotNull(firstElement);
+        Assert.IsType<ImageItemViewModel>(firstElement!.DataContext);
+
+        var secondElement = repeater.TryGetElement(1);
+        Assert.NotNull(secondElement);
+        Assert.IsType<ImageItemViewModel>(secondElement!.DataContext);
+    }
+
+    [AvaloniaFact]
+    public void MainWindow_Gallery_UpdatesWhenImagesAddedOrRemoved()
+    {
+        var vm = GUITestHelpers.CreateViewModel();
+        GUITestHelpers.AddTestFiles(vm, 3);
+
+        var window = GUITestHelpers.CreateWindow(vm);
+        window.UpdateLayout();
+
+        var repeater = window.FindControl<ItemsRepeater>("ImagesRepeater");
+        Assert.NotNull(repeater);
+        Assert.NotNull(repeater!.TryGetElement(0));
+        Assert.NotNull(repeater.TryGetElement(2));
+
+        vm.Images.RemoveAt(0);
+        window.UpdateLayout();
+
+        Assert.NotNull(repeater.TryGetElement(0));
+        Assert.NotNull(repeater.TryGetElement(1));
+    }
+
+    [AvaloniaFact]
+    public void MainWindow_ConvertButton_DisabledWithoutSelection()
+    {
+        var vm = GUITestHelpers.CreateViewModel();
+        Assert.False(vm.IsAnySelected);
+        Assert.False(vm.ConvertSelectedCommand.CanExecute(null));
+
+        GUITestHelpers.AddTestFiles(vm, 1);
+        vm.Images[0].IsSelected = true;
+
+        Assert.True(vm.ConvertSelectedCommand.CanExecute(null));
     }
 
     [AvaloniaFact]
     public void MainWindow_DragDropBehavior_EnabledOnRootGrid()
-    {
-        var window = GUITestHelpers.CreateWindow();
-        var rootGrid = window.Content as Grid;
-        Assert.NotNull(rootGrid);
-
-        Assert.True(DragDropBehavior.GetEnableDragDrop(rootGrid!), "DragDropBehavior.EnableDragDrop should be true");
-        Assert.True(DragDrop.GetAllowDrop(rootGrid!), "DragDrop.AllowDrop should be true");
-    }
-
-    [AvaloniaFact]
-    public void MainWindow_DragDropBehavior_HasDropHandlerAttached()
     {
         var vm = GUITestHelpers.CreateViewModel();
         var window = GUITestHelpers.CreateWindow(vm);
@@ -163,5 +237,90 @@ public class MainWindowBehavioralTests
         Assert.NotNull(rootGrid);
 
         Assert.True(DragDropBehavior.GetEnableDragDrop(rootGrid!));
+        Assert.True(DragDrop.GetAllowDrop(rootGrid!));
+    }
+
+    [AvaloniaFact]
+    public void MainWindow_PerItemCheckBox_UpdatesSelectionState()
+    {
+        var vm = GUITestHelpers.CreateViewModel();
+        GUITestHelpers.AddTestFiles(vm, 2);
+
+        var window = GUITestHelpers.CreateWindow(vm);
+        window.UpdateLayout();
+
+        var repeater = window.FindControl<ItemsRepeater>("ImagesRepeater");
+        Assert.NotNull(repeater);
+
+        var firstElement = repeater!.TryGetElement(0);
+        Assert.NotNull(firstElement);
+
+        var checkBoxes = GUITestHelpers.GetAllControls<CheckBox>(firstElement!);
+        var checkBox = checkBoxes.FirstOrDefault();
+        Assert.NotNull(checkBox);
+
+        Assert.False(vm.IsAnySelected);
+
+        checkBox!.IsChecked = true;
+
+        Assert.True(vm.Images[0].IsSelected, "VM should reflect CheckBox.IsChecked=true");
+        Assert.True(vm.IsAnySelected);
+
+        checkBox.IsChecked = false;
+
+        Assert.False(vm.Images[0].IsSelected, "VM should reflect CheckBox.IsChecked=false");
+        Assert.False(vm.IsAnySelected);
+    }
+
+    [AvaloniaFact]
+    public void MainWindow_QualitySlider_UpdatesQualityOverride()
+    {
+        var vm = GUITestHelpers.CreateViewModel();
+        GUITestHelpers.AddTestFiles(vm, 1);
+
+        var window = GUITestHelpers.CreateWindow(vm);
+        window.UpdateLayout();
+
+        var repeater = window.FindControl<ItemsRepeater>("ImagesRepeater");
+        Assert.NotNull(repeater);
+
+        var firstElement = repeater!.TryGetElement(0);
+        Assert.NotNull(firstElement);
+
+        var sliders = GUITestHelpers.GetAllControls<Slider>(firstElement!);
+        Assert.NotEmpty(sliders);
+
+        var slider = sliders.First();
+        slider.Value = 42;
+
+        Assert.Equal(42, vm.Images[0].QualityOverride);
+    }
+
+    [AvaloniaFact]
+    public void MainWindow_ItemOpenFolderButton_VisibilityUpdatesWithOutputPath()
+    {
+        var vm = GUITestHelpers.CreateViewModel();
+        GUITestHelpers.AddTestFiles(vm, 1);
+
+        var window = GUITestHelpers.CreateWindow(vm);
+        window.UpdateLayout();
+
+        var repeater = window.FindControl<ItemsRepeater>("ImagesRepeater");
+        Assert.NotNull(repeater);
+
+        var firstElement = repeater!.TryGetElement(0);
+        Assert.NotNull(firstElement);
+
+        var buttons = GUITestHelpers.GetAllControls<Button>(firstElement!)
+            .Where(b => (b.Content?.ToString() ?? "").Contains("Open folder", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        var openFolderButton = buttons.FirstOrDefault();
+        Assert.NotNull(openFolderButton);
+        Assert.False(openFolderButton!.IsVisible, "Open folder button should be hidden when OutputPath is empty");
+
+        vm.Images[0].OutputPath = @"C:\some\output\path";
+
+        Assert.True(openFolderButton.IsVisible, "Open folder button should be visible when OutputPath is set");
     }
 }

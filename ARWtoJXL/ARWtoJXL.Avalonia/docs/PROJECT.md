@@ -8,7 +8,7 @@ Avalonia UI presentation layer implementing the desktop app with MVVM pattern, d
 ARWtoJXL.Avalonia/
 ├── App.axaml + App.cs                       # Application entry point with DI container setup
 ├── AppStrings.cs                            # Shared string resource constants
-├── MainWindow.axaml + MainWindow.axaml.cs   # Main window with File/List menus, toolbar (Convert, Cancel, Open Output Folder, Settings), file cards with per-file quality slider, "Open folder" per-item button, status bar
+├── MainWindow.axaml + MainWindow.axaml.cs   # Main window with File/List menus, toolbar (Convert, Cancel, Open Output Folder, Settings), virtualized file gallery (ItemsRepeater with UniformGridLayout), per-file quality slider, "Open folder" per-item button, status bar
 ├── SettingsWindow.axaml + SettingsWindow.axaml.cs # Resizable tabbed settings dialog (Conversion, Output, Behavior, Hardware, Presets tabs)
 ├── SettingsService.cs                       # Settings persistence (JSON-based), AppSettings/ConversionPreset models, ConflictResolution enum
 ├── ViewLocator.cs                           # IDataTemplate implementation for MVVM view-model to view mapping
@@ -73,6 +73,7 @@ ARWtoJXL.Avalonia/
 - **Settings Persistence**: Both `MainViewModel` and `SettingsViewModel` auto-save to disk on property change via `OnPropertyChanged`. `SettingsViewModel` uses a 500ms debounce timer to batch rapid edits — avoids synchronous I/O on UI thread and race conditions. `Dispose()` flushes pending persist. `MainViewModel` loads all settings from disk on startup. Settings stored in `%APPDATA%\ARWtoJXL\settings.json`. Settings window syncs through shared persistence — `SettingsViewModel` loads current state from disk on open, `MainViewModel.RefreshSettings()` reloads from disk on close.
 - **Quality Scale Segments**: The quality slider in SettingsWindow displays a three-segment color bar below the track: Lossy (0-89, red), Near-lossless (90-99, amber), Lossless (100, green) with labeled captions aligned to each segment.
 - **HeadlessTestMode**: `MainViewModel.HeadlessTestMode` static flag skips thumbnail generation during GUI tests to avoid file I/O.
+- **UI Virtualization**: The image gallery uses `ItemsRepeater` with `UniformGridLayout` inside a `ScrollViewer` for efficient rendering of large file lists with wrapping grid layout. Only visible item controls are instantiated, reducing memory usage from O(n) to O(visible items).
 
 ## ViewModels
 
