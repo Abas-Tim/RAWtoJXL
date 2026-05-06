@@ -37,7 +37,7 @@ public class ImageProcessingService : IImageService
         return await _imageConverterService.ExtractThumbnailAsync(filePath, cancellationToken);
     }
 
-    public async Task ConvertArwToJxlAsync(
+    public async Task ConvertToJxlAsync(
         string inputPath,
         string outputPath,
         Action<double> progress,

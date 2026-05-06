@@ -144,7 +144,7 @@ public class ImageConverterService : IImageConverterService
         var profiles = new MetadataProfiles(_logger);
         var ext = Path.GetExtension(filePath).ToLowerInvariant();
 
-        if (ext == ".arw")
+        if (SupportedFormats.IsRawFile(ext))
         {
             var exifPath = await _exiftoolService.ExtractExifAsync(filePath, cancellationToken);
             if (!string.IsNullOrEmpty(exifPath))

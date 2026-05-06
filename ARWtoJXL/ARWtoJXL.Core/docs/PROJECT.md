@@ -1,6 +1,6 @@
 # ARWtoJXL.Core
 
-Business logic layer implementing the ARW conversion pipeline with clean architecture and dependency injection.
+Business logic layer implementing the multi-format RAW conversion pipeline with clean architecture and dependency injection.
 
 ## Project Structure
 
@@ -18,7 +18,8 @@ ARWtoJXL.Core/
 ├── Models/
 │   ├── FileLockedException.cs     # Custom exception for file-lock errors (IOException wrapper)
 │   ├── MetadataProfiles.cs        # Metadata container (EXIF, XMP, ICC, IPTC profiles) with disposable temp file cleanup and logging
-│   └── QualityCalculator.cs       # Static helper for quality→distance/effort mapping
+│   ├── QualityCalculator.cs       # Static helper for quality→distance/effort mapping
+    │   └── SupportedFormats.cs        # Static list of supported RAW extensions (ARW, CR2, CR3, NEF, RAF, ORF, RW2, DNG, etc.) and helper methods
 ├── Services/
 │   ├── ImageProcessingService.cs  # Main service orchestrating conversion pipeline
 │   ├── ImageConverterService.cs   # Magick.NET implementation (thumbnails, RAW extraction, metadata)
@@ -53,8 +54,8 @@ ARWtoJXL.Core/
 
 ### IImageService (Primary Interface)
 Defines two async operations:
-- `GetThumbnailAsync(filePath, cancellationToken)` → `byte[]`: Extracts thumbnail from ARW/JXL using Magick.NET (300x300 JPG)
-- `ConvertArwToJxlAsync(inputPath, outputPath, progress, quality, outputFormat, cancellationToken, skipMetadata, effort)`: Orchestrates conversion pipeline
+- `GetThumbnailAsync(filePath, cancellationToken)` → `byte[]`: Extracts thumbnail from RAW/JXL using Magick.NET (300x300 JPG)
+- `ConvertToJxlAsync(inputPath, outputPath, progress, quality, outputFormat, cancellationToken, skipMetadata, effort)`: Orchestrates conversion pipeline
   - `progress` is a required `Action<double>` callback (non-nullable, no default). Fault-tolerant: exceptions from the callback are caught and logged, preventing pipeline breakage and orphaned temp files.
   - `outputFormat = OutputFormat.Jxl`: Two-stage direct PPM streaming to cjxl stdin via `StreamPpmToAsync` + writer delegate — zero intermediate disk I/O, single file open, native ImageMagick C-code encoding
   - `outputFormat = OutputFormat.Jpeg`: ARW→JPEG via IImageConverterService with quality setting + exiftool metadata embedding
@@ -71,8 +72,8 @@ Also defines two enums in the same file:
 ### ImageProcessingService (Orchestrator)
 Coordinates the conversion pipeline by delegating to specialized services. Supports three output formats:
 1. **JXL (default)**: Two-stage via `ImageConverterService.StreamPpmToAsync` (direct PPM stream to cjxl stdin) + `CjxlEncoderService.EncodeFromStreamAsync` with writer delegate — zero intermediate buffering, single file open
-2. **JPEG**: Delegates to `IImageConverterService.ConvertToJpegAsync()` for ARW→JPEG + exiftool metadata embedding
-3. **PNG**: Direct ARW→PNG via ImageConverterService (16-bit lossless) + exiftool metadata embedding
+2. **JPEG**: Delegates to `IImageConverterService.ConvertToJpegAsync()` for RAW→JPEG + exiftool metadata embedding
+3. **PNG**: Direct RAW→PNG via ImageConverterService (16-bit lossless) + exiftool metadata embedding
 
 **Constructor Injection:**
 ```csharp
@@ -92,7 +93,7 @@ public ImageProcessingService(
 - `ExtractToRawRgb16Async()`: Extracts raw 16-bit RGB pixel data from ARW file as byte array (big-endian, 2 bytes per channel) — legacy, superseded by `StreamPpmToAsync`
 - `StreamPpmToAsync()`: Opens ARW, sets Depth=16/ColorSpace=sRGB/Format=Ppm, writes PPM directly to output stream via Magick.NET native `Write()` — single file open, zero intermediate buffering, streams directly to cjxl stdin
 - `ExtractMetadataProfilesAsync()`: Extracts EXIF, XMP, ICC, IPTC profiles to temp files for cjxl — fully async, no sync-over-async blocking
-  - **ARW files:** Awaits `IExiftoolService.ExtractExifAsync()` for EXIF extraction (Magick.NET cannot reliably read EXIF from Sony ARW files). Much faster (~1s) than the previous Magick.NET fallback chain (~10s). Exceptions propagate to caller.
+  - **RAW files:** Awaits `IExiftoolService.ExtractExifAsync()` for EXIF extraction (Magick.NET cannot reliably read EXIF from RAW files). Much faster (~1s) than the previous Magick.NET fallback chain (~10s). Exceptions propagate to caller.
   - **Non-ARW files:** Offloads Magick.NET profile extraction to `Task.Run` (CPU-bound). Magick.NET failures are caught and logged, then exiftool fallback is attempted for EXIF. Other exceptions propagate to caller.
   - **Helper:** `ExtractProfilesFromImageAsync()` runs Magick.NET profile extraction on a thread-pool thread via `Task.Run`.
 - **Helper:** `GetProfileBytes()` extracts raw bytes from a Magick.NET profile via the stable `IImageProfile.ToByteArray()` public API.
@@ -174,19 +175,19 @@ Centralized quality calculations to avoid duplication:
 
 **JXL Pipeline (Two-stage process):**
 1. **Stage 0 (Magick.NET + exiftool):** Extract metadata profiles (EXIF, XMP, ICC, IPTC) to temp files (~0-10% progress)
-2. **Stage 1 (Magick.NET + cjxl stdin pipe):** `StreamPpmToAsync` opens ARW once, configures `Format=Ppm`, `Depth=16`, `ColorSpace=sRGB`, then streams PPM directly to cjxl stdin via native `image.Write()` — zero intermediate buffering, single file open, native C-code encoding (~10-98% progress)
+2. **Stage 1 (Magick.NET + cjxl stdin pipe):** `StreamPpmToAsync` opens RAW once, configures `Format=Ppm`, `Depth=16`, `ColorSpace=sRGB`, then streams PPM directly to cjxl stdin via native `image.Write()` — zero intermediate buffering, single file open, native C-code encoding (~10-98% progress)
 
 **Old pipeline (replaced):** 2x file opens, ~67M pixel iterations in C# (`ExtractToRawRgb16Async`), manual PPM header construction (`BuildPpmStream`), ~800MB RAM for 24MP images.
 **New pipeline:** 1x file open, native ImageMagick C-code PPM encoding via `StreamPpmToAsync`, delegates PPM write to `CjxlEncoderService.ExecuteEncodingProcessWithWriterAsync`, ~4MB RAM overhead.
 
 **JPEG Pipeline (Two-stage process):**
 1. **Stage 0 (Magick.NET):** Extract metadata profiles
-2. **Stage 1 (Magick.NET via IImageConverterService):** ARW → JPEG with quality setting
+2. **Stage 1 (Magick.NET via IImageConverterService):** RAW → JPEG with quality setting
 3. **Post-processing:** exiftool metadata embedding
 
 **PNG Pipeline (Two-stage process):**
 1. **Stage 0 (Magick.NET):** Extract metadata profiles
-2. **Stage 1 (Magick.NET):** ARW → PNG (16-bit lossless)
+2. **Stage 1 (Magick.NET):** RAW → PNG (16-bit lossless)
 3. **Post-processing:** exiftool metadata embedding
 
 **cjxl arguments:**
@@ -198,9 +199,9 @@ Centralized quality calculations to avoid duplication:
 **Progress tracking:** 0.1 (metadata) → 0.3 (PPM streaming) → 0.35→0.98 smooth (cjxl encoding via time-based estimation) → 1.0 (JXL complete)
 
 **Metadata handling:**
-- **EXIF extraction (ARW):** `IExiftoolService.ExtractExifAsync()` uses exiftool (`-b -exif:all`) to extract raw EXIF bytes from source ARW, saves to temp file, returns file path (~1s). Non-ARW files use Magick.NET first.
+- **EXIF extraction (RAW):** `IExiftoolService.ExtractExifAsync()` uses exiftool (`-b -exif:all`) to extract raw EXIF bytes from source RAW file, saves to temp file, returns file path (~1s). Non-RAW files use Magick.NET first.
 - **XMP/ICC/IPTC:** Extracted via Magick.NET profile lookup (`GetProfile("XMP")`, `GetProfile("ICC ")`, `GetIptcProfile()`).
-- **Metadata embedding:** cjxl's `-x exif` argument does not reliably embed metadata (v0.11.2 known issue). Post-encoding, `IExiftoolService.EmbedMetadataAsync()` uses exiftool `-tagsFromFile source.arw -exif:all -xmp:all -icc-profile -overwrite_original output.jxl` to copy all available metadata (EXIF, XMP, ICC) from the original ARW to the output file.
+- **Metadata embedding:** cjxl's `-x exif` argument does not reliably embed metadata (v0.11.2 known issue). Post-encoding, `IExiftoolService.EmbedMetadataAsync()` uses exiftool `-tagsFromFile source.raw -exif:all -xmp:all -icc-profile -overwrite_original output.jxl` to copy all available metadata (EXIF, XMP, ICC) from the original source file to the output file.
 - **Skip metadata:** When `skipMetadata` is true, both metadata extraction and embedding are skipped entirely, improving conversion speed.
 - **Path resolution:** `IProcessRunner.FindExiftoolAsync()` centralizes exiftool.exe discovery (common paths → PATH → app directory) — fully async.
 - Metadata temp files kept alive during encoding (disposed AFTER `EncodeAsync` completes in finally block).

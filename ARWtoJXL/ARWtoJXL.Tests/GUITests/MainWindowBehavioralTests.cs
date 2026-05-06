@@ -73,8 +73,8 @@ public class MainWindowBehavioralTests
             try
             {
                 var mockImageService = new Mock<IImageService>();
-                mockImageService
-                    .Setup(x => x.ConvertArwToJxlAsync(
+           mockImageService
+                     .Setup(x => x.ConvertToJxlAsync(
                         It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Action<double>>(),
                         It.IsAny<int>(), It.IsAny<OutputFormat>(), It.IsAny<CancellationToken>(),
                         It.IsAny<bool>(), It.IsAny<int?>(), It.IsAny<int?>()))
@@ -105,7 +105,7 @@ public class MainWindowBehavioralTests
                 Assert.Equal(ImageStatus.Converted, vm.Images[0].Status);
 
                 mockImageService.Verify(
-                    x => x.ConvertArwToJxlAsync(
+                    x => x.ConvertToJxlAsync(
                         arwFile, It.IsAny<string>(), It.IsAny<Action<double>>(),
                         It.IsAny<int>(), It.IsAny<OutputFormat>(), It.IsAny<CancellationToken>(),
                         It.IsAny<bool>(), It.IsAny<int?>(), It.IsAny<int?>()),

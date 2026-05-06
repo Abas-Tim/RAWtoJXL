@@ -38,26 +38,26 @@ namespace ARWtoJXL.Tests
         [InlineData(70)]
         [InlineData(90)]
         [InlineData(100)]
-        public async Task ConvertArwToJxlAsync_VariousQualitySettings_CreatesJxlFile(int quality)
+        public async Task ConvertToJxlAsync_VariousQualitySettings_CreatesJxlFile(int quality)
         {
             var outputPath = GetOutputPath($"quality{quality}");
             await CleanOutputFile(outputPath);
 
-            await _imageService.ConvertArwToJxlAsync(TestArwPath, outputPath, p => { }, quality, OutputFormat.Jxl, TestContext.Current.CancellationToken);
+            await _imageService.ConvertToJxlAsync(TestArwPath, outputPath, p => { }, quality, OutputFormat.Jxl, TestContext.Current.CancellationToken);
 
             Assert.True(File.Exists(outputPath));
             Assert.True(new FileInfo(outputPath).Length > 0);
         }
 
         [Fact]
-        public async Task ConvertArwToJxlAsync_ProgressCallback_ReportsSmoothProgress()
+        public async Task ConvertToJxlAsync_ProgressCallback_ReportsSmoothProgress()
         {
             var outputPath = GetOutputPath("progress");
             await CleanOutputFile(outputPath);
 
             var progressValues = new List<double>();
             var lockObj = new object();
-            await _imageService.ConvertArwToJxlAsync(
+            await _imageService.ConvertToJxlAsync(
                 TestArwPath,
                 outputPath,
                 p => { lock (lockObj) progressValues.Add(p); },

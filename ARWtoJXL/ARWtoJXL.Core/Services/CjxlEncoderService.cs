@@ -32,7 +32,7 @@ public class CjxlEncoderService : ICjxlEncoder
 
     public async Task EncodeAsync(
         string inputPath,
-        string originalArwPath,
+        string originalSourcePath,
         string outputPath,
         int quality,
         MetadataProfiles? metadata = null,
@@ -62,13 +62,13 @@ public class CjxlEncoderService : ICjxlEncoder
 
         if (metadata != null && metadata.HasAny)
         {
-            await _exiftoolService.EmbedMetadataAsync(originalArwPath, outputPath, metadata, cancellationToken);
+            await _exiftoolService.EmbedMetadataAsync(originalSourcePath, outputPath, metadata, cancellationToken);
         }
     }
 
     public async Task EncodeFromStreamAsync(
         Stream inputStream,
-        string originalArwPath,
+        string originalSourcePath,
         string outputPath,
         int quality,
         MetadataProfiles? metadata = null,
@@ -102,13 +102,13 @@ public class CjxlEncoderService : ICjxlEncoder
 
         if (metadata != null && metadata.HasAny)
         {
-            await _exiftoolService.EmbedMetadataAsync(originalArwPath, outputPath, metadata, cancellationToken);
+            await _exiftoolService.EmbedMetadataAsync(originalSourcePath, outputPath, metadata, cancellationToken);
         }
     }
 
     public async Task EncodeFromStreamAsync(
         string inputPath,
-        string originalArwPath,
+        string originalSourcePath,
         string outputPath,
         int quality,
         MetadataProfiles? metadata,
@@ -143,7 +143,7 @@ public class CjxlEncoderService : ICjxlEncoder
 
         if (metadata != null && metadata.HasAny)
         {
-            await _exiftoolService.EmbedMetadataAsync(originalArwPath, outputPath, metadata, cancellationToken);
+            await _exiftoolService.EmbedMetadataAsync(originalSourcePath, outputPath, metadata, cancellationToken);
         }
     }
 

@@ -289,7 +289,7 @@ namespace ARWtoJXL.Avalonia.ViewModels
                         long sourceSize = 0;
                         try { sourceSize = new FileInfo(item.FilePath).Length; } catch { }
 
-    await _imageService.ConvertArwToJxlAsync(
+    await _imageService.ConvertToJxlAsync(
                              item.FilePath,
                              outputPath,
                              p =>
@@ -457,7 +457,7 @@ namespace ARWtoJXL.Avalonia.ViewModels
             {
                 var searchOption = SearchRecursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
                 var files = Directory.GetFiles(folder, "*.*", searchOption)
-                    .Where(f => Path.GetExtension(f).ToLower() is ".arw" or ".jxl")
+                    .Where(f => IsSupportedFile(Path.GetExtension(f)))
                     .ToList();
                 if (files.Any())
                 {
@@ -633,7 +633,7 @@ namespace ARWtoJXL.Avalonia.ViewModels
             {
                 if (string.IsNullOrEmpty(path) || !File.Exists(path)) continue;
                 var extension = Path.GetExtension(path).ToLower();
-                if (extension != ".arw" && extension != ".jxl") continue;
+                if (!IsSupportedFile(extension)) continue;
                 validPaths.Add(path);
             }
 
@@ -785,6 +785,12 @@ namespace ARWtoJXL.Avalonia.ViewModels
                 CjxlEffort = CjxlEffort,
                 CjxlThreads = CjxlThreads
             });
+        }
+
+        private static bool IsSupportedFile(string extension)
+        {
+            var ext = extension.ToLowerInvariant();
+            return SupportedFormats.IsRawFile(ext) || ext == ".jxl";
         }
 
         private sealed class BoundedFilePathSet

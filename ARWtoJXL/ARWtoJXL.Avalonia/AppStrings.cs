@@ -1,3 +1,5 @@
+using ARWtoJXL.Core.Models;
+
 namespace ARWtoJXL.Avalonia
 {
     public static class AppStrings
@@ -16,7 +18,8 @@ namespace ARWtoJXL.Avalonia
         public const string Cancelling = "Cancelling...";
         public const string FailedToOpenOutputFolder = "Failed to open output folder.";
         public const string OpenFileDialogTitle = "Open Image Files";
-        public const string OpenFileDialogFilter = "Sony RAW Files|*.ARW|JPEG XL Files|*.JXL|All Files|*.*";
+        public static string OpenFileDialogFilter =>
+            $"{SupportedFormats.ToFileFilter("RAW Files", SupportedFormats.RawExtensions)}|{SupportedFormats.ToFileFilter("JPEG XL Files", new[] { ".jxl" })}|All Files|*.*";
         public const string ThumbnailFailedPrefix = "Thumbnail failed: ";
         public const string ProgressErrorPrefix = "Progress error: ";
         public const string FileLockedPrefix = "File locked: ";

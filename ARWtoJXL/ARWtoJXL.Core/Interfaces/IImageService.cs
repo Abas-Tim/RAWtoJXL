@@ -26,7 +26,7 @@ namespace ARWtoJXL.Core.Interfaces
     {
         Task<byte[]> GetThumbnailAsync(string filePath, CancellationToken cancellationToken = default);
 
-        Task ConvertArwToJxlAsync(
+        Task ConvertToJxlAsync(
             string inputPath,
             string outputPath,
             Action<double> progress,

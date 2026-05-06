@@ -15,7 +15,7 @@ namespace ARWtoJXL.Core.Interfaces
         /// Asynchronously encodes an image to JPEG XL format.
         /// </summary>
         /// <param name="inputPath">Path to the input image file (PNG).</param>
-        /// <param name="originalArwPath">Path to the original ARW file (for metadata extraction).</param>
+        /// <param name="originalSourcePath">Path to the original source file (for metadata extraction).</param>
         /// <param name="outputPath">Path for the output JPEG XL file.</param>
         /// <param name="quality">Quality level (0-100, where 100 is lossless).</param>
         /// <param name="metadata">Optional metadata profiles to embed.</param>
@@ -26,7 +26,7 @@ namespace ARWtoJXL.Core.Interfaces
         /// <param name="threads">Optional thread count override. Null uses OS processor count.</param>
         Task EncodeAsync(
             string inputPath,
-            string originalArwPath,
+            string originalSourcePath,
             string outputPath,
             int quality,
             MetadataProfiles? metadata = null,
@@ -40,7 +40,7 @@ namespace ARWtoJXL.Core.Interfaces
         /// Asynchronously encodes an image from a PPM stream to JPEG XL format.
         /// </summary>
         /// <param name="inputStream">Stream containing PPM data (P6 binary format).</param>
-        /// <param name="originalArwPath">Path to the original ARW file (for metadata extraction).</param>
+        /// <param name="originalSourcePath">Path to the original source file (for metadata extraction).</param>
         /// <param name="outputPath">Path for the output JPEG XL file.</param>
         /// <param name="quality">Quality level (0-100, where 100 is lossless).</param>
         /// <param name="metadata">Optional metadata profiles to embed.</param>
@@ -51,7 +51,7 @@ namespace ARWtoJXL.Core.Interfaces
         /// <param name="threads">Optional thread count override. Null uses OS processor count.</param>
         Task EncodeFromStreamAsync(
             Stream inputStream,
-            string originalArwPath,
+            string originalSourcePath,
             string outputPath,
             int quality,
             MetadataProfiles? metadata = null,
@@ -64,8 +64,8 @@ namespace ARWtoJXL.Core.Interfaces
         /// <summary>
         /// Asynchronously encodes an image by writing PPM data directly to cjxl stdin via a delegate.
         /// </summary>
-        /// <param name="inputPath">Path to the source ARW file for PPM generation.</param>
-        /// <param name="originalArwPath">Path to the original ARW file (for metadata extraction).</param>
+        /// <param name="inputPath">Path to the source file for PPM generation.</param>
+        /// <param name="originalSourcePath">Path to the original source file (for metadata extraction).</param>
         /// <param name="outputPath">Path for the output JPEG XL file.</param>
         /// <param name="quality">Quality level (0-100, where 100 is lossless).</param>
         /// <param name="metadata">Optional metadata profiles to embed.</param>
@@ -76,7 +76,7 @@ namespace ARWtoJXL.Core.Interfaces
         /// <param name="threads">Optional thread count override. Null uses OS processor count.</param>
         Task EncodeFromStreamAsync(
             string inputPath,
-            string originalArwPath,
+            string originalSourcePath,
             string outputPath,
             int quality,
             MetadataProfiles? metadata,
