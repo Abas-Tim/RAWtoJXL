@@ -317,10 +317,12 @@ public class MainWindowBehavioralTests
 
         var openFolderButton = buttons.FirstOrDefault();
         Assert.NotNull(openFolderButton);
-        Assert.False(openFolderButton!.IsVisible, "Open folder button should be hidden when OutputPath is empty");
+        Assert.Equal(0.0, openFolderButton!.Opacity);
+        Assert.False(openFolderButton.IsEnabled);
 
         vm.Images[0].OutputPath = @"C:\some\output\path";
 
-        Assert.True(openFolderButton.IsVisible, "Open folder button should be visible when OutputPath is set");
+        Assert.Equal(1.0, openFolderButton.Opacity);
+        Assert.True(openFolderButton.IsEnabled);
     }
 }

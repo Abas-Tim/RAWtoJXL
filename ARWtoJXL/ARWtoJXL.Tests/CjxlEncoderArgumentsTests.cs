@@ -11,7 +11,7 @@ public class CjxlEncoderArgumentsTests
     public void BuildEncodingArguments_Quality50_ReturnsExpectedArgs()
     {
         var service = CreateTestEncoder();
-        var args = service.BuildEncodingArguments(50, null, @"C:\input.png", @"C:\output.jxl");
+        var args = service.BuildEncodingArguments(50, @"C:\input.png", @"C:\output.jxl");
 
         float expectedDistance = QualityCalculator.CalculateDistance(50);
         Assert.Contains($"--distance={expectedDistance:F2}", args);
@@ -28,7 +28,7 @@ public class CjxlEncoderArgumentsTests
     public void BuildEncodingArguments_Quality0_ReturnsMaxCompressionArgs()
     {
         var service = CreateTestEncoder();
-        var args = service.BuildEncodingArguments(0, null, @"C:\input.png", @"C:\output.jxl");
+        var args = service.BuildEncodingArguments(0, @"C:\input.png", @"C:\output.jxl");
 
         Assert.Contains("--effort=7", args);
         Assert.DoesNotContain("--modular=1", args);
@@ -45,7 +45,7 @@ public class CjxlEncoderArgumentsTests
     public void BuildEncodingArguments_EffortMatchesCalculator(int quality, int expectedEffort)
     {
         var service = CreateTestEncoder();
-        var args = service.BuildEncodingArguments(quality, null, @"C:\input.png", @"C:\output.jxl");
+        var args = service.BuildEncodingArguments(quality, @"C:\input.png", @"C:\output.jxl");
 
         Assert.Contains($"--effort={expectedEffort}", args);
     }
@@ -54,30 +54,11 @@ public class CjxlEncoderArgumentsTests
     public void BuildEncodingArguments_DistanceMatchesCalculator()
     {
         var service = CreateTestEncoder();
-        var args = service.BuildEncodingArguments(85, null, @"C:\input.png", @"C:\output.jxl");
+        var args = service.BuildEncodingArguments(85, @"C:\input.png", @"C:\output.jxl");
 
         float expectedDistance = QualityCalculator.CalculateDistance(85);
         string expectedArg = $"--distance={expectedDistance:F2}";
         Assert.Contains(expectedArg, args);
-    }
-
-    [Fact]
-    public void BuildEncodingArguments_MetadataNull_DoesNotAddMetadataArgs()
-    {
-        var service = CreateTestEncoder();
-        var args = service.BuildEncodingArguments(85, null, @"C:\input.png", @"C:\output.jxl");
-
-        Assert.DoesNotContain("-x", args);
-    }
-
-    [Fact]
-    public void BuildEncodingArguments_MetadataEmpty_DoesNotAddMetadataArgs()
-    {
-        var service = CreateTestEncoder();
-        var metadata = new MetadataProfiles();
-        var args = service.BuildEncodingArguments(85, metadata, @"C:\input.png", @"C:\output.jxl");
-
-        Assert.DoesNotContain("-x", args);
     }
 
     [Fact]
@@ -86,7 +67,7 @@ public class CjxlEncoderArgumentsTests
         var service = CreateTestEncoder();
         var input = @"C:\Users\test\photo.png";
         var output = @"D:\output\converted.jxl";
-        var args = service.BuildEncodingArguments(85, null, input, output);
+        var args = service.BuildEncodingArguments(85, input, output);
 
         Assert.Equal(input, args[^2]);
         Assert.Equal(output, args[^1]);
@@ -96,7 +77,7 @@ public class CjxlEncoderArgumentsTests
     public void BuildEncodingArguments_MinimalArgs_CountIsAtLeastSix()
     {
         var service = CreateTestEncoder();
-        var args = service.BuildEncodingArguments(85, null, @"C:\input.png", @"C:\output.jxl");
+        var args = service.BuildEncodingArguments(85, @"C:\input.png", @"C:\output.jxl");
 
         Assert.InRange(args.Count, 6, 7);
     }
@@ -105,7 +86,7 @@ public class CjxlEncoderArgumentsTests
     public void BuildEncodingArguments_EffortOverride_UsesCustomEffort()
     {
         var service = CreateTestEncoder();
-        var args = service.BuildEncodingArguments(50, null, @"C:\input.png", @"C:\output.jxl", effortOverride: 3);
+        var args = service.BuildEncodingArguments(50, @"C:\input.png", @"C:\output.jxl", effortOverride: 3);
 
         Assert.Contains("--effort=3", args);
         Assert.DoesNotContain("--effort=7", args);
@@ -115,7 +96,7 @@ public class CjxlEncoderArgumentsTests
     public void BuildEncodingArguments_EffortOverrideNull_UsesAutoEffort()
     {
         var service = CreateTestEncoder();
-        var args = service.BuildEncodingArguments(50, null, @"C:\input.png", @"C:\output.jxl", effortOverride: null);
+        var args = service.BuildEncodingArguments(50, @"C:\input.png", @"C:\output.jxl", effortOverride: null);
 
         Assert.Contains("--effort=7", args);
     }
@@ -127,7 +108,7 @@ public class CjxlEncoderArgumentsTests
         return new TestEncoder(logger.Object);
     }
 
-private class TestEncoder : CjxlEncoderService
+ private class TestEncoder : CjxlEncoderService
     {
         public TestEncoder(ILogger logger)
             : base(Mock.Of<IPathResolver>(), Mock.Of<IExiftoolService>(), logger, Mock.Of<IProcessRunner>())

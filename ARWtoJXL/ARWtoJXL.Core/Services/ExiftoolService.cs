@@ -20,33 +20,101 @@ public class ExiftoolService : IExiftoolService
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-    public async Task<string?> ExtractExifAsync(string filePath, CancellationToken cancellationToken = default)
+    public async Task<MetadataProfiles> ExtractMetadataProfilesAsync(string filePath, CancellationToken cancellationToken = default)
     {
         await Task.Yield();
 
         string? exiftoolPath = await _processRunner.FindExiftoolAsync("ExiftoolService");
         if (string.IsNullOrEmpty(exiftoolPath))
         {
-            _logger.Write("[ExiftoolService] exiftool.exe not found - skipping EXIF extraction");
-            return null;
+            _logger.Write("[ExiftoolService] exiftool.exe not found - skipping metadata extraction");
+            return new MetadataProfiles(_logger);
         }
 
-        byte[]? exifData = await _processRunner.RunProcessBinaryAsync(
-            exiftoolPath,
-            $"-b -exif:all \"{filePath}\"",
-            cancellationToken);
+        var profiles = new MetadataProfiles(_logger);
 
-        if (exifData != null && exifData.Length > 0)
+        try
         {
-            _logger.Write($"[ExiftoolService] exiftool extracted {exifData.Length} bytes of EXIF");
-            return _fileService.SaveBytesToTemp(exifData, "exif");
+            byte[]? exifData = await _processRunner.RunProcessBinaryAsync(
+                exiftoolPath,
+                $"-b -exif:all \"{filePath}\"",
+                cancellationToken);
+
+            if (exifData != null && exifData.Length > 0)
+            {
+                profiles.ExifPath = _fileService.SaveBytesToTemp(exifData, "exif");
+                _logger.Write($"[ExiftoolService] EXIF extracted: {exifData.Length} bytes -> {profiles.ExifPath}");
+            }
+            else
+            {
+                _logger.Write("[ExiftoolService] exiftool returned empty EXIF data");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Write($"[ExiftoolService] EXIF extraction failed: {ex.Message}");
         }
 
-        _logger.Write("[ExiftoolService] exiftool returned empty EXIF data");
-        return null;
+        try
+        {
+            byte[]? xmpData = await _processRunner.RunProcessBinaryAsync(
+                exiftoolPath,
+                $"-b -xmp:all \"{filePath}\"",
+                cancellationToken);
+
+            if (xmpData != null && xmpData.Length > 0)
+            {
+                profiles.XmpPath = _fileService.SaveBytesToTemp(xmpData, "xmp");
+                _logger.Write($"[ExiftoolService] XMP extracted: {xmpData.Length} bytes -> {profiles.XmpPath}");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Write($"[ExiftoolService] XMP extraction failed: {ex.Message}");
+        }
+
+        try
+        {
+            byte[]? iccData = await _processRunner.RunProcessBinaryAsync(
+                exiftoolPath,
+                $"-b -icc_profile \"{filePath}\"",
+                cancellationToken);
+
+            if (iccData != null && iccData.Length > 0)
+            {
+                profiles.IccPath = _fileService.SaveBytesToTemp(iccData, "icc");
+                _logger.Write($"[ExiftoolService] ICC extracted: {iccData.Length} bytes -> {profiles.IccPath}");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Write($"[ExiftoolService] ICC extraction failed: {ex.Message}");
+        }
+
+        try
+        {
+            byte[]? iptcData = await _processRunner.RunProcessBinaryAsync(
+                exiftoolPath,
+                $"-b -iptc:all \"{filePath}\"",
+                cancellationToken);
+
+            if (iptcData != null && iptcData.Length > 0)
+            {
+                profiles.IptcPath = _fileService.SaveBytesToTemp(iptcData, "jbf");
+                _logger.Write($"[ExiftoolService] IPTC extracted: {iptcData.Length} bytes -> {profiles.IptcPath}");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Write($"[ExiftoolService] IPTC extraction failed: {ex.Message}");
+        }
+
+        _logger.Write($"[ExiftoolService] Final metadata: Exif={profiles.ExifPath ?? "none"}, Xmp={profiles.XmpPath ?? "none"}, Icc={profiles.IccPath ?? "none"}, Iptc={profiles.IptcPath ?? "none"}, HasAny={profiles.HasAny}");
+
+        return profiles;
     }
 
-    public async Task EmbedMetadataAsync(string sourcePath, string outputPath, MetadataProfiles metadata, CancellationToken cancellationToken = default)
+    public async Task EmbedMetadataAsync(string sourcePath, string outputPath, CancellationToken cancellationToken = default)
     {
         await Task.Yield();
 
@@ -54,12 +122,6 @@ public class ExiftoolService : IExiftoolService
         if (string.IsNullOrEmpty(exiftoolPath))
         {
             _logger.Write("[ExiftoolService] exiftool.exe not found - skipping metadata embedding");
-            return;
-        }
-
-        if (!metadata.HasAny)
-        {
-            _logger.Write("[ExiftoolService] No metadata to embed");
             return;
         }
 

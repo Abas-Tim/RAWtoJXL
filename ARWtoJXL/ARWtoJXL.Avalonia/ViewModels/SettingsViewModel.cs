@@ -75,7 +75,7 @@ namespace ARWtoJXL.Avalonia.ViewModels
                 RecentFiles = _recentFiles,
                 SkipMetadata = SkipMetadata,
                 CjxlEffort = CjxlEffort,
-                CjxlThreads = CjxlThreads
+                CjxlThreads = CjxlThreads,
             });
         }
 
@@ -312,7 +312,7 @@ namespace ARWtoJXL.Avalonia.ViewModels
                 ConfirmOverwrite = ConfirmOverwrite,
                 SkipMetadata = SkipMetadata,
                 CjxlEffort = CjxlEffort,
-                CjxlThreads = CjxlThreads
+                CjxlThreads = CjxlThreads,
             };
 
             if (Presets.Any(p => p.Name.Equals(preset.Name, StringComparison.OrdinalIgnoreCase)))
@@ -377,7 +377,7 @@ namespace ARWtoJXL.Avalonia.ViewModels
                 RecentFiles = saved.RecentFiles,
                 SkipMetadata = SkipMetadata,
                 CjxlEffort = CjxlEffort,
-                CjxlThreads = CjxlThreads
+                CjxlThreads = CjxlThreads,
             });
             IsSaving = false;
             RequestClose?.Invoke(this, EventArgs.Empty);

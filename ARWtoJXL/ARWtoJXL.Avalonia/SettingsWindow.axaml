@@ -239,7 +239,7 @@
                             <TextBlock Text="(Auto = all cores)" FontSize="10" Foreground="Gray" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Grid>
-                </StackPanel>
+               </StackPanel>
             </TabItem>
 
             <!-- Presets Tab -->

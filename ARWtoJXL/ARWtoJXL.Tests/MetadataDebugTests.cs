@@ -12,6 +12,7 @@ using Xunit;
 
 namespace ARWtoJXL.Tests
 {
+    [Collection("Conversion")]
     public class MetadataDebugTests : Startup
     {
         [Fact]

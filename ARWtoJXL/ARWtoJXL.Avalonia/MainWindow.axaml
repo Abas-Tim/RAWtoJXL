@@ -47,24 +47,44 @@
                         <MenuItem Header="_File">
                             <MenuItem Header="_Open File" Command="{Binding OpenFileCommand}"/>
                             <MenuItem Header="Open _Folder" Command="{Binding OpenFolderCommand}"/>
-                            <MenuItem>
-                                <MenuItem.Header>
-                                    <ScrollViewer MaxHeight="200" Width="350">
-                                        <ItemsControl ItemsSource="{Binding RecentFiles}">
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate>
-                                                    <TextBlock Text="{Binding}"
-                                                               FontSize="10"
-                                                               Foreground="Blue"
-                                                               Margin="4,1"
-                                                               TextTrimming="CharacterEllipsis"
-                                                               ToolTip.Tip="{Binding}"/>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-                                    </ScrollViewer>
-                                </MenuItem.Header>
-                            </MenuItem>
+                            <MenuItem Click="RecentMenuItemClicked">
+                                 <MenuItem.Header>
+                                     <Grid x:Name="RecentHeaderGrid"
+                                           PointerEntered="RecentPointerEntered" PointerExited="RecentPointerExited">
+                                         <TextBlock Text="Recent"/>
+                                         <Popup IsOpen="{Binding IsRecentHovered}"
+                                                PlacementTarget="{Binding ElementName=RecentHeaderGrid}"
+                                                Placement="RightEdgeAlignedTop"
+                                                HorizontalOffset="4"
+                                                MaxWidth="350">
+                                             <Border Background="White" BorderBrush="Gray" BorderThickness="1" Padding="4"
+                                                     PointerEntered="RecentPopupPointerEntered" PointerExited="RecentPopupPointerExited">
+                                                 <ScrollViewer MaxHeight="200"
+                                                               PointerEntered="RecentPopupPointerEntered" PointerExited="RecentPopupPointerExited">
+                                                     <ItemsControl ItemsSource="{Binding RecentFiles}"
+                                                                   PointerEntered="RecentPopupPointerEntered" PointerExited="RecentPopupPointerExited">
+                                                         <ItemsControl.ItemTemplate>
+                                                             <DataTemplate>
+                                                                 <Button Click="RecentFileClicked" Tag="{Binding}"
+                                                                         Classes="menu-item"
+                                                                         Padding="8,4"
+                                                                         HorizontalAlignment="Stretch"
+                                                                         Margin="0">
+                                                                     <TextBlock Text="{Binding}"
+                                                                                FontSize="10"
+                                                                                TextTrimming="CharacterEllipsis"
+                                                                                MaxWidth="340"
+                                                                                ToolTip.Tip="{Binding}"/>
+                                                                 </Button>
+                                                             </DataTemplate>
+                                                         </ItemsControl.ItemTemplate>
+                                                     </ItemsControl>
+                                                 </ScrollViewer>
+                                             </Border>
+                                         </Popup>
+                                     </Grid>
+                                 </MenuItem.Header>
+                             </MenuItem>
                             <MenuItem Header="_Load All" Command="{Binding LoadRecentFilesCommand}"/>
                             <MenuItem Header="C_lear Recent" Command="{Binding ClearRecentFilesCommand}"/>
                         </MenuItem>
@@ -146,21 +166,22 @@
                                             VerticalAlignment="Center"
                                             ToolTip.Tip="Drag to set quality (0-100)"/>
                                 </Grid>
-                                <TextBlock Text="{Binding SizeInfoText}"
-                                               FontSize="10"
-                                               Foreground="Green"
-                                               Margin="8,0,0,2"
-                                               VerticalAlignment="Center"
-                                               IsVisible="{Binding SizeInfoText, Converter={StaticResource StringToVisibilityConverter}}"/>
+                           <TextBlock Text="{Binding SizeInfoText}"
+                                                FontSize="10"
+                                                Foreground="Green"
+                                                Margin="8,0,0,2"
+                                                VerticalAlignment="Center"
+                                                Opacity="{Binding SizeInfoText, Converter={StaticResource StringToVisibilityConverter}}"/>
 
-                                <Button Content="Open folder"
-                                        Command="{Binding OpenOutputFolderCommand}"
-                                        FontSize="10"
-                                        Padding="4,2"
-                                        Margin="0,2,0,0"
-                                        HorizontalAlignment="Left"
-                                        Classes="link"
-                                        IsVisible="{Binding OutputPath, Converter={StaticResource StringToVisibilityConverter}}"/>
+                              <Button Content="Open folder"
+                                         Command="{Binding OpenOutputFolderCommand}"
+                                         FontSize="10"
+                                         Padding="4,2"
+                                         Margin="0,2,0,0"
+                                         HorizontalAlignment="Left"
+                                         Classes="link"
+                                         Opacity="{Binding OutputPath, Converter={StaticResource StringToVisibilityConverter}}"
+                                         IsEnabled="{Binding OutputPath, Converter={StaticResource StringToVisibilityConverter}}"/>
 
                                  <ProgressBar Height="3"
                                              IsIndeterminate="True"

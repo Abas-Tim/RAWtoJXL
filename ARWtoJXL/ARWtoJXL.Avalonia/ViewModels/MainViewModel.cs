@@ -145,6 +145,9 @@ namespace ARWtoJXL.Avalonia.ViewModels
         private ObservableCollection<string> _recentFiles = new();
 
         [ObservableProperty]
+        private bool _isRecentHovered;
+
+        [ObservableProperty]
         private bool _skipMetadata;
 
         partial void OnSkipMetadataChanged(bool value)
@@ -195,6 +198,7 @@ namespace ARWtoJXL.Avalonia.ViewModels
         private int _totalCount = 0;
 
         public event Action? RequestOpenSettings;
+        public event Action? RequestRefreshLayout;
 
         public MainViewModel(IImageService imageService, IDialogService dialogService, IDispatcherService dispatcherService, IFilePickerService filePickerService)
         {
@@ -239,130 +243,121 @@ namespace ARWtoJXL.Avalonia.ViewModels
             IsCancelRequested = false;
             RefreshAllCommands();
 
-            int maxConcurrency = Environment.ProcessorCount;
-            using var semaphore = new SemaphoreSlim(maxConcurrency);
-            var tasks = readySelected.Select(async item =>
+           foreach (var item in readySelected)
             {
-                await semaphore.WaitAsync(_cancellationTokenSource.Token);
+                if (_cancellationTokenSource.Token.IsCancellationRequested)
+                {
+                    break;
+                }
+
+                _currentFileProgress = 0;
+                item.Status = ImageStatus.Converting;
+
+                string? outputPath = ResolveOutputPath(item.FilePath);
+
+                if (outputPath == null)
+                {
+                    await OnUiAsync(() =>
+                    {
+                        item.Status = ImageStatus.Failed;
+                        item.ErrorMessage = AppStrings.FileSkipped;
+                    });
+                    UpdateProgress(readySelected.Count);
+                    continue;
+                }
+
+                if (File.Exists(outputPath) && ConfirmOverwrite)
+                {
+                    bool confirm = await _dialogService.ShowConfirmAsync(
+                        $"Overwrite existing file?\n\n{Path.GetFileName(outputPath)}",
+                        "Confirm Overwrite");
+                    if (!confirm)
+                    {
+                        await OnUiAsync(() =>
+                        {
+                            item.Status = ImageStatus.Failed;
+                            item.ErrorMessage = AppStrings.FileSkippedByUser;
+                        });
+                        UpdateProgress(readySelected.Count);
+                        continue;
+                    }
+                }
+
+                int quality = item.EffectiveQuality(QualityPreset);
+
                 try
                 {
-                    if (_cancellationTokenSource.Token.IsCancellationRequested)
-                    {
-                        return;
-                    }
+                    long sourceSize = 0;
+                    try { sourceSize = new FileInfo(item.FilePath).Length; } catch { }
 
-                    _currentFileProgress = 0;
-                    item.Status = ImageStatus.Converting;
-
-                    string? outputPath = ResolveOutputPath(item.FilePath);
-
-                    if (outputPath == null)
-                    {
-                        await OnUiAsync(() =>
+                    await _imageService.ConvertToJxlAsync(
+                        item.FilePath,
+                        outputPath,
+                        p =>
                         {
-                            item.Status = ImageStatus.Failed;
-                            item.ErrorMessage = AppStrings.FileSkipped;
-                        });
-                        return;
-                    }
+                            var t = OnUiAsync(() => OnFileProgress(p));
+                            _ = t.ContinueWith(
+                                errorTask =>
+                                {
+                                    _ = OnUiAsync(() =>
+                                        StatusMessage = $"{AppStrings.ProgressErrorPrefix}{errorTask.Exception?.GetBaseException().Message}");
+                                },
+                                CancellationToken.None,
+                                TaskContinuationOptions.OnlyOnFaulted,
+                                TaskScheduler.Default);
+                        },
+                        quality,
+                        OutputFormat,
+                        _cancellationTokenSource.Token,
+                        SkipMetadata,
+                        CjxlEffort >= 0 ? CjxlEffort : null,
+                        CjxlThreads > 0 ? CjxlThreads : null);
 
-                    if (File.Exists(outputPath) && ConfirmOverwrite)
+                    long outputSize = 0;
+                    try { outputSize = new FileInfo(outputPath).Length; } catch { }
+
+                    await OnUiAsync(() =>
                     {
-                        bool confirm = await _dialogService.ShowConfirmAsync(
-                            $"Overwrite existing file?\n\n{Path.GetFileName(outputPath)}",
-                            "Confirm Overwrite");
-                        if (!confirm)
+                        item.Status = ImageStatus.Converted;
+                        item.SourceFileSize = sourceSize;
+                        item.OutputFileSize = outputSize;
+                        item.OutputPath = outputPath;
+                        SettingsService.AddRecentFile(item.FilePath);
+                        RefreshRecentFiles();
+
+                        if (string.IsNullOrEmpty(OutputDirectory))
                         {
-                            await OnUiAsync(() =>
-                            {
-                                item.Status = ImageStatus.Failed;
-                                item.ErrorMessage = AppStrings.FileSkippedByUser;
-                            });
-                            return;
+                            OutputDirectory = Path.GetDirectoryName(outputPath) ?? string.Empty;
                         }
-                    }
-
-                    int quality = item.EffectiveQuality(QualityPreset);
-
-                    try
-                    {
-                        long sourceSize = 0;
-                        try { sourceSize = new FileInfo(item.FilePath).Length; } catch { }
-
-    await _imageService.ConvertToJxlAsync(
-                             item.FilePath,
-                             outputPath,
-                             p =>
-                             {
-                                 var t = OnUiAsync(() => OnFileProgress(p));
-                                 _ = t.ContinueWith(
-                                     errorTask =>
-                                     {
-                                         _ = OnUiAsync(() =>
-                                             StatusMessage = $"{AppStrings.ProgressErrorPrefix}{errorTask.Exception?.GetBaseException().Message}");
-                                     },
-                                     CancellationToken.None,
-                                     TaskContinuationOptions.OnlyOnFaulted,
-                                     TaskScheduler.Default);
-                             },
-                             quality,
-                             OutputFormat,
-                             _cancellationTokenSource.Token,
-                             SkipMetadata,
-                             CjxlEffort >= 0 ? CjxlEffort : null,
-                             CjxlThreads > 0 ? CjxlThreads : null);
-
-                        long outputSize = 0;
-                        try { outputSize = new FileInfo(outputPath).Length; } catch { }
-
-                        await OnUiAsync(() =>
-                        {
-                            item.Status = ImageStatus.Converted;
-                            item.SourceFileSize = sourceSize;
-                            item.OutputFileSize = outputSize;
-                            item.OutputPath = outputPath;
-                            SettingsService.AddRecentFile(item.FilePath);
-                            RefreshRecentFiles();
-
-                            if (string.IsNullOrEmpty(OutputDirectory))
-                            {
-                                OutputDirectory = Path.GetDirectoryName(outputPath) ?? string.Empty;
-                            }
-                        });
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        await OnUiAsync(() =>
-                        {
-                            item.Status = ImageStatus.Pending;
-                            item.ErrorMessage = AppStrings.Cancelled;
-                        });
-                    }
-                    catch (FileLockedException ex)
-                    {
-                        await OnUiAsync(() =>
-                        {
-                            item.Status = ImageStatus.Failed;
-                            item.ErrorMessage = $"{AppStrings.FileLockedPrefix}{ex.Message}";
-                        });
-                    }
-                    catch (Exception ex)
-                    {
-                        await OnUiAsync(() =>
-                        {
-                            item.Status = ImageStatus.Failed;
-                            item.ErrorMessage = ex.Message;
-                        });
-                    }
+                    });
                 }
-                finally
+                catch (OperationCanceledException)
                 {
-                    semaphore.Release();
-                    UpdateProgress(readySelected.Count);
+                    await OnUiAsync(() =>
+                    {
+                        item.Status = ImageStatus.Pending;
+                        item.ErrorMessage = AppStrings.Cancelled;
+                    });
                 }
-            });
+                catch (FileLockedException ex)
+                {
+                    await OnUiAsync(() =>
+                    {
+                        item.Status = ImageStatus.Failed;
+                        item.ErrorMessage = $"{AppStrings.FileLockedPrefix}{ex.Message}";
+                    });
+                }
+                catch (Exception ex)
+                {
+                    await OnUiAsync(() =>
+                    {
+                        item.Status = ImageStatus.Failed;
+                        item.ErrorMessage = ex.Message;
+                    });
+                }
 
-            await Task.WhenAll(tasks);
+                UpdateProgress(readySelected.Count);
+            }
 
             string lastOutputDir = string.Empty;
             if (readySelected.Any())
@@ -384,6 +379,7 @@ namespace ARWtoJXL.Avalonia.ViewModels
                 CompletedCount = 0;
                 TotalCount = 0;
                 RefreshAllCommands();
+                RequestRefreshLayout?.Invoke();
             });
         }
 
@@ -496,6 +492,15 @@ namespace ARWtoJXL.Avalonia.ViewModels
             if (existing.Count > 0)
             {
                 await AddFilesAsync(existing);
+            }
+        }
+
+        [RelayCommand]
+        private async Task LoadSingleRecentFile(string filePath)
+        {
+            if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
+            {
+                await AddFilesAsync(new[] { filePath });
             }
         }
 
@@ -783,7 +788,7 @@ namespace ARWtoJXL.Avalonia.ViewModels
                 RecentFiles = saved.RecentFiles,
                 SkipMetadata = SkipMetadata,
                 CjxlEffort = CjxlEffort,
-                CjxlThreads = CjxlThreads
+                CjxlThreads = CjxlThreads,
             });
         }
 

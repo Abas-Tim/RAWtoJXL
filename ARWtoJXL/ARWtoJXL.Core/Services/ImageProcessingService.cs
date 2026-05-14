@@ -3,7 +3,6 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using ARWtoJXL.Core.Interfaces;
-using ARWtoJXL.Core.Models;
 
 namespace ARWtoJXL.Core.Services;
 
@@ -50,7 +49,7 @@ public class ImageProcessingService : IImageService
     {
         if (outputFormat == OutputFormat.Jxl)
         {
-            await ConvertToJxlAsync(inputPath, outputPath, progress, quality, cancellationToken, skipMetadata, effort, threads);
+            await ConvertToJxlInternalAsync(inputPath, outputPath, progress, quality, cancellationToken, skipMetadata, effort, threads);
         }
         else if (outputFormat == OutputFormat.Jpeg)
         {
@@ -62,7 +61,7 @@ public class ImageProcessingService : IImageService
         }
     }
 
-    private async Task ConvertToJxlAsync(
+    private async Task ConvertToJxlInternalAsync(
         string inputPath,
         string outputPath,
         Action<double> progress,
@@ -72,50 +71,33 @@ public class ImageProcessingService : IImageService
         int? effort = null,
         int? threads = null)
     {
-        MetadataProfiles? metadata = null;
+        ReportProgress(progress, 0.1);
 
-        try
+        if (skipMetadata)
         {
-            ReportProgress(progress, 0.1);
-
-            if (!skipMetadata)
-            {
-                metadata = await ExtractMetadataWithLoggingAsync(inputPath, cancellationToken);
-                if (metadata != null)
-                {
-                    _logger.Write($"[ImageProcessing] Metadata extracted: Exif={metadata?.ExifPath ?? "none"}, Xmp={metadata?.XmpPath ?? "none"}, Icc={metadata?.IccPath ?? "none"}, Iptc={metadata?.IptcPath ?? "none"}, HasAny={metadata?.HasAny}");
-                }
-            }
-            else
-            {
-                _logger.Write($"[ImageProcessing] Metadata extraction skipped for {Path.GetFileName(inputPath)}");
-            }
-
-            ReportProgress(progress, 0.3);
-
-            await _cjxlEncoder.EncodeFromStreamAsync(
-                inputPath,
-                inputPath,
-                outputPath,
-                quality,
-                metadata,
-                async (stream, ct) => await _imageConverterService.StreamPpmToAsync(inputPath, stream, ct),
-                cancellationToken,
-                timeoutSeconds: 300,
-                cjxlProgress => ReportProgress(progress, 0.35 + cjxlProgress * 0.63),
-                effort,
-                threads);
-
-            ReportProgress(progress, 1.0);
-
-            if (!_fileService.FileExists(outputPath))
-            {
-                throw new FileNotFoundException($"Conversion completed but output file not found at: {outputPath}");
-            }
+            _logger.Write($"[ImageProcessing] Metadata embedding skipped for {Path.GetFileName(inputPath)}");
         }
-        finally
+
+        ReportProgress(progress, 0.3);
+
+        await _cjxlEncoder.EncodeFromStreamAsync(
+            inputPath,
+            inputPath,
+            outputPath,
+            quality,
+            async (stream, ct) => await _imageConverterService.StreamPpmToAsync(inputPath, stream, ct),
+            cancellationToken,
+            timeoutSeconds: 300,
+            cjxlProgress => ReportProgress(progress, 0.35 + cjxlProgress * 0.63),
+            effort,
+            skipMetadata,
+            threads);
+
+        ReportProgress(progress, 1.0);
+
+        if (!_fileService.FileExists(outputPath))
         {
-            metadata?.Dispose();
+            throw new FileNotFoundException($"Conversion completed but output file not found at: {outputPath}");
         }
     }
 
@@ -129,36 +111,24 @@ public class ImageProcessingService : IImageService
     {
         ReportProgress(progress, 0.1);
 
-        MetadataProfiles? metadata = null;
+        if (skipMetadata)
+        {
+            _logger.Write($"[ImageProcessing] Metadata embedding skipped for {Path.GetFileName(inputPath)}");
+        }
+
+        await _imageConverterService.ConvertToJpegAsync(inputPath, outputPath, quality, cancellationToken);
+        ReportProgress(progress, 0.9);
+
         if (!skipMetadata)
         {
-            metadata = await ExtractMetadataWithLoggingAsync(inputPath, cancellationToken);
-        }
-        else
-        {
-            _logger.Write($"[ImageProcessing] Metadata extraction skipped for {Path.GetFileName(inputPath)}");
+            await _exiftoolService.EmbedMetadataAsync(inputPath, outputPath, cancellationToken);
         }
 
-        try
+        ReportProgress(progress, 1.0);
+
+        if (!_fileService.FileExists(outputPath))
         {
-            await _imageConverterService.ConvertToJpegAsync(inputPath, outputPath, quality, cancellationToken);
-            ReportProgress(progress, 0.9);
-
-            if (metadata != null && metadata.HasAny)
-            {
-                await _exiftoolService.EmbedMetadataAsync(inputPath, outputPath, metadata, cancellationToken);
-            }
-
-            ReportProgress(progress, 1.0);
-
-            if (!_fileService.FileExists(outputPath))
-            {
-                throw new FileNotFoundException($"Conversion completed but output file not found at: {outputPath}");
-            }
-        }
-        finally
-        {
-            metadata?.Dispose();
+            throw new FileNotFoundException($"Conversion completed but output file not found at: {outputPath}");
         }
     }
 
@@ -171,49 +141,24 @@ public class ImageProcessingService : IImageService
     {
         ReportProgress(progress, 0.1);
 
-        MetadataProfiles? metadata = null;
+        if (skipMetadata)
+        {
+            _logger.Write($"[ImageProcessing] Metadata embedding skipped for {Path.GetFileName(inputPath)}");
+        }
+
+        await _imageConverterService.ConvertToPngAsync(inputPath, outputPath, cancellationToken);
+        ReportProgress(progress, 0.7);
+
         if (!skipMetadata)
         {
-            metadata = await ExtractMetadataWithLoggingAsync(inputPath, cancellationToken);
-        }
-        else
-        {
-            _logger.Write($"[ImageProcessing] Metadata extraction skipped for {Path.GetFileName(inputPath)}");
+            await _exiftoolService.EmbedMetadataAsync(inputPath, outputPath, cancellationToken);
         }
 
-        try
-        {
-            await _imageConverterService.ConvertToPngAsync(inputPath, outputPath, cancellationToken);
-            ReportProgress(progress, 0.7);
+        ReportProgress(progress, 1.0);
 
-            if (metadata != null && metadata.HasAny)
-            {
-                await _exiftoolService.EmbedMetadataAsync(inputPath, outputPath, metadata, cancellationToken);
-            }
-
-            ReportProgress(progress, 1.0);
-
-            if (!_fileService.FileExists(outputPath))
-            {
-                throw new FileNotFoundException($"Conversion completed but output file not found at: {outputPath}");
-            }
-        }
-        finally
+        if (!_fileService.FileExists(outputPath))
         {
-            metadata?.Dispose();
-        }
-    }
-
-    private async Task<MetadataProfiles?> ExtractMetadataWithLoggingAsync(string inputPath, CancellationToken cancellationToken)
-    {
-        try
-        {
-            return await _imageConverterService.ExtractMetadataProfilesAsync(inputPath, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.Write($"[ImageProcessing] Metadata extraction failed: {ex.GetBaseException().Message}");
-            return null;
+            throw new FileNotFoundException($"Conversion completed but output file not found at: {outputPath}");
         }
     }
 

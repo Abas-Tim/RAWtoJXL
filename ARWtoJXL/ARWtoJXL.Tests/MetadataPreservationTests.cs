@@ -7,6 +7,7 @@ using Xunit;
 
 namespace ARWtoJXL.Tests
 {
+    [Collection("Conversion")]
     public class MetadataPreservationTests : Startup
     {
         private readonly IImageConverterService _imageConverterService;

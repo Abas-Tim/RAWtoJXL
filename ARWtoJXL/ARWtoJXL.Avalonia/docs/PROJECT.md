@@ -66,7 +66,7 @@ ARWtoJXL.Avalonia/
 ## Key Features
 
 - **Drag-Drop**: Single attached property `DragDropBehavior.EnableDragDrop` on root Grid. Internally wires `DragDrop.SetAllowDrop`, `AddDragEnterHandler`, `AddDragOverHandler`, `AddDropHandler`. Drop handler finds ancestor `MainViewModel` via `DataContext` chain, reads `SearchRecursive` for recursive folder enumeration. Supports both structured file data (`DataFormat.File`) and plain text paths (`DataFormat.Text`) for Windows Explorer compatibility.
-- **Recent Files**: Scrollable list in the File menu with Load All and Clear Recent actions. `SettingsService.AddRecentFile()` maintains max 50 entries.
+- **Recent Files**: Hover-activated popup in the File menu, positioned to the right of the Recent button (`Placement="RightEdgeAlignedTop"`). Stays open while hovering either the button or the popup via a 200ms `DispatcherTimer` delay. MenuItem click is suppressed (`e.Handled = true`). Each file entry is a clickable button; click handler is wrapped in try-catch and closes the popup after the file operation completes. Load All and Clear Recent actions below the popup. `SettingsService.AddRecentFile()` maintains max 50 entries.
 - **File Picker**: Avalonia storage APIs (`StorageProvider.OpenFilePickerAsync`, `OpenFolderPickerAsync`)
 - **Presets**: Named conversion presets with quality, effort, raw distance settings
 - **Confirmation Dialogs**: Custom `ConfirmDialog` window with `MessageText`/`TitleText` proxy properties delegating to a nested `ConfirmDialogViewModel` (`ObservableObject`). DataContext is the viewmodel. `TitleText` setter also updates `Window.Title` for immediate effect. Yes button (`IsDefault`) closes with `true`, No button (`IsCancel`) closes with `false`.
@@ -79,7 +79,7 @@ ARWtoJXL.Avalonia/
 
 ### MainViewModel
 **Properties (all `[ObservableProperty]`):**
-- `Images` (ObservableCollection<ImageItemViewModel>), `IsCancelRequested` (bool), `StatusMessage` (string), `IsConverting` (bool), `OutputPath` (string), `SubfolderName` (string), `IsAllSelected` (bool), `OutputDirectory` (string), `UseSubfolder` (bool), `QualityPreset` (int), `SearchRecursive` (bool), `OutputFormat` (OutputFormat), `ConflictResolution` (ConflictResolution), `ConfirmOverwrite` (bool), `UseCustomOutputDirectory` (bool), `CustomOutputDirectory` (string), `RecentFiles` (ObservableCollection<string>), `SkipMetadata` (bool), `CjxlEffort` (int), `CjxlThreads` (int), `IsAnySelected` (bool), `CompletedCount` (int), `TotalCount` (int)
+- `Images` (ObservableCollection<ImageItemViewModel>), `IsCancelRequested` (bool), `StatusMessage` (string), `IsConverting` (bool), `OutputPath` (string), `SubfolderName` (string), `IsAllSelected` (bool), `OutputDirectory` (string), `UseSubfolder` (bool), `QualityPreset` (int), `SearchRecursive` (bool), `OutputFormat` (OutputFormat), `ConflictResolution` (ConflictResolution), `ConfirmOverwrite` (bool), `UseCustomOutputDirectory` (bool), `CustomOutputDirectory` (string), `RecentFiles` (ObservableCollection<string>), `IsRecentHovered` (bool), `SkipMetadata` (bool), `CjxlEffort` (int), `CjxlThreads` (int), `IsAnySelected` (bool), `CompletedCount` (int), `TotalCount` (int)
 
 **Private fields:** `_currentFileProgress` (double) — tracks per-file progress (0.0-1.0) from conversion pipeline for smooth overall progress display.
 
@@ -88,7 +88,7 @@ ARWtoJXL.Avalonia/
 - `CancelCommand.CanExecute` returns `IsConverting` — enabled throughout conversion for immediate cancellation.
 - `OpenOutputFolderCommand` becomes enabled as soon as the first file converts successfully (`OutputDirectory` is set incrementally on each successful conversion, not only after all complete).
 
-**Progress tracking:** `UpdateProgressDisplay()` computes overall percentage from completed count + current file progress. `OnFileProgress()` receives per-file progress from `IImageService.ConvertArwToJxlAsync` callback and updates status message with live percentage.
+**Progress tracking:** `UpdateProgressDisplay()` computes overall percentage from completed count + current file progress. `OnFileProgress()` receives per-file progress from `IImageService.ConvertToJxlAsync` callback and updates status message with live percentage. Files convert sequentially (one at a time) to avoid UI dispatcher overload from N parallel progress callbacks.
 
 **Public methods:** `RefreshSettings()` — reloads settings from disk (called when SettingsWindow closes).
 
@@ -162,3 +162,6 @@ Named preset: `Name`, `Quality`, `OutputFormat`, `ConflictResolution`, `UseSubfo
 - **ViewLocator "Not Found" bug**: `Match()` was returning `true` for all non-Control objects, intercepting button content strings. Fixed to only match `.ViewModels` namespace types.
 - **Command naming**: `[RelayCommand]` method `LoadRecentFilesCommand` renamed to `LoadRecentFiles` to avoid conflict with generated `LoadRecentFilesCommand` property.
 - **Effort ComboBox InvalidCastException**: `SelectedItem` binding to `int` property failed with `ComboBoxItem` items. Fixed with `SelectedValue` + `SelectedValueBinding` + `StringToIntConverter` to convert string `Tag` values to `int`.
+- **Recent Files positioning**: Popup changed from below to right of button using `Placement="RightEdgeAlignedTop"` with `PlacementTarget` binding.
+- **Recent Files hover persistence**: Added `DispatcherTimer` (200ms delay) to keep popup open while transitioning from button to popup.
+- **Recent Files crash safety**: Click handler wrapped in try-catch; popup closes after file operation completes, not before. Global exception handlers added in `App.cs` (`AppDomain.UnhandledException`, `Dispatcher.UnhandledException`, `TaskScheduler.UnobservedTaskException`).

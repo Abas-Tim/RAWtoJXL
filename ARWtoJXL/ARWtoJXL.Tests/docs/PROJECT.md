@@ -31,6 +31,7 @@ ARWtoJXL.Tests/
 
 - **Startup**: Central DI configuration base class — calls `services.AddCoreServices()` from `ARWtoJXL.Core`. Tests inherit from `Startup` and resolve services from `Services` property. Provides `CreateScope()` for test isolation. Locates `test1.ARW` test fixture relative to assembly directory.
 - **TestAppBuilder**: Avalonia headless application builder registered via `[assembly: AvaloniaTestApplication(typeof(TestAppBuilder))]`. Configures `App` with `AvaloniaHeadlessPlatformOptions` for GUI tests.
+- **ConversionTestCollection**: `[CollectionDefinition("Conversion")]` ensures `ConversionTests`, `MetadataPreservationTests`, and `MetadataDebugTests` run sequentially, preventing multiple cjxl processes from competing for CPU cores.
 
 ## Running Tests
 

@@ -35,11 +35,11 @@ public class CjxlEncoderService : ICjxlEncoder
         string originalSourcePath,
         string outputPath,
         int quality,
-        MetadataProfiles? metadata = null,
         CancellationToken cancellationToken = default,
         int timeoutSeconds = DefaultTimeoutSeconds,
         Action<double>? progress = null,
         int? effort = null,
+        bool skipMetadata = false,
         int? threads = null)
     {
         ValidateInputParameters(inputPath, outputPath, quality);
@@ -54,15 +54,15 @@ public class CjxlEncoderService : ICjxlEncoder
 
         string cjxlPath = await ResolveCjxlExecutableAsync(cancellationToken);
 
-        var args = BuildEncodingArguments(quality, metadata, inputPath, outputPath, effort, threads);
+        var args = BuildEncodingArguments(quality, inputPath, outputPath, effort, threads);
 
         await ExecuteEncodingProcessAsync(cjxlPath, args, cancellationToken, timeoutSeconds, progress);
 
         VerifyOutputFile(outputPath);
 
-        if (metadata != null && metadata.HasAny)
+        if (!skipMetadata)
         {
-            await _exiftoolService.EmbedMetadataAsync(originalSourcePath, outputPath, metadata, cancellationToken);
+            await _exiftoolService.EmbedMetadataAsync(originalSourcePath, outputPath, cancellationToken);
         }
     }
 
@@ -71,11 +71,11 @@ public class CjxlEncoderService : ICjxlEncoder
         string originalSourcePath,
         string outputPath,
         int quality,
-        MetadataProfiles? metadata = null,
         CancellationToken cancellationToken = default,
         int timeoutSeconds = DefaultTimeoutSeconds,
         Action<double>? progress = null,
         int? effort = null,
+        bool skipMetadata = false,
         int? threads = null)
     {
         if (string.IsNullOrWhiteSpace(outputPath))
@@ -94,15 +94,15 @@ public class CjxlEncoderService : ICjxlEncoder
 
         string cjxlPath = await ResolveCjxlExecutableAsync(cancellationToken);
 
-        var args = BuildStreamEncodingArguments(quality, metadata, outputPath, effort, threads);
+        var args = BuildStreamEncodingArguments(quality, outputPath, effort, threads);
 
         await ExecuteEncodingProcessFromStreamAsync(cjxlPath, args, inputStream, cancellationToken, timeoutSeconds, progress);
 
         VerifyOutputFile(outputPath);
 
-        if (metadata != null && metadata.HasAny)
+        if (!skipMetadata)
         {
-            await _exiftoolService.EmbedMetadataAsync(originalSourcePath, outputPath, metadata, cancellationToken);
+            await _exiftoolService.EmbedMetadataAsync(originalSourcePath, outputPath, cancellationToken);
         }
     }
 
@@ -111,12 +111,12 @@ public class CjxlEncoderService : ICjxlEncoder
         string originalSourcePath,
         string outputPath,
         int quality,
-        MetadataProfiles? metadata,
         Func<Stream, CancellationToken, Task> ppmWriter,
         CancellationToken cancellationToken,
         int timeoutSeconds,
         Action<double>? progress,
         int? effort,
+        bool skipMetadata = false,
         int? threads = null)
     {
         if (string.IsNullOrWhiteSpace(outputPath))
@@ -135,15 +135,15 @@ public class CjxlEncoderService : ICjxlEncoder
 
         string cjxlPath = await ResolveCjxlExecutableAsync(cancellationToken);
 
-        var args = BuildStreamEncodingArguments(quality, metadata, outputPath, effort, threads);
+        var args = BuildStreamEncodingArguments(quality, outputPath, effort, threads);
 
         await ExecuteEncodingProcessWithWriterAsync(cjxlPath, args, ppmWriter, inputPath, cancellationToken, timeoutSeconds, progress);
 
         VerifyOutputFile(outputPath);
 
-        if (metadata != null && metadata.HasAny)
+        if (!skipMetadata)
         {
-            await _exiftoolService.EmbedMetadataAsync(originalSourcePath, outputPath, metadata, cancellationToken);
+            await _exiftoolService.EmbedMetadataAsync(originalSourcePath, outputPath, cancellationToken);
         }
     }
 
@@ -210,13 +210,12 @@ public class CjxlEncoderService : ICjxlEncoder
 
     protected internal List<string> BuildEncodingArguments(
         int quality,
-        MetadataProfiles? metadata,
         string inputPath,
         string outputPath,
         int? effortOverride = null,
         int? threadsOverride = null)
     {
-        var args = new List<string>(16);
+        var args = new List<string>(10);
 
         float distance = QualityCalculator.CalculateDistance(quality);
         int effort = effortOverride ?? QualityCalculator.CalculateEffort(quality);
@@ -237,8 +236,7 @@ public class CjxlEncoderService : ICjxlEncoder
             args.Add("--progressive_dc=1");
         }
 
-        _logger.Write($"[CjxlEncoder] Building args: quality={quality}, effort={effort}, distance={distance:F2}, metadata={metadata?.HasAny}");
-        AddMetadataArguments(args, metadata);
+        _logger.Write($"[CjxlEncoder] Building args: quality={quality}, effort={effort}, distance={distance:F2}");
 
         args.Add(inputPath);
         args.Add(outputPath);
@@ -248,12 +246,11 @@ public class CjxlEncoderService : ICjxlEncoder
 
      protected internal List<string> BuildStreamEncodingArguments(
         int quality,
-        MetadataProfiles? metadata,
         string outputPath,
         int? effortOverride = null,
         int? threadsOverride = null)
     {
-        var args = new List<string>(16);
+        var args = new List<string>(10);
 
         float distance = QualityCalculator.CalculateDistance(quality);
         int effort = effortOverride ?? QualityCalculator.CalculateEffort(quality);
@@ -274,8 +271,7 @@ public class CjxlEncoderService : ICjxlEncoder
             args.Add("--progressive_dc=1");
         }
 
-        _logger.Write($"[CjxlEncoder] Building stream args: quality={quality}, effort={effort}, distance={distance:F2}, metadata={metadata?.HasAny}");
-        AddMetadataArguments(args, metadata);
+        _logger.Write($"[CjxlEncoder] Building stream args: quality={quality}, effort={effort}, distance={distance:F2}");
 
         args.Add("-");
         args.Add(outputPath);
@@ -297,10 +293,14 @@ public class CjxlEncoderService : ICjxlEncoder
         _logger.Write($"[CjxlEncoder] Raw args ({args.Count}): [{string.Join("] [", args)}]");
 
         var startTime = DateTime.UtcNow;
-        var progressTask = ReportProgressAsync(startTime, TimeSpan.FromSeconds(timeoutSeconds), progress, cancellationToken, _logger);
+        using var progressCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        progressCts.CancelAfter(TimeSpan.FromSeconds(timeoutSeconds));
+        var progressTask = ReportProgressAsync(startTime, TimeSpan.FromSeconds(timeoutSeconds), progress, progressCts.Token, _logger);
 
         var encodeTask = _processRunner.RunProcessWithStdinAsync(cjxlPath, argumentsString, inputStream, timeoutSeconds, cancellationToken);
         var result = await encodeTask;
+
+        progressCts.Cancel();
 
         if (progressTask != null)
         {
@@ -329,33 +329,6 @@ public class CjxlEncoderService : ICjxlEncoder
         }
     }
 
-    private void AddMetadataArguments(List<string> args, MetadataProfiles? metadata)
-    {
-        if (metadata is null || !metadata.HasAny)
-        {
-            _logger.Write("[CjxlEncoder] No metadata to add");
-            return;
-        }
-
-        _logger.Write($"[CjxlEncoder] Adding metadata profiles: Exif={metadata.ExifPath ?? "none"}, Xmp={metadata.XmpPath ?? "none"}, Icc={metadata.IccPath ?? "none"}, Iptc={metadata.IptcPath ?? "none"}");
-
-        void AddMetaArg(string key, string? path)
-        {
-            if (string.IsNullOrEmpty(path) || !File.Exists(path)) return;
-            var size = new FileInfo(path).Length;
-            if (size == 0) return;
-            var cleanPath = path.Replace("\\", "/");
-            args.Add("-x");
-            args.Add($"{key}={cleanPath}");
-            _logger.Write($"[CjxlEncoder] Added metadata: -x {key}={cleanPath} ({size} bytes)");
-        }
-
-        AddMetaArg("exif", metadata.ExifPath);
-        AddMetaArg("xmp", metadata.XmpPath);
-        AddMetaArg("icc_pathname", metadata.IccPath);
-        AddMetaArg("jumbf", metadata.IptcPath);
-    }
-
     private async Task ExecuteEncodingProcessAsync(
         string cjxlPath,
         List<string> args,
@@ -369,10 +342,14 @@ public class CjxlEncoderService : ICjxlEncoder
         _logger.Write($"[CjxlEncoder] Raw args ({args.Count}): [{string.Join("] [", args)}]");
 
         var startTime = DateTime.UtcNow;
-        var progressTask = ReportProgressAsync(startTime, TimeSpan.FromSeconds(timeoutSeconds), progress, cancellationToken, _logger);
+        using var progressCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        progressCts.CancelAfter(TimeSpan.FromSeconds(timeoutSeconds));
+        var progressTask = ReportProgressAsync(startTime, TimeSpan.FromSeconds(timeoutSeconds), progress, progressCts.Token, _logger);
 
         var encodeTask = _processRunner.RunProcessWithTimeoutAsync(cjxlPath, argumentsString, timeoutSeconds, cancellationToken);
         var result = await encodeTask;
+
+        progressCts.Cancel();
 
         if (progressTask != null)
         {
@@ -415,8 +392,11 @@ public class CjxlEncoderService : ICjxlEncoder
         _logger.Write($"[CjxlEncoder] Full cjxl command (stdin): {cjxlPath} {argumentsString}");
         _logger.Write($"[CjxlEncoder] Raw args ({args.Count}): [{string.Join("] [", args)}]");
 
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(TimeSpan.FromSeconds(timeoutSeconds));
+
         var startTime = DateTime.UtcNow;
-        var progressTask = ReportProgressAsync(startTime, TimeSpan.FromSeconds(timeoutSeconds), progress, cancellationToken, _logger);
+        var progressTask = ReportProgressAsync(startTime, TimeSpan.FromSeconds(timeoutSeconds), progress, timeoutCts.Token, _logger);
 
         var startInfo = new ProcessStartInfo
         {
@@ -435,9 +415,6 @@ public class CjxlEncoderService : ICjxlEncoder
             throw new FileNotFoundException($"Failed to start cjxl: {cjxlPath}");
         }
 
-        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutCts.CancelAfter(TimeSpan.FromSeconds(timeoutSeconds));
-
         bool timedOut = false;
 
         try
@@ -452,6 +429,8 @@ public class CjxlEncoderService : ICjxlEncoder
 
             string stdout = await stdoutTask;
             string stderr = await stderrTask;
+
+            timeoutCts.Cancel();
 
             if (progressTask != null)
             {
@@ -528,24 +507,21 @@ public class CjxlEncoderService : ICjxlEncoder
 
    private static async Task<string> SafeReadStreamAsync(System.IO.StreamReader reader, CancellationToken token)
     {
-        using var drainCts = CancellationTokenSource.CreateLinkedTokenSource(token);
-        drainCts.CancelAfter(TimeSpan.FromSeconds(5));
-
         var buffer = new char[4096];
         var result = new System.Text.StringBuilder();
 
         try
         {
-            while (true)
+            while (!token.IsCancellationRequested)
             {
-                int bytesRead = await reader.ReadAsync(buffer.AsMemory(), drainCts.Token);
+                int bytesRead = await reader.ReadAsync(buffer.AsMemory(), token);
                 if (bytesRead == 0) break;
                 result.Append(buffer, 0, bytesRead);
             }
         }
         catch (OperationCanceledException)
         {
-            // Reading timed out or was cancelled; return whatever was captured
+            // Reading cancelled; return whatever was captured
         }
         catch (IOException)
         {
@@ -577,6 +553,9 @@ public class CjxlEncoderService : ICjxlEncoder
             {
                 logger.Write($"[CjxlEncoder] Progress callback threw: {ex.GetBaseException().Message}");
             }
+
+            if (elapsed.TotalSeconds >= maxTime.TotalSeconds)
+                break;
         }
     }
 

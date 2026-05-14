@@ -8,6 +8,8 @@ using ARWtoJXL.Core.Interfaces;
 using ARWtoJXL.Avalonia.Services;
 using ARWtoJXL.Avalonia.ViewModels;
 
+using Avalonia.Threading;
+
 namespace ARWtoJXL.Avalonia;
 
 public partial class App : Application
@@ -23,6 +25,8 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
+            desktop.Exit += OnDesktopExit;
+
             var serviceCollection = new ServiceCollection();
             serviceCollection.AddCoreServices();
             serviceCollection.AddSingleton<IDialogService, DialogService>();
@@ -45,6 +49,27 @@ public partial class App : Application
             desktop.MainWindow = mainWindow;
         }
 
+        AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+            System.Diagnostics.Debug.WriteLine($"CRASH: {args.ExceptionObject}");
+
+        Dispatcher.UIThread.UnhandledException += (_, args) =>
+        {
+            System.Diagnostics.Debug.WriteLine($"UI CRASH: {args.Exception}");
+            args.Handled = true;
+        };
+
+        TaskScheduler.UnobservedTaskException += (_, args) =>
+        {
+            System.Diagnostics.Debug.WriteLine($"TASK CRASH: {args.Exception}");
+            args.SetObserved();
+        };
+
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private void OnDesktopExit(object? sender, ControlledApplicationLifetimeExitEventArgs e)
+    {
+        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            desktop.Exit -= OnDesktopExit;
     }
 }
