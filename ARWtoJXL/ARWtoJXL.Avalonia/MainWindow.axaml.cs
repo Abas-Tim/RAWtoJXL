@@ -19,6 +19,7 @@ namespace ARWtoJXL.Avalonia
         private DispatcherTimer? _recentCloseTimer;
         private bool _isRecentHovered;
         private bool _isPopupHovered;
+        private bool _isPopupClickInProgress;
 
         public MainWindow()
         {
@@ -69,6 +70,16 @@ namespace ARWtoJXL.Avalonia
             ScheduleRecentClose();
         }
 
+        private void RecentPopupPointerPressed(object? sender, PointerPressedEventArgs e)
+        {
+            _isPopupClickInProgress = true;
+        }
+
+        private void RecentPopupPointerReleased(object? sender, PointerReleasedEventArgs e)
+        {
+            _isPopupClickInProgress = false;
+        }
+
         private void RecentMenuItemClicked(object? sender, RoutedEventArgs e)
         {
             e.Handled = true;
@@ -82,6 +93,8 @@ namespace ARWtoJXL.Avalonia
 
         private void ScheduleRecentClose()
         {
+            if (_isPopupClickInProgress)
+                return;
             CancelRecentClose();
             _recentCloseTimer = new DispatcherTimer(
                 TimeSpan.FromMilliseconds(200),
@@ -118,9 +131,6 @@ namespace ARWtoJXL.Avalonia
                     {
                         await vm.AddFilesAsync(new[] { filePath });
                     }
-                    _isRecentHovered = false;
-                    _isPopupHovered = false;
-                    vm.IsRecentHovered = false;
                 }
             }
             catch (Exception ex)

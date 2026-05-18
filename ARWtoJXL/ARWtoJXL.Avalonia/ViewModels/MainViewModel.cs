@@ -147,6 +147,8 @@ namespace ARWtoJXL.Avalonia.ViewModels
         [ObservableProperty]
         private bool _isRecentHovered;
 
+        public bool HasRecentFiles => RecentFiles.Count > 0;
+
         [ObservableProperty]
         private bool _skipMetadata;
 
@@ -395,6 +397,7 @@ namespace ARWtoJXL.Avalonia.ViewModels
                 item.Thumbnail?.Dispose();
                 item.IsRemoved = true;
                 item.PropertyChanged -= Item_PropertyChanged;
+                _addedFilePaths.Remove(item.FilePath);
                 Images.Remove(item);
             }
             _selectedImages.Clear();
@@ -811,6 +814,15 @@ namespace ARWtoJXL.Avalonia.ViewModels
             }
 
             public bool Contains(string path) => _set.Contains(path);
+
+            public void Remove(string path)
+            {
+                if (_set.Remove(path))
+                {
+                    _order.Remove(path);
+                    _totalBytes -= EstimateBytes(path);
+                }
+            }
 
             public void Add(string path)
             {

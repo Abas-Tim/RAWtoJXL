@@ -66,7 +66,7 @@ ARWtoJXL.Avalonia/
 ## Key Features
 
 - **Drag-Drop**: Single attached property `DragDropBehavior.EnableDragDrop` on root Grid. Internally wires `DragDrop.SetAllowDrop`, `AddDragEnterHandler`, `AddDragOverHandler`, `AddDropHandler`. Drop handler finds ancestor `MainViewModel` via `DataContext` chain, reads `SearchRecursive` for recursive folder enumeration. Supports both structured file data (`DataFormat.File`) and plain text paths (`DataFormat.Text`) for Windows Explorer compatibility.
-- **Recent Files**: Hover-activated popup in the File menu, positioned to the right of the Recent button (`Placement="RightEdgeAlignedTop"`). Stays open while hovering either the button or the popup via a 200ms `DispatcherTimer` delay. MenuItem click is suppressed (`e.Handled = true`). Each file entry is a clickable button; click handler is wrapped in try-catch and closes the popup after the file operation completes. Load All and Clear Recent actions below the popup. `SettingsService.AddRecentFile()` maintains max 50 entries.
+- **Recent Files**: Hover-activated popup in the File menu, positioned to the right of the Recent button (`Placement="RightEdgeAlignedTop"`). Stays open while hovering either the button or the popup via a 200ms `DispatcherTimer` delay. MenuItem is disabled when no recent files exist (`IsEnabled="{Binding HasRecentFiles}"`). Click-in-progress tracking (`PointerPressed`/`PointerReleased`) prevents popup from closing mid-click when pointer briefly exits bounds. Each file entry is a full-width clickable button (`Background="Transparent"`, `TextBlock.HorizontalAlignment="Stretch"`); click handler is wrapped in try-catch and does not forcibly close the popup. Load All and Clear Recent actions below the popup. `SettingsService.AddRecentFile()` maintains max 50 entries.
 - **File Picker**: Avalonia storage APIs (`StorageProvider.OpenFilePickerAsync`, `OpenFolderPickerAsync`)
 - **Presets**: Named conversion presets with quality, effort, raw distance settings
 - **Confirmation Dialogs**: Custom `ConfirmDialog` window with `MessageText`/`TitleText` proxy properties delegating to a nested `ConfirmDialogViewModel` (`ObservableObject`). DataContext is the viewmodel. `TitleText` setter also updates `Window.Title` for immediate effect. Yes button (`IsDefault`) closes with `true`, No button (`IsCancel`) closes with `false`.
@@ -81,6 +81,8 @@ ARWtoJXL.Avalonia/
 **Properties (all `[ObservableProperty]`):**
 - `Images` (ObservableCollection<ImageItemViewModel>), `IsCancelRequested` (bool), `StatusMessage` (string), `IsConverting` (bool), `OutputPath` (string), `SubfolderName` (string), `IsAllSelected` (bool), `OutputDirectory` (string), `UseSubfolder` (bool), `QualityPreset` (int), `SearchRecursive` (bool), `OutputFormat` (OutputFormat), `ConflictResolution` (ConflictResolution), `ConfirmOverwrite` (bool), `UseCustomOutputDirectory` (bool), `CustomOutputDirectory` (string), `RecentFiles` (ObservableCollection<string>), `IsRecentHovered` (bool), `SkipMetadata` (bool), `CjxlEffort` (int), `CjxlThreads` (int), `IsAnySelected` (bool), `CompletedCount` (int), `TotalCount` (int)
 
+**Computed properties:** `HasRecentFiles` (bool) — `RecentFiles.Count > 0`, used to disable the Recent menu item when empty.
+
 **Private fields:** `_currentFileProgress` (double) — tracks per-file progress (0.0-1.0) from conversion pipeline for smooth overall progress display.
 
 **Commands (`[RelayCommand]`):**
@@ -92,7 +94,7 @@ ARWtoJXL.Avalonia/
 
 **Public methods:** `RefreshSettings()` — reloads settings from disk (called when SettingsWindow closes).
 
-**Nested class:** `BoundedFilePathSet` — memory-bounded deduplication set for added file paths (1 MB limit, FIFO eviction via LinkedList + HashSet).
+**Nested class:** `BoundedFilePathSet` — memory-bounded deduplication set for added file paths (1 MB limit, FIFO eviction via LinkedList + HashSet). Supports `Remove()` to allow re-adding previously removed files.
 
 ### SettingsViewModel
 Implements `IDisposable` — `Dispose()` stops debounce timer, flushes pending persist, and disposes timer resources. Called from `SettingsWindow.Closing`.
@@ -165,3 +167,6 @@ Named preset: `Name`, `Quality`, `OutputFormat`, `ConflictResolution`, `UseSubfo
 - **Recent Files positioning**: Popup changed from below to right of button using `Placement="RightEdgeAlignedTop"` with `PlacementTarget` binding.
 - **Recent Files hover persistence**: Added `DispatcherTimer` (200ms delay) to keep popup open while transitioning from button to popup.
 - **Recent Files crash safety**: Click handler wrapped in try-catch; popup closes after file operation completes, not before. Global exception handlers added in `App.cs` (`AppDomain.UnhandledException`, `Dispatcher.UnhandledException`, `TaskScheduler.UnobservedTaskException`).
+- **Recent button empty state**: Recent menu item disabled when `RecentFiles` is empty (`IsEnabled="{Binding HasRecentFiles}"`), preventing spurious clicks that close the menu.
+- **Recent popup click reliability**: `PointerPressed`/`PointerReleased` tracking on popup prevents close timer from firing during click; full-width button click area via `Background="Transparent"` and stretched TextBlock; `RecentFileClicked` no longer forcibly resets hover state flags.
+- **Removed files re-addable**: `RemoveSelected` now removes paths from `_addedFilePaths` via `BoundedFilePathSet.Remove()`, allowing removed files to be re-added from recent.

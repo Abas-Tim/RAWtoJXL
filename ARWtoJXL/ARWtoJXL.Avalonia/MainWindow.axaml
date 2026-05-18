@@ -47,40 +47,47 @@
                         <MenuItem Header="_File">
                             <MenuItem Header="_Open File" Command="{Binding OpenFileCommand}"/>
                             <MenuItem Header="Open _Folder" Command="{Binding OpenFolderCommand}"/>
-                            <MenuItem Click="RecentMenuItemClicked">
-                                 <MenuItem.Header>
-                                     <Grid x:Name="RecentHeaderGrid"
-                                           PointerEntered="RecentPointerEntered" PointerExited="RecentPointerExited">
-                                         <TextBlock Text="Recent"/>
+                           <MenuItem IsEnabled="{Binding HasRecentFiles}" Click="RecentMenuItemClicked">
+                                  <MenuItem.Header>
+                                      <Grid x:Name="RecentHeaderGrid"
+                                            HorizontalAlignment="Stretch"
+                                            Background="Transparent"
+                                            PointerEntered="RecentPointerEntered" PointerExited="RecentPointerExited">
+                                          <TextBlock Text="Recent" HorizontalAlignment="Stretch"/>
                                          <Popup IsOpen="{Binding IsRecentHovered}"
                                                 PlacementTarget="{Binding ElementName=RecentHeaderGrid}"
                                                 Placement="RightEdgeAlignedTop"
                                                 HorizontalOffset="4"
                                                 MaxWidth="350">
-                                             <Border Background="White" BorderBrush="Gray" BorderThickness="1" Padding="4"
-                                                     PointerEntered="RecentPopupPointerEntered" PointerExited="RecentPopupPointerExited">
-                                                 <ScrollViewer MaxHeight="200"
-                                                               PointerEntered="RecentPopupPointerEntered" PointerExited="RecentPopupPointerExited">
-                                                     <ItemsControl ItemsSource="{Binding RecentFiles}"
-                                                                   PointerEntered="RecentPopupPointerEntered" PointerExited="RecentPopupPointerExited">
-                                                         <ItemsControl.ItemTemplate>
-                                                             <DataTemplate>
-                                                                 <Button Click="RecentFileClicked" Tag="{Binding}"
-                                                                         Classes="menu-item"
-                                                                         Padding="8,4"
-                                                                         HorizontalAlignment="Stretch"
-                                                                         Margin="0">
-                                                                     <TextBlock Text="{Binding}"
-                                                                                FontSize="10"
-                                                                                TextTrimming="CharacterEllipsis"
-                                                                                MaxWidth="340"
-                                                                                ToolTip.Tip="{Binding}"/>
-                                                                 </Button>
-                                                             </DataTemplate>
-                                                         </ItemsControl.ItemTemplate>
-                                                     </ItemsControl>
-                                                 </ScrollViewer>
-                                             </Border>
+                                         <Border Background="White" BorderBrush="Gray" BorderThickness="1" Padding="4"
+                                                      PointerEntered="RecentPopupPointerEntered" PointerExited="RecentPopupPointerExited"
+                                                      PointerPressed="RecentPopupPointerPressed" PointerReleased="RecentPopupPointerReleased">
+                                                  <ScrollViewer MaxHeight="200"
+                                                                PointerEntered="RecentPopupPointerEntered" PointerExited="RecentPopupPointerExited"
+                                                                PointerPressed="RecentPopupPointerPressed" PointerReleased="RecentPopupPointerReleased">
+                                                      <ItemsControl ItemsSource="{Binding RecentFiles}"
+                                                                    PointerEntered="RecentPopupPointerEntered" PointerExited="RecentPopupPointerExited"
+                                                                    PointerPressed="RecentPopupPointerPressed" PointerReleased="RecentPopupPointerReleased">
+                                                          <ItemsControl.ItemTemplate>
+                                                              <DataTemplate>
+                                                                  <Button Click="RecentFileClicked" Tag="{Binding}"
+                                                                          Classes="menu-item"
+                                                                          Padding="8,4"
+                                                                          HorizontalAlignment="Stretch"
+                                                                          Margin="0"
+                                                                          Background="Transparent">
+                                                                      <TextBlock Text="{Binding}"
+                                                                                 FontSize="10"
+                                                                                 TextTrimming="CharacterEllipsis"
+                                                                                 MaxWidth="340"
+                                                                                 HorizontalAlignment="Stretch"
+                                                                                 ToolTip.Tip="{Binding}"/>
+                                                                  </Button>
+                                                              </DataTemplate>
+                                                          </ItemsControl.ItemTemplate>
+                                                      </ItemsControl>
+                                                  </ScrollViewer>
+                                              </Border>
                                          </Popup>
                                      </Grid>
                                  </MenuItem.Header>
