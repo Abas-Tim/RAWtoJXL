@@ -48,28 +48,6 @@ Each project maintains its own documentation with detailed information on archit
 - Tests: `dotnet test ARWtoJXL.Tests.csproj`
 - GUI tests: `dotnet test ARWtoJXL.Tests.csproj --filter "category=gui"`
 
-## Git Ignore Policy
-
-Excluded via root `.gitignore`:
-- `bin/`, `obj/` — build outputs
-- `packages/`, `*.nupkg`, `project.nuget.cache` — NuGet artifacts
-- `*.user`, `*.suo`, `*.sln.docstates` — IDE state
-- `.idea/`, `*.sln.iml` — Rider artifacts
-- `MediaCache/` — ImageMagick cache
-- `*.pdb` — debug symbols
-- `cjxl_help_*.txt`, `debug_metadata.csx` — temp debug files
-- `cjxl.exe` — bundled binary (downloaded at build time)
-
 ## Git LFS
 
-Git LFS manages large binary test fixtures. Required to clone or pull this repository.
-
-- **Setup:** `git lfs install` (once per user), then `git clone` / `git pull`
-- **Tracked patterns** (`.gitattributes`): `*.ARW`
-- **Files:** `ARWtoJXL/ARWtoJXL.Tests/test1.ARW` (~47 MB test fixture)
-- **Migrate existing files to LFS:** `git lfs migrate import --include="*.ARW" --include-ref=refs/heads/<branch>`
-
-## License Compliance
-
-- `THIRD-PARTY-NOTICES.md` contains license texts for all dependencies
-- **GPL-3.0**: exiftool.exe is GPL-3.0; bundled in repo with license notice in THIRD-PARTY-NOTICES.md
+Git LFS manages large binary test fixtures. Required to clone or pull this repository. Run `git lfs install` before clone/pull. `*.ARW` files are tracked (see `.gitattributes`).

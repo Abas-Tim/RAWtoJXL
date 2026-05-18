@@ -160,13 +160,8 @@ Named preset: `Name`, `Quality`, `OutputFormat`, `ConflictResolution`, `UseSubfo
 - **SelectionMode**: Set in code-behind via `FindControl<T>()` due to XAML enum resolution issues
 - **DataTemplates**: Single template uses `ItemTemplate` instead of `DataTemplates` collection to avoid `x:DataType` requirements
 
-### Known Fixes
-- **ViewLocator "Not Found" bug**: `Match()` was returning `true` for all non-Control objects, intercepting button content strings. Fixed to only match `.ViewModels` namespace types.
-- **Command naming**: `[RelayCommand]` method `LoadRecentFilesCommand` renamed to `LoadRecentFiles` to avoid conflict with generated `LoadRecentFilesCommand` property.
-- **Effort ComboBox InvalidCastException**: `SelectedItem` binding to `int` property failed with `ComboBoxItem` items. Fixed with `SelectedValue` + `SelectedValueBinding` + `StringToIntConverter` to convert string `Tag` values to `int`.
-- **Recent Files positioning**: Popup changed from below to right of button using `Placement="RightEdgeAlignedTop"` with `PlacementTarget` binding.
-- **Recent Files hover persistence**: Added `DispatcherTimer` (200ms delay) to keep popup open while transitioning from button to popup.
-- **Recent Files crash safety**: Click handler wrapped in try-catch; popup closes after file operation completes, not before. Global exception handlers added in `App.cs` (`AppDomain.UnhandledException`, `Dispatcher.UnhandledException`, `TaskScheduler.UnobservedTaskException`).
-- **Recent button empty state**: Recent menu item disabled when `RecentFiles` is empty (`IsEnabled="{Binding HasRecentFiles}"`), preventing spurious clicks that close the menu.
-- **Recent popup click reliability**: `PointerPressed`/`PointerReleased` tracking on popup prevents close timer from firing during click; full-width button click area via `Background="Transparent"` and stretched TextBlock; `RecentFileClicked` no longer forcibly resets hover state flags.
-- **Removed files re-addable**: `RemoveSelected` now removes paths from `_addedFilePaths` via `BoundedFilePathSet.Remove()`, allowing removed files to be re-added from recent.
+### Current Behavior Notes
+- **ViewLocator**: `Match()` only matches `.ViewModels` namespace types. `Build()` replaces `.ViewModels` with `.Views`, strips "ViewModel" suffix. Falls back to "Not Found" TextBlock.
+- **Effort ComboBox**: Uses `SelectedValue` + `SelectedValueBinding` + `StringToIntConverter` to convert string `Tag` values to `int`.
+- **Recent Files**: Popup at `Placement="RightEdgeAlignedTop"`. 200ms `DispatcherTimer` keeps popup open during hover transitions. Click-in-progress tracking via `PointerPressed`/`PointerReleased`. Disabled when empty (`IsEnabled="{Binding HasRecentFiles}"`).
+- **Removed files**: `RemoveSelected` removes paths from `_addedFilePaths` via `BoundedFilePathSet.Remove()`, allowing re-add.

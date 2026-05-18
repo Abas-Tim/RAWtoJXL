@@ -230,6 +230,3 @@ When an ARW file is locked by another application (Adobe Bridge, Lightroom, etc.
 ## Additional Notes
 
 - `InternalsVisibleTo` is set for `ARWtoJXL.Tests` to allow test access to `protected internal` members (e.g., `BuildEncodingArguments`, `BuildStreamEncodingArguments`).
-
-# Web Fetch Docs
-cjxl start commands params info is at @[here](https://man.archlinux.org/man/cjxl.1.en.txt)
