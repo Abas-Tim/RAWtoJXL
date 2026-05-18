@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using ImageMagick;
+using ImageMagick.Formats;
 using ARWtoJXL.Core.Interfaces;
 using ARWtoJXL.Core.Models;
 
@@ -33,29 +34,85 @@ namespace ARWtoJXL.Core.Services;
             throw new FileNotFoundException($"File not found: {filePath}");
         }
 
-        return await Task.Run(() =>
+        try
         {
-            try
+            var preview = await _exiftoolService.ExtractPreviewImageAsync(filePath, cancellationToken);
+            if (preview != null)
             {
-                using var image = new MagickImage(filePath);
-                image.Resize(300, 300);
-                image.Format = MagickFormat.Jpg;
-                image.Quality = 85;
-                image.Strip();
+                return preview;
+            }
 
-                using var ms = new MemoryStream();
-                image.Write(ms);
-                return ms.ToArray();
-            }
-            catch (IOException ex) when (FileLockedException.IsFileLocked(ex))
+            var dngThumbnail = TryGetDngThumbnail(filePath);
+            if (dngThumbnail != null)
             {
-                throw new FileLockedException(filePath, ex);
+                return dngThumbnail;
             }
-            catch (Exception ex)
+
+            return await Task.Run(() => FallbackDecodeThumbnail(filePath), cancellationToken);
+        }
+        catch (IOException ex) when (FileLockedException.IsFileLocked(ex))
+        {
+            throw new FileLockedException(filePath, ex);
+        }
+        catch (Exception ex)
+        {
+            if (ex is FileLockedException)
+                throw;
+            throw new Exception($"Failed to load thumbnail for {Path.GetFileName(filePath)}: {ex.Message}", ex);
+        }
+    }
+
+    private byte[]? TryGetDngThumbnail(string filePath)
+    {
+        try
+        {
+            using var image = new MagickImage();
+            image.Settings.SetDefines(new DngReadDefines
             {
-                throw new Exception($"Failed to load thumbnail for {Path.GetFileName(filePath)}: {ex.Message}", ex);
+                ReadThumbnail = true
+            });
+            image.Ping(filePath);
+
+            var profile = image.GetProfile("dng:thumbnail");
+            if (profile == null)
+            {
+                return null;
             }
-        }, cancellationToken);
+
+            var data = profile.ToByteArray();
+            if (data == null || data.Length == 0)
+            {
+                return null;
+            }
+
+            using var thumbnail = new MagickImage(data);
+            using var ms = new MemoryStream();
+            thumbnail.Format = MagickFormat.Jpg;
+            thumbnail.Quality = 85;
+            thumbnail.Write(ms);
+            return ms.ToArray();
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private byte[] FallbackDecodeThumbnail(string filePath)
+    {
+        var settings = new MagickReadSettings();
+        settings.SetDefine(MagickFormat.Unknown, "raw:use-camera-lookup-table", "false");
+
+        using var image = new MagickImage(filePath, settings);
+        image.ColorSpace = ColorSpace.sRGB;
+        image.Thumbnail(300, 300);
+        image.Format = MagickFormat.Jpg;
+        image.Quality = 80;
+        image.Strip();
+
+        using var ms = new MemoryStream();
+        image.Write(ms);
+        return ms.ToArray();
     }
 
    public async Task ConvertToPngAsync(string inputPath, string outputPath, CancellationToken cancellationToken = default)

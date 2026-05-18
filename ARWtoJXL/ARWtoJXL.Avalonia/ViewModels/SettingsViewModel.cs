@@ -46,6 +46,11 @@ namespace ARWtoJXL.Avalonia.ViewModels
             SkipMetadata = saved.SkipMetadata;
             CjxlEffort = saved.CjxlEffort;
             CjxlThreads = saved.CjxlThreads;
+
+            // Initialize selected options after loading to handle the case where
+            // the saved value equals the field default (which wouldn't trigger OnChanged)
+            SelectedEffortOption = CjxlEffortOptions.FirstOrDefault(e => e.Value == CjxlEffort);
+            SelectedThreadsOption = CjxlThreadsOptions.FirstOrDefault(e => e.Value == CjxlThreads);
         }
 
         protected override void OnPropertyChanged(PropertyChangedEventArgs e)
@@ -131,11 +136,20 @@ namespace ARWtoJXL.Avalonia.ViewModels
             public string Display { get; }
             public int Value { get; }
             public ThreadOption(string display, int value) { Display = display; Value = value; }
+
+            public override bool Equals(object? obj)
+            {
+                return obj is ThreadOption other && Value == other.Value;
+            }
+
+            public override int GetHashCode()
+            {
+                return Value.GetHashCode();
+            }
         }
 
        public static readonly EffortOption[] DefaultCjxlEffortOptions = new[]
         {
-            new EffortOption("Auto", -1),
             new EffortOption("1", 1),
             new EffortOption("2", 2),
             new EffortOption("3", 3),
@@ -173,7 +187,7 @@ namespace ARWtoJXL.Avalonia.ViewModels
         private bool _skipMetadata;
 
         [ObservableProperty]
-        private int _cjxlEffort = -1;
+        private int _cjxlEffort = 7;
 
         [ObservableProperty]
         private EffortOption? _selectedEffortOption;
@@ -182,9 +196,9 @@ namespace ARWtoJXL.Avalonia.ViewModels
 
         partial void OnCjxlEffortChanged(int value)
         {
-            if (value < -1 || value > 9)
+            if (value < 1 || value > 9)
             {
-                CjxlEffort = -1;
+                CjxlEffort = 7;
             }
             if (_syncingEffort) return;
             _syncingEffort = true;
@@ -200,19 +214,23 @@ namespace ARWtoJXL.Avalonia.ViewModels
         private ThreadOption? _selectedThreadsOption;
 
         private bool _syncingThreads;
+        private ThreadOption[]? _cachedThreadsOptions;
 
         public ThreadOption[] CjxlThreadsOptions
         {
             get
             {
-                int maxThreads = Environment.ProcessorCount;
-                var options = new ThreadOption[maxThreads + 1];
-                options[0] = new ThreadOption("Auto", -1);
-                for (int i = 1; i <= maxThreads; i++)
+                if (_cachedThreadsOptions == null)
                 {
-                    options[i] = new ThreadOption(i.ToString(), i);
+                    int maxThreads = Environment.ProcessorCount;
+                    _cachedThreadsOptions = new ThreadOption[maxThreads + 1];
+                    _cachedThreadsOptions[0] = new ThreadOption("Auto", -1);
+                    for (int i = 1; i <= maxThreads; i++)
+                    {
+                        _cachedThreadsOptions[i] = new ThreadOption(i.ToString(), i);
+                    }
                 }
-                return options;
+                return _cachedThreadsOptions;
             }
         }
 
@@ -356,6 +374,10 @@ namespace ARWtoJXL.Avalonia.ViewModels
             SkipMetadata = SelectedPreset.SkipMetadata;
             CjxlEffort = SelectedPreset.CjxlEffort;
             CjxlThreads = SelectedPreset.CjxlThreads;
+
+            // Sync selected options in case values match current ones (which wouldn't trigger OnChanged)
+            SelectedEffortOption = CjxlEffortOptions.FirstOrDefault(e => e.Value == CjxlEffort);
+            SelectedThreadsOption = CjxlThreadsOptions.FirstOrDefault(e => e.Value == CjxlThreads);
         }
 
         [RelayCommand]

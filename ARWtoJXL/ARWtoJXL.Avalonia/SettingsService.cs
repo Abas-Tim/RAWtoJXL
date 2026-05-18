@@ -46,7 +46,7 @@ namespace ARWtoJXL.Avalonia
         public bool SkipMetadata { get; set; } = false;
 
         [JsonPropertyName("cjxlEffort")]
-        public int CjxlEffort { get; set; } = -1;
+        public int CjxlEffort { get; set; } = 7;
 
         [JsonPropertyName("cjxlThreads")]
         public int CjxlThreads { get; set; } = -1;
@@ -91,7 +91,7 @@ namespace ARWtoJXL.Avalonia
         public bool SkipMetadata { get; set; } = false;
 
         [JsonPropertyName("cjxlEffort")]
-        public int CjxlEffort { get; set; } = -1;
+        public int CjxlEffort { get; set; } = 7;
 
         [JsonPropertyName("cjxlThreads")]
         public int CjxlThreads { get; set; } = -1;

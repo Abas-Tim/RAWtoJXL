@@ -9,5 +9,6 @@ namespace ARWtoJXL.Core.Interfaces
     {
         Task<MetadataProfiles> ExtractMetadataProfilesAsync(string filePath, CancellationToken cancellationToken = default);
         Task EmbedMetadataAsync(string sourcePath, string outputPath, CancellationToken cancellationToken = default);
+        Task<byte[]?> ExtractPreviewImageAsync(string filePath, CancellationToken cancellationToken = default);
     }
 }

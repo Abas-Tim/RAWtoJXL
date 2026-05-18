@@ -54,7 +54,7 @@ ARWtoJXL.Core/
 
 ### IImageService (Primary Interface)
 Defines two async operations:
-- `GetThumbnailAsync(filePath, cancellationToken)` → `byte[]`: Extracts thumbnail from RAW/JXL using Magick.NET (300x300 JPG)
+- `GetThumbnailAsync(filePath, cancellationToken)` → `byte[]`: Three-stage thumbnail: (1) exiftool `-b -PreviewImage` direct read (~10ms), (2) Magick.NET `dng:thumbnail` profile via LibRaw, (3) fast decode fallback with camera LUT disabled + nearest-neighbor resampling (300x300 JPG)
 - `ConvertToJxlAsync(inputPath, outputPath, progress, quality, outputFormat, cancellationToken, skipMetadata, effort)`: Orchestrates conversion pipeline
    - `progress` is a required `Action<double>` callback (non-nullable, no default). Fault-tolerant: exceptions from the callback are caught and logged, preventing pipeline breakage and orphaned temp files.
    - `outputFormat = OutputFormat.Jxl`: Direct PPM streaming to cjxl stdin via `StreamPpmToAsync` + writer delegate — zero intermediate disk I/O, single file open, native ImageMagick C-code encoding, followed by exiftool metadata embedding
@@ -87,7 +87,7 @@ public ImageProcessingService(
 ```
 
 ### IImageConverterService / ImageConverterService
-- `ExtractThumbnailAsync()`: Resizes image to 300x300, outputs JPEG
+- `ExtractThumbnailAsync()`: Three-stage thumbnail extraction: (1) **exiftool** `-b -PreviewImage` — fastest path, reads embedded JPEG preview directly from file at TIFF IFD1 offset (~10ms per file, works for all RAW formats including Sony ARW); (2) **Magick.NET dng:thumbnail profile** — uses `DngReadDefines.ReadThumbnail=true` + `Ping()` + `GetProfile("dng:thumbnail").ToByteArray()` — LibRaw-based extraction via ImageMagick, zero full decode; (3) **full decode fallback** — `raw:use-camera-lookup-table=false` define (skips expensive camera LUT), `Thumbnail(300,300)` (fast nearest-neighbor resampling), outputs JPEG at quality 80. Each stage catches all exceptions and returns null on failure, ensuring the next fallback path always works.
 - `ConvertToPngAsync()`: Converts ARW to 16-bit PNG in temp directory
 - `ConvertToJpegAsync()`: Converts ARW to JPEG with quality setting, creates output directory if needed
 - `ExtractToRawRgb16Async()`: Extracts raw 16-bit RGB pixel data from ARW file as byte array (big-endian, 2 bytes per channel) — legacy, superseded by `StreamPpmToAsync`
@@ -98,6 +98,7 @@ public ImageProcessingService(
 ### IExiftoolService / ExiftoolService
 - `ExtractMetadataProfilesAsync(filePath)`: Extracts EXIF, XMP, ICC, IPTC profiles using exiftool for all formats (RAW and non-RAW). Returns `MetadataProfiles` with temp file paths. Used for reading metadata from output files (e.g., tests).
 - `EmbedMetadataAsync(sourcePath, outputPath)`: Embeds EXIF, XMP, ICC metadata into output file using exiftool's `-tagsFromFile` — copies all available metadata types directly from source. Single exiftool invocation, no temp file dependencies.
+- `ExtractPreviewImageAsync(filePath)`: Extracts embedded JPEG preview image using exiftool `-b -PreviewImage` — reads preview directly from TIFF IFD1 directory at file offset level, no decode required. Returns raw JPEG bytes or null. Primary thumbnail path for Sony ARW and all other RAW formats.
 - Uses `IProcessRunner.FindExiftoolAsync()` for path resolution (fully async, no thread-pool blocking)
 - **Constructor:** `ExiftoolService(IProcessRunner processRunner, IFileService fileService, ILogger logger)`
 

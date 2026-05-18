@@ -2,10 +2,10 @@
   "version": 1,
   "isRoot": true,
   "tools": {
-    "dotnet-script": {
-      "version": "2.0.0",
+    "ilspycmd": {
+      "version": "10.0.1.8346",
       "commands": [
-        "dotnet-script"
+        "ilspycmd"
       ],
       "rollForward": false
     }

@@ -645,13 +645,19 @@ namespace ARWtoJXL.Avalonia.ViewModels
                 validPaths.Add(path);
             }
 
-            var newItems = validPaths.Select(path => new ImageItemViewModel
+            var newItems = new List<ImageItemViewModel>(validPaths.Count);
+            foreach (var path in validPaths)
             {
-                FilePath = path,
-                FileName = Path.GetFileName(path),
-                Status = ImageStatus.Ready,
-                SourceFileSize = new FileInfo(path).Length
-            }).ToList();
+                long fileSize = 0;
+                try { fileSize = new FileInfo(path).Length; } catch { }
+                newItems.Add(new ImageItemViewModel
+                {
+                    FilePath = path,
+                    FileName = Path.GetFileName(path),
+                    Status = ImageStatus.Ready,
+                    SourceFileSize = fileSize
+                });
+            }
 
             await OnUiAsync(() =>
             {
@@ -678,7 +684,7 @@ namespace ARWtoJXL.Avalonia.ViewModels
 
         private async Task GenerateThumbnailsAsync(List<ImageItemViewModel> items)
         {
-            var semaphore = new SemaphoreSlim(Math.Min(4, Environment.ProcessorCount));
+            var semaphore = new SemaphoreSlim(Math.Max(4, Environment.ProcessorCount / 2));
             var tasks = items.Select(async item =>
             {
                 await semaphore.WaitAsync();

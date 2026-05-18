@@ -204,7 +204,6 @@ public class SettingsWindowTests
 
         Assert.NotNull(effortCombo.ItemsSource);
         var options = effortCombo.ItemsSource.Cast<SettingsViewModel.EffortOption>().ToList();
-        Assert.Contains(options, o => o.Display == "Auto" && o.Value == -1);
         Assert.Contains(options, o => o.Display == "1" && o.Value == 1);
         Assert.Contains(options, o => o.Display == "9" && o.Value == 9);
     }

@@ -114,6 +114,38 @@ public class ExiftoolService : IExiftoolService
         return profiles;
     }
 
+    public async Task<byte[]?> ExtractPreviewImageAsync(string filePath, CancellationToken cancellationToken = default)
+        {
+            string? exiftoolPath = await _processRunner.FindExiftoolAsync("ExiftoolService");
+            if (string.IsNullOrEmpty(exiftoolPath))
+            {
+                _logger.Write("[ExiftoolService] exiftool.exe not found - skipping preview extraction");
+                return null;
+            }
+
+            try
+            {
+                byte[]? previewData = await _processRunner.RunProcessBinaryAsync(
+                    exiftoolPath,
+                    $"-b -PreviewImage \"{filePath}\"",
+                    cancellationToken);
+
+                if (previewData != null && previewData.Length > 0)
+                {
+                    _logger.Write($"[ExiftoolService] Preview image extracted: {previewData.Length} bytes");
+                    return previewData;
+                }
+
+                _logger.Write("[ExiftoolService] No preview image found in file");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.Write($"[ExiftoolService] Preview extraction failed: {ex.Message}");
+                return null;
+            }
+        }
+
     public async Task EmbedMetadataAsync(string sourcePath, string outputPath, CancellationToken cancellationToken = default)
     {
         await Task.Yield();
