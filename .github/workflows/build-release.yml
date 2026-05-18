@@ -1,0 +1,298 @@
+# ── CI / CD Pipeline for ARWtoJXL ────────────────────────────────────────────
+#
+#  Builds • Tests • Packages • Publishes GitHub Releases
+#
+#  Triggers:
+#    • push to main/develop          → build + upload artifacts
+#    • push of v* tags              → build + create GitHub Release
+#    • pull_request                 → build + test only
+#    • workflow_dispatch            → manual trigger (optional version tag)
+#
+#  Manual trigger example:
+#    gh workflow run build-release.yml -f version=1.2.0
+#
+# ──────────────────────────────────────────────────────────────────────────────
+
+name: Build & Release
+
+on:
+  push:
+    branches: [main, develop]
+    tags:
+      - "v*"
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Override version tag (e.g. 1.2.0)"
+        required: false
+      create_release:
+        description: "Create GitHub Release"
+        required: false
+        type: boolean
+        default: false
+
+env:
+  DOTNET_VERSION: "8.0.x"
+  CJXL_VERSION: "0.11.2"
+  EXIFTOOL_VERSION: "13.57"
+
+# ── Concurrency ─────────────────────────────────────────────────────────────
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+# ── Jobs ────────────────────────────────────────────────────────────────────
+jobs:
+  # ── 1. Build & Test ─────────────────────────────────────────────────────
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest]
+        # Add macos-latest / ubuntu-latest here when ports are available
+
+    steps:
+      # ── Checkout ───────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      # ── .NET SDK ───────────────────────────────────────────────────────
+      - name: Install .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      # ── Cache NuGet packages ───────────────────────────────────────────
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: "~/.nuget/packages"
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json', '**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      # ── Download cjxl ─────────────────────────────────────────────────
+      - name: Download cjxl
+        shell: pwsh
+        run: |
+          $url = "https://github.com/libjxl/libjxl/releases/download/v${{ env.CJXL_VERSION }}/jxl-x64-windows-static.zip"
+          $zip  = Join-Path $env:TEMP "cjxl.zip"
+          curl.exe -L -s -o $zip $url
+          $dest = Join-Path $env:TEMP "cjxl-extract"
+          New-Item -ItemType Directory -Path $dest -Force | Out-Null
+          Expand-Archive -Path $zip -DestinationPath $dest -Force
+          $exe = Get-ChildItem $dest -Filter "cjxl.exe" -Recurse | Select-Object -First 1
+          if ($exe) {
+            Copy-Item $exe.FullName "${{ github.workspace }}/ARWtoJXL/cjxl.exe" -Force
+            Write-Output "cjxl.exe downloaded successfully."
+          } else {
+            Write-Error "cjxl.exe not found in archive!"
+            exit 1
+          }
+          Remove-Item $zip, $dest -Recurse -Force -ErrorAction SilentlyContinue
+
+      # ── Download exiftool ─────────────────────────────────────────────
+      - name: Download exiftool
+        shell: pwsh
+        run: |
+          $version = "${{ env.EXIFTOOL_VERSION }}"
+          # Replace dots with nothing for the filename: 13.57 → 1357  (SourceForge convention)
+          $verNoDot = $version -replace '\.'
+          $url = "https://sourceforge.net/projects/exiftool/files/exiftool-${version}_64.zip/download"
+          $zip = Join-Path $env:TEMP "exiftool.zip"
+
+          curl.exe -L -s `
+            -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" `
+            -H "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" `
+            -o $zip $url
+
+          $bytes = [System.IO.File]::ReadAllBytes($zip)
+          if ($bytes[0] -eq 80 -and $bytes[1] -eq 75) {
+            $dest = Join-Path $env:TEMP "exiftool-extract"
+            New-Item -ItemType Directory -Path $dest -Force | Out-Null
+            Expand-Archive -Path $zip -DestinationPath $dest -Force
+
+            $exe = Get-ChildItem $dest -Filter "exiftool*.exe" -Recurse | Select-Object -First 1
+            if ($exe) {
+              Copy-Item $exe.FullName "${{ github.workspace }}/ARWtoJXL/exiftool.exe" -Force
+            }
+
+            $filesDir = Get-ChildItem $dest -Filter "exiftool_files" -Directory -Recurse | Select-Object -First 1
+            if ($filesDir) {
+              Copy-Item $filesDir.FullName "${{ github.workspace }}/ARWtoJXL/exiftool_files" -Recurse -Force
+            }
+
+            Remove-Item $dest -Recurse -Force
+          }
+          Remove-Item $zip -Force -ErrorAction SilentlyContinue
+          Write-Output "exiftool downloaded successfully."
+
+      # ── Restore ────────────────────────────────────────────────────────
+      - name: Restore dependencies
+        run: dotnet restore ARWtoJXL/ARWtoJXL.sln
+        working-directory: ${{ github.workspace }}
+
+      # ── Build ──────────────────────────────────────────────────────────
+      - name: Build solution
+        run: dotnet build ARWtoJXL/ARWtoJXL.sln --configuration Release --no-restore
+
+      # ── Test ───────────────────────────────────────────────────────────
+      - name: Run tests
+        run: dotnet test ARWtoJXL/ARWtoJXL.sln --configuration Release --no-build --verbosity normal
+        continue-on-error: false
+
+      # ── Publish self-contained ─────────────────────────────────────────
+      - name: Publish self-contained win-x64
+        shell: pwsh
+        run: |
+          $project = "ARWtoJXL/ARWtoJXL.Avalonia/ARWtoJXL.Avalonia.csproj"
+          dotnet publish $project `
+            -c Release `
+            -r win-x64 `
+            --self-contained true `
+            -p:DebugType=None `
+            -p:DebugSymbols=false `
+            -o "${{ github.workspace }}/publish"
+
+      # ── Copy dependencies to publish ───────────────────────────────────
+      - name: Bundle dependencies
+        shell: pwsh
+        run: |
+          Copy-Item "${{ github.workspace }}/ARWtoJXL/cjxl.exe" "${{ github.workspace }}/publish/" -Force
+          Copy-Item "${{ github.workspace }}/ARWtoJXL/exiftool.exe" "${{ github.workspace }}/publish/" -Force
+          if (Test-Path "${{ github.workspace }}/ARWtoJXL/exiftool_files") {
+            Copy-Item "${{ github.workspace }}/ARWtoJXL/exiftool_files" "${{ github.workspace }}/publish/" -Recurse -Force
+          }
+
+      # ── Resolve version ───────────────────────────────────────────────
+      - name: Resolve version
+        id: version
+        shell: pwsh
+        run: |
+          # Prefer manual override
+          $v = "${{ github.event.inputs.version }}"
+          if (-not $v) {
+            # Fall back to git tag (strip leading 'v')
+            if ($env:GITHUB_REF -match 'refs/tags/v?(.+)') {
+              $v = $matches[1]
+            } else {
+              # Fall back to csproj <Version>
+              $csproj = Get-Content "${{ github.workspace }}/ARWtoJXL/ARWtoJXL.Avalonia/ARWtoJXL.Avalonia.csproj" -Raw
+              if ($csproj -match '<Version>([^<]+)</Version>') {
+                $v = $matches[1].Trim()
+              } else {
+                $v = "1.0.0"
+              }
+            }
+          }
+          Write-Output "version=$v"
+          echo "version=$v" >> $env:GITHUB_OUTPUT
+
+      # ── Pack ZIP ──────────────────────────────────────────────────────
+      - name: Create portable ZIP
+        id: package
+        shell: pwsh
+        run: |
+          $version   = "${{ steps.version.outputs.version }}"
+          $name      = "ARWtoJXL-${version}-win-x64"
+          $zipPath   = "${{ github.workspace }}/${name}.zip"
+          Compress-Archive `
+            -Path "${{ github.workspace }}/publish/*" `
+            -DestinationPath $zipPath `
+            -CompressionLevel Optimal
+          $sizeMB = [math]::Round((Get-Item $zipPath).Length / 1MB, 2)
+          Write-Output "archive_name=$name"
+          Write-Output "archive_path=$zipPath"
+          Write-Output "archive_size=${sizeMB}MB"
+          echo "archive_name=$name" >> $env:GITHUB_OUTPUT
+          echo "archive_path=$zipPath" >> $env:GITHUB_OUTPUT
+
+      # ── Compute checksums ─────────────────────────────────────────────
+      - name: Compute SHA-256 checksum
+        id: checksum
+        shell: pwsh
+        run: |
+          $zip   = "${{ steps.package.outputs.archive_path }}"
+          $hash  = (Get-FileHash -Path $zip -Algorithm SHA256).Hash
+          $sha   = "${zip}.sha256"
+          $hash  | Out-File -FilePath $sha -Encoding ASCII
+          Write-Output "sha256=$hash"
+          echo "sha256=$hash" >> $env:GITHUB_OUTPUT
+
+      # ── Upload artifacts (for non-tag builds) ─────────────────────────
+      - name: Upload build artifacts
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.package.outputs.archive_name }}
+          path: |
+            ${{ steps.package.outputs.archive_path }}
+            ${{ steps.package.outputs.archive_path }}.sha256
+          retention-days: 14
+
+  # ── 2. Publish GitHub Release ──────────────────────────────────────────
+  release:
+    name: Publish Release
+    runs-on: ubuntu-latest
+    needs: build
+    if: ${{ startsWith(github.ref, 'refs/tags/v') || github.event.inputs.create_release == 'true' }}
+    permissions:
+      contents: write
+
+    steps:
+      # ── Download artifacts from build job ────────────────────────────
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ARWtoJXL-${{ github.event.inputs.version || github.ref_name }}-win-x64
+          path: ${{ github.workspace }}/artifacts
+
+      # ── Resolve version ──────────────────────────────────────────────
+      - name: Resolve version
+        id: version
+        shell: pwsh
+        run: |
+          $v = "${{ github.event.inputs.version }}"
+          if (-not $v) {
+            $ref = "${{ github.ref_name }}"
+            if ($ref -match '^v?') { $v = $ref -replace '^v', '' }
+            else { $v = "1.0.0" }
+          }
+          echo "version=$v" >> $env:GITHUB_OUTPUT
+          echo "tag=v$v" >> $env:GITHUB_OUTPUT
+
+      # ── Create or update GitHub Release ──────────────────────────────
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          ARTIFACT_DIR="${{ github.workspace }}/artifacts"
+
+          # Check if release already exists
+          if gh release view "$TAG" --json id --jq .id > /dev/null 2>&1; then
+            echo "Release $TAG already exists. Uploading assets..."
+            gh release upload "$TAG" "$ARTIFACT_DIR"/* --clobber
+          else
+            echo "Creating release $TAG..."
+            gh release create "$TAG" \
+              "$ARTIFACT_DIR"/* \
+              --title "ARWtoJXL ${{ steps.version.outputs.version }}" \
+              --generate-notes
+          fi
+
+      # ── Release summary ──────────────────────────────────────────────
+      - name: Release summary
+        run: |
+          echo "## 📦 Release ${{ steps.version.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version:** ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Runtime:** win-x64" >> $GITHUB_STEP_SUMMARY
+          echo "- **Assets uploaded:**" >> $GITHUB_STEP_SUMMARY
+          ls -la "${{ github.workspace }}/artifacts/" >> $GITHUB_STEP_SUMMARY 2>&1 || true
