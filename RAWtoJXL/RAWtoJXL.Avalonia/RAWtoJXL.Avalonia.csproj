@@ -7,6 +7,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
+    <Version>0.1</Version>
+    <Authors>Timur Abasov</Authors>
+    <Description>Windows desktop app converting RAW camera files to JPEG-XL, JPEG, or PNG.</Description>
+    <RepositoryUrl>https://github.com/yourname/RAWtoJXL</RepositoryUrl>
+    <PackageTags>raw;jxl;jpeg-xl;image-conversion;photography</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>

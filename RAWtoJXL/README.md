@@ -1,4 +1,4 @@
-# ARW to JXL Converter
+# RAWtoJXL
 
 Windows desktop app (.NET 8, Avalonia 12) converting RAW camera files to JPEG-XL, JPEG, or PNG.
 

@@ -4,6 +4,10 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <Authors>Timur Abasov</Authors>
+    <Description>Windows desktop app converting RAW camera files to JPEG-XL, JPEG, or PNG.</Description>
+    <RepositoryUrl>https://github.com/yourname/RAWtoJXL</RepositoryUrl>
+    <PackageTags>raw;jxl;jpeg-xl;image-conversion;photography</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
