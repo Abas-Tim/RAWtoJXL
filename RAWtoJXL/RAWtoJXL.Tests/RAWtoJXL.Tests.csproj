@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+     <PackageReference Include="Avalonia" Version="12.0.1" />
+     <PackageReference Include="Avalonia.Controls.ItemsRepeater" Version="12.0.0" />
+     <PackageReference Include="Avalonia.Headless.XUnit" Version="12.0.1" />
+     <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="Moq" Version="4.20.72" />
+    <PackageReference Include="xunit.v3" Version="3.2.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RAWtoJXL.Core\RAWtoJXL.Core.csproj" />
+    <ProjectReference Include="..\RAWtoJXL.Avalonia\RAWtoJXL.Avalonia.csproj" />
+    <None Include="..\cjxl.exe" Condition="Exists('..\cjxl.exe')" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\exiftool.exe" Condition="Exists('..\exiftool.exe')" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\exiftool_files\**\*.*" Condition="Exists('..\exiftool_files')">
+      <Link>exiftool_files\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="test1.ARW" Condition="Exists('test1.ARW')" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

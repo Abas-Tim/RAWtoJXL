@@ -1,7 +1,0 @@
-<Solution>
-  <Folder Name="/ARWtoJXL/">
-    <Project Path="ARWtoJXL/ARWtoJXL.Core/ARWtoJXL.Core.csproj" />
-    <Project Path="ARWtoJXL/ARWtoJXL.Tests/ARWtoJXL.Tests.csproj" />
-    <Project Path="ARWtoJXL/ARWtoJXL.Avalonia/ARWtoJXL.Avalonia.csproj" />
-  </Folder>
-</Solution>

@@ -1,0 +1,227 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:RAWtoJXL.Avalonia.ViewModels"
+        xmlns:local="using:RAWtoJXL.Avalonia"
+        xmlns:conv="using:RAWtoJXL.Avalonia.Converters"
+        xmlns:behaviors="using:RAWtoJXL.Avalonia.Behaviors"
+        xmlns:controls="using:Avalonia.Controls"
+        xmlns:ir="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls.ItemsRepeater"
+        xmlns:layout="clr-namespace:Avalonia.Layout;assembly=Avalonia.Controls.ItemsRepeater"
+        x:Class="RAWtoJXL.Avalonia.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Title="ARW to JXL Converter"
+        Width="1000" Height="750"
+        MinWidth="800" MinHeight="600"
+        WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <conv:ImageStatusToStringConverter x:Key="ImageStatusToStringConverter"/>
+        <conv:ImageStatusToVisibilityConverter x:Key="ImageStatusToVisibilityConverter"/>
+        <conv:BooleanToBrushConverter x:Key="BooleanToBrushConverter"/>
+        <conv:BooleanToTextConverter x:Key="BooleanToTextConverter"/>
+        <conv:BooleanToValueConverter x:Key="BooleanToValueConverter"/>
+        <conv:NullableIntConverter x:Key="NullableIntConverter"/>
+        <conv:IntToDoubleConverter x:Key="IntToDoubleConverter"/>
+        <conv:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
+    </Window.Resources>
+
+    <Grid behaviors:DragDropBehavior.EnableDragDrop="True" DragDrop.AllowDrop="True">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0"
+                Background="Transparent"
+                BorderBrush="Gray"
+                BorderThickness="0,0,0,1"
+                Padding="15,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <Menu>
+                        <MenuItem Header="_File">
+                            <MenuItem Header="_Open File" Command="{Binding OpenFileCommand}"/>
+                            <MenuItem Header="Open _Folder" Command="{Binding OpenFolderCommand}"/>
+                           <MenuItem IsEnabled="{Binding HasRecentFiles}" Click="RecentMenuItemClicked">
+                                  <MenuItem.Header>
+                                      <Grid x:Name="RecentHeaderGrid"
+                                            HorizontalAlignment="Stretch"
+                                            Background="Transparent"
+                                            PointerEntered="RecentPointerEntered" PointerExited="RecentPointerExited">
+                                          <TextBlock Text="Recent" HorizontalAlignment="Stretch"/>
+                                         <Popup IsOpen="{Binding IsRecentHovered}"
+                                                PlacementTarget="{Binding ElementName=RecentHeaderGrid}"
+                                                Placement="RightEdgeAlignedTop"
+                                                HorizontalOffset="4"
+                                                MaxWidth="350">
+                                         <Border Background="White" BorderBrush="Gray" BorderThickness="1" Padding="4"
+                                                      PointerEntered="RecentPopupPointerEntered" PointerExited="RecentPopupPointerExited"
+                                                      PointerPressed="RecentPopupPointerPressed" PointerReleased="RecentPopupPointerReleased">
+                                                  <ScrollViewer MaxHeight="200"
+                                                                PointerEntered="RecentPopupPointerEntered" PointerExited="RecentPopupPointerExited"
+                                                                PointerPressed="RecentPopupPointerPressed" PointerReleased="RecentPopupPointerReleased">
+                                                      <ItemsControl ItemsSource="{Binding RecentFiles}"
+                                                                    PointerEntered="RecentPopupPointerEntered" PointerExited="RecentPopupPointerExited"
+                                                                    PointerPressed="RecentPopupPointerPressed" PointerReleased="RecentPopupPointerReleased">
+                                                          <ItemsControl.ItemTemplate>
+                                                              <DataTemplate>
+                                                                  <Button Click="RecentFileClicked" Tag="{Binding}"
+                                                                          Classes="menu-item"
+                                                                          Padding="8,4"
+                                                                          HorizontalAlignment="Stretch"
+                                                                          Margin="0"
+                                                                          Background="Transparent">
+                                                                      <TextBlock Text="{Binding}"
+                                                                                 FontSize="10"
+                                                                                 TextTrimming="CharacterEllipsis"
+                                                                                 MaxWidth="340"
+                                                                                 HorizontalAlignment="Stretch"
+                                                                                 ToolTip.Tip="{Binding}"/>
+                                                                  </Button>
+                                                              </DataTemplate>
+                                                          </ItemsControl.ItemTemplate>
+                                                      </ItemsControl>
+                                                  </ScrollViewer>
+                                              </Border>
+                                         </Popup>
+                                     </Grid>
+                                 </MenuItem.Header>
+                             </MenuItem>
+                            <MenuItem Header="_Load All" Command="{Binding LoadRecentFilesCommand}"/>
+                            <MenuItem Header="C_lear Recent" Command="{Binding ClearRecentFilesCommand}"/>
+                        </MenuItem>
+                        <MenuItem Header="_List">
+                            <MenuItem Command="{Binding SelectAllCommand}">
+                                <MenuItem.Header>
+                                    <TextBlock Text="{Binding IsAllSelected, Converter={StaticResource BooleanToTextConverter}}"/>
+                                </MenuItem.Header>
+                            </MenuItem>
+                            <MenuItem Header="_Remove" Command="{Binding RemoveSelectedCommand}"/>
+                        </MenuItem>
+                    </Menu>
+                    <Button Content="Convert"
+                            Command="{Binding ConvertSelectedCommand}"
+                            Margin="0,0,8,0"
+                            Classes="accent"/>
+                    <Button Content="Cancel"
+                            Command="{Binding CancelCommand}"
+                            Margin="0,0,8,0"
+                            Classes="danger"
+                            IsVisible="{Binding IsConverting}"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Content="Settings"
+                            Command="{Binding OpenSettingsCommand}"
+                            Margin="0,0,12,0"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <ScrollViewer Grid.Row="1" Margin="15">
+            <ir:ItemsRepeater ItemsSource="{Binding Images}" x:Name="ImagesRepeater">
+                <ir:ItemsRepeater.Layout>
+                    <layout:UniformGridLayout MinItemWidth="200"
+                                              MinColumnSpacing="8"
+                                              MinRowSpacing="8"/>
+                </ir:ItemsRepeater.Layout>
+                <ir:ItemsRepeater.ItemTemplate>
+                    <DataTemplate x:DataType="vm:ImageItemViewModel">
+                        <Border Background="Transparent"
+                                BorderBrush="Gray"
+                                BorderThickness="1"
+                                Padding="10"
+                                Width="200"
+                                CornerRadius="4">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                    <CheckBox IsChecked="{Binding IsSelected}"
+                                              VerticalAlignment="Center"
+                                              Margin="0,0,6,0"/>
+                                    <TextBlock Text="{Binding FileName}"
+                                               FontSize="11"
+                                               VerticalAlignment="Center"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseBrush}"
+                                               TextTrimming="CharacterEllipsis"
+                                               MaxWidth="110"/>
+                                    <TextBlock Text="{Binding SourceFileSizeText}"
+                                               FontSize="10"
+                                               VerticalAlignment="Center"
+                                               Foreground="Gray"
+                                               Margin="4,0,0,0"
+                                               IsVisible="{Binding SourceFileSizeText, Converter={StaticResource StringToVisibilityConverter}}"/>
+                                </StackPanel>
+
+                                <Image Source="{Binding Thumbnail}"
+                                       Height="120"
+                                       Stretch="Uniform"
+                                       Margin="0,0,0,6"/>
+
+                                <Grid Margin="0,0,0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="Q:" FontSize="10" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                    <Slider Grid.Column="1" Minimum="0" Maximum="100"
+                                            Value="{Binding QualitySliderValue, Mode=TwoWay}"
+                                            VerticalAlignment="Center"
+                                            ToolTip.Tip="Drag to set quality (0-100)"/>
+                                </Grid>
+                           <TextBlock Text="{Binding SizeInfoText}"
+                                                FontSize="10"
+                                                Foreground="Green"
+                                                Margin="8,0,0,2"
+                                                VerticalAlignment="Center"
+                                                Opacity="{Binding SizeInfoText, Converter={StaticResource StringToVisibilityConverter}}"/>
+
+                              <Button Content="Open folder"
+                                         Command="{Binding OpenOutputFolderCommand}"
+                                         FontSize="10"
+                                         Padding="4,2"
+                                         Margin="0,2,0,0"
+                                         HorizontalAlignment="Left"
+                                         Classes="link"
+                                         Opacity="{Binding OutputPath, Converter={StaticResource StringToVisibilityConverter}}"
+                                         IsEnabled="{Binding OutputPath, Converter={StaticResource StringToVisibilityConverter}}"/>
+
+                                 <ProgressBar Height="3"
+                                             IsIndeterminate="True"
+                                             IsVisible="{Binding Status, Converter={StaticResource ImageStatusToVisibilityConverter}, ConverterParameter='Converting'}"
+                                             Margin="0,0,0,4"/>
+
+                                <TextBlock Text="{Binding ErrorMessage}"
+                                           FontSize="10"
+                                           Foreground="Red"
+                                           IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToVisibilityConverter}}"/>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ir:ItemsRepeater.ItemTemplate>
+            </ir:ItemsRepeater>
+        </ScrollViewer>
+
+        <Border Grid.Row="2"
+                Background="Transparent"
+                BorderBrush="Gray"
+                BorderThickness="0,1,0,0"
+                Padding="15,10">
+            <StackPanel>
+                <ProgressBar Minimum="0"
+                             Maximum="{Binding TotalCount, Converter={StaticResource BooleanToValueConverter}, ConverterParameter='DefaultIfZero'}"
+                             Value="{Binding CompletedCount}"
+                             Height="5"
+                             Margin="0,0,0,8"/>
+              <TextBlock Text="{Binding StatusMessage}"
+                            HorizontalAlignment="Center"
+                            FontSize="11"
+                            Margin="0,0,0,4"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

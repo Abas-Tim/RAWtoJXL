@@ -1,4 +1,4 @@
-# ARWtoJXL - Project Overview
+# RAWtoJXL - Project Overview
 
 ## Summary
 
@@ -7,23 +7,23 @@ Windows desktop app (.NET 8, Avalonia 12 UI) that converts RAW camera files to J
 ## Repository Layout
 
 ```
-ARWtoJPEGXL/
+RAWtoJXL/
 ├── .gitignore
-├── ARWtoJXL.slnx                          # Solution matrix
+├── RAWtoJXL.slnx                          # Solution matrix
 ├── THIRD-PARTY-NOTICES.md                 # License notices for all dependencies
 ├── docs/
 │   └── PROJECT_OVERVIEW.md               # This file
-└── ARWtoJXL/
+└── RAWtoJXL/
     ├── build.ps1                          # Build script (restore, download deps, publish)
     ├── cjxl.exe                           # JPEG XL encoder v0.11.2 (downloaded at build time)
     ├── exiftool.exe                       # Metadata tool v13.57 (downloaded at build time)
     ├── exiftool_files/                    # exiftool companion Perl runtime DLLs
-    ├── ARWtoJXL.sln
-    ├── ARWtoJXL.Core/                     # Business logic layer
+    ├── RAWtoJXL.sln
+    ├── RAWtoJXL.Core/                     # Business logic layer
     │   └── docs/PROJECT.md               # Core project documentation
-    ├── ARWtoJXL.Avalonia/                      # Avalonia UI presentation layer
+    ├── RAWtoJXL.Avalonia/                      # Avalonia UI presentation layer
     │   └── docs/PROJECT.md               # Avalonia project documentation
-    └── ARWtoJXL.Tests/                    # xUnit test suite
+    └── RAWtoJXL.Tests/                    # xUnit test suite
         └── docs/PROJECT.md               # Tests project documentation
 ```
 
@@ -31,22 +31,22 @@ ARWtoJPEGXL/
 
 Each project maintains its own documentation with detailed information on architecture, services, components, and dependencies:
 
-- **ARWtoJXL.Core** — `ARWtoJXL/ARWtoJXL.Core/docs/PROJECT.md`
+- **RAWtoJXL.Core** — `RAWtoJXL/RAWtoJXL.Core/docs/PROJECT.md`
   - Services, interfaces, DI registration, conversion pipeline, file lock handling, concurrency model, enums
 
-- **ARWtoJXL.Avalonia** — `ARWtoJXL/ARWtoJXL.Avalonia/docs/PROJECT.md`
+- **RAWtoJXL.Avalonia** — `RAWtoJXL/RAWtoJXL.Avalonia/docs/PROJECT.md`
   - UI/UX flow, view models, UI components, settings, selection logic
 
-- **ARWtoJXL.Tests** — `ARWtoJXL/ARWtoJXL.Tests/docs/PROJECT.md`
+- **RAWtoJXL.Tests** — `RAWtoJXL/RAWtoJXL.Tests/docs/PROJECT.md`
   - Test configuration, test suites, DI setup for tests
 
 ## Build/Deploy
 
-- `build.ps1` (in `ARWtoJXL/`): checks cjxl.exe exists, downloads exiftool v13.57 if missing (from SourceForge), copies both to publish dir, then `dotnet restore` + `dotnet publish`
+- `build.ps1` (in `RAWtoJXL/`): checks cjxl.exe exists, downloads exiftool v13.57 if missing (from SourceForge), copies both to publish dir, then `dotnet restore` + `dotnet publish`
 - Single-file publish: `dotnet publish -c Release -r win-x64 --self-contained true -p:DebugType=None -p:DebugSymbols=false`
 - cjxl.exe + exiftool.exe + exiftool_files/ copied to output via `<None Include="..\*.exe" CopyToOutputDirectory="PreserveNewest" />`
-- Tests: `dotnet test ARWtoJXL.Tests.csproj`
-- GUI tests: `dotnet test ARWtoJXL.Tests.csproj --filter "category=gui"`
+- Tests: `dotnet test RAWtoJXL.Tests.csproj`
+- GUI tests: `dotnet test RAWtoJXL.Tests.csproj --filter "category=gui"`
 
 ## Git LFS
 

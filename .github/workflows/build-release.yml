@@ -1,4 +1,4 @@
-# ── CI / CD Pipeline for ARWtoJXL ────────────────────────────────────────────
+# ── CI / CD Pipeline for RAWtoJXL ────────────────────────────────────────────
 #
 #  Builds • Tests • Packages • Publishes GitHub Releases
 #
@@ -89,7 +89,7 @@ jobs:
           Expand-Archive -Path $zip -DestinationPath $dest -Force
           $exe = Get-ChildItem $dest -Filter "cjxl.exe" -Recurse | Select-Object -First 1
           if ($exe) {
-            Copy-Item $exe.FullName "${{ github.workspace }}/ARWtoJXL/cjxl.exe" -Force
+            Copy-Item $exe.FullName "${{ github.workspace }}/RAWtoJXL/cjxl.exe" -Force
             Write-Output "cjxl.exe downloaded successfully."
           } else {
             Write-Error "cjxl.exe not found in archive!"
@@ -120,12 +120,12 @@ jobs:
 
             $exe = Get-ChildItem $dest -Filter "exiftool*.exe" -Recurse | Select-Object -First 1
             if ($exe) {
-              Copy-Item $exe.FullName "${{ github.workspace }}/ARWtoJXL/exiftool.exe" -Force
+              Copy-Item $exe.FullName "${{ github.workspace }}/RAWtoJXL/exiftool.exe" -Force
             }
 
             $filesDir = Get-ChildItem $dest -Filter "exiftool_files" -Directory -Recurse | Select-Object -First 1
             if ($filesDir) {
-              Copy-Item $filesDir.FullName "${{ github.workspace }}/ARWtoJXL/exiftool_files" -Recurse -Force
+              Copy-Item $filesDir.FullName "${{ github.workspace }}/RAWtoJXL/exiftool_files" -Recurse -Force
             }
 
             Remove-Item $dest -Recurse -Force
@@ -135,23 +135,23 @@ jobs:
 
       # ── Restore ────────────────────────────────────────────────────────
       - name: Restore dependencies
-        run: dotnet restore ARWtoJXL/ARWtoJXL.sln
+        run: dotnet restore RAWtoJXL/RAWtoJXL.sln
         working-directory: ${{ github.workspace }}
 
       # ── Build ──────────────────────────────────────────────────────────
       - name: Build solution
-        run: dotnet build ARWtoJXL/ARWtoJXL.sln --configuration Release --no-restore
+        run: dotnet build RAWtoJXL/RAWtoJXL.sln --configuration Release --no-restore
 
       # ── Test ───────────────────────────────────────────────────────────
       - name: Run tests
-        run: dotnet test ARWtoJXL/ARWtoJXL.sln --configuration Release --no-build --verbosity normal
+        run: dotnet test RAWtoJXL/RAWtoJXL.sln --configuration Release --no-build --verbosity normal
         continue-on-error: false
 
       # ── Publish self-contained ─────────────────────────────────────────
       - name: Publish self-contained win-x64
         shell: pwsh
         run: |
-          $project = "ARWtoJXL/ARWtoJXL.Avalonia/ARWtoJXL.Avalonia.csproj"
+          $project = "RAWtoJXL/RAWtoJXL.Avalonia/RAWtoJXL.Avalonia.csproj"
           dotnet publish $project `
             -c Release `
             -r win-x64 `
@@ -164,10 +164,10 @@ jobs:
       - name: Bundle dependencies
         shell: pwsh
         run: |
-          Copy-Item "${{ github.workspace }}/ARWtoJXL/cjxl.exe" "${{ github.workspace }}/publish/" -Force
-          Copy-Item "${{ github.workspace }}/ARWtoJXL/exiftool.exe" "${{ github.workspace }}/publish/" -Force
-          if (Test-Path "${{ github.workspace }}/ARWtoJXL/exiftool_files") {
-            Copy-Item "${{ github.workspace }}/ARWtoJXL/exiftool_files" "${{ github.workspace }}/publish/" -Recurse -Force
+          Copy-Item "${{ github.workspace }}/RAWtoJXL/cjxl.exe" "${{ github.workspace }}/publish/" -Force
+          Copy-Item "${{ github.workspace }}/RAWtoJXL/exiftool.exe" "${{ github.workspace }}/publish/" -Force
+          if (Test-Path "${{ github.workspace }}/RAWtoJXL/exiftool_files") {
+            Copy-Item "${{ github.workspace }}/RAWtoJXL/exiftool_files" "${{ github.workspace }}/publish/" -Recurse -Force
           }
 
       # ── Resolve version ───────────────────────────────────────────────
@@ -183,7 +183,7 @@ jobs:
               $v = $matches[1]
             } else {
               # Fall back to csproj <Version>
-              $csproj = Get-Content "${{ github.workspace }}/ARWtoJXL/ARWtoJXL.Avalonia/ARWtoJXL.Avalonia.csproj" -Raw
+              $csproj = Get-Content "${{ github.workspace }}/RAWtoJXL/RAWtoJXL.Avalonia/RAWtoJXL.Avalonia.csproj" -Raw
               if ($csproj -match '<Version>([^<]+)</Version>') {
                 $v = $matches[1].Trim()
               } else {
@@ -200,7 +200,7 @@ jobs:
         shell: pwsh
         run: |
           $version   = "${{ steps.version.outputs.version }}"
-          $name      = "ARWtoJXL-${version}-win-x64"
+          $name      = "RAWtoJXL-${version}-win-x64"
           $zipPath   = "${{ github.workspace }}/${name}.zip"
           Compress-Archive `
             -Path "${{ github.workspace }}/publish/*" `
@@ -250,7 +250,7 @@ jobs:
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
-          name: ARWtoJXL-${{ github.event.inputs.version || github.ref_name }}-win-x64
+          name: RAWtoJXL-${{ github.event.inputs.version || github.ref_name }}-win-x64
           path: ${{ github.workspace }}/artifacts
 
       # ── Resolve version ──────────────────────────────────────────────
@@ -283,7 +283,7 @@ jobs:
             echo "Creating release $TAG..."
             gh release create "$TAG" \
               "$ARTIFACT_DIR"/* \
-              --title "ARWtoJXL ${{ steps.version.outputs.version }}" \
+              --title "RAWtoJXL ${{ steps.version.outputs.version }}" \
               --generate-notes
           fi
 

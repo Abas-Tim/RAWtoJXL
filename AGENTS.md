@@ -111,12 +111,12 @@ For review, debugging, or analysis outputs, use: findings with references, concl
 - Don't rely on knowledge from within the model(yourself). Unless absolutely sure use web search if available and try to get more precise info from web.
 - Do not use absolute paths. Use relative and make adapters for paths of different OSs
 - Do not select or execute easiest solutions, select the ones that work best
-- There can be a log file in temp folder with execution logs. Example of path `C:\Users\AccountName\AppData\Local\Temp\ARWtoJXL.log`. Read it for more context when testing and debugging.
+- There can be a log file in temp folder with execution logs. Example of path `C:\Users\AccountName\AppData\Local\Temp\RAWtoJXL.log`. Read it for more context when testing and debugging.
 - **Before reading source files, check the documentation for the project you are working on:**
   - Root overview: `docs/PROJECT_OVERVIEW.md`
-  - Core project: `ARWtoJXL/ARWtoJXL.Core/docs/PROJECT.md`
-  - Avalonia GUI project: `ARWtoJXL/ARWtoJXL.Avalonia/docs/PROJECT.md`
-  - Tests project: `ARWtoJXL/ARWtoJXL.Tests/docs/PROJECT.md`
+  - Core project: `RAWtoJXL/RAWtoJXL.Core/docs/PROJECT.md`
+  - Avalonia GUI project: `RAWtoJXL/RAWtoJXL.Avalonia/docs/PROJECT.md`
+  - Tests project: `RAWtoJXL/RAWtoJXL.Tests/docs/PROJECT.md`
 - **Write code with no duplication. Design with DI in mind — depend on interfaces, not concrete implementations.**
 - **After any source code changes, update the corresponding project's `docs/PROJECT.md` to reflect the new state.**
 - **After changes affecting the overall project structure, update `docs/PROJECT_OVERVIEW.md`.**

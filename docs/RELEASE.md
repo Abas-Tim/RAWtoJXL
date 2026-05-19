@@ -1,6 +1,6 @@
 # Release Guide
 
-This document explains how to build portable Windows releases of ARWtoJXL and
+This document explains how to build portable Windows releases of RAWtoJXL and
 publish them to GitHub Releases.
 
 ---
@@ -10,7 +10,7 @@ publish them to GitHub Releases.
 ### Local Build (PowerShell)
 
 ```powershell
-cd ARWtoJXL
+cd RAWtoJXL
 .\build-release.ps1
 ```
 
@@ -19,9 +19,9 @@ This will:
 1. Download `cjxl.exe` and `exiftool.exe` (if not already present).
 2. Restore NuGet packages and publish a self-contained `win-x64` executable.
 3. Bundle dependencies into the output folder.
-4. Create a portable ZIP archive in `ARWtoJXL/artifacts/`.
+4. Create a portable ZIP archive in `RAWtoJXL/artifacts/`.
 
-The resulting archive is named `ARWtoJXL-{version}-win-x64.zip`.
+The resulting archive is named `RAWtoJXL-{version}-win-x64.zip`.
 
 ### Options
 
@@ -85,7 +85,7 @@ After a local build, upload the ZIP to a GitHub Release:
 
 ```powershell
 # Build locally
-cd ARWtoJXL
+cd RAWtoJXL
 .\build-release.ps1 -Version "1.2.0"
 
 # Create release and upload artifacts\*.zip + *.sha256
@@ -107,7 +107,7 @@ The version is resolved in the following order (first match wins):
 | Fallback          | `1.0.0`                      |
 
 To set a version in the project file, add to
-`ARWtoJXL.Avalonia/ARWtoJXL.Avalonia.csproj`:
+`RAWtoJXL.Avalonia/RAWtoJXL.Avalonia.csproj`:
 
 ```xml
 <PropertyGroup>
@@ -123,15 +123,15 @@ Each release includes:
 
 | Asset                                | Description                        |
 |--------------------------------------|------------------------------------|
-| `ARWtoJXL-{version}-win-x64.zip`     | Portable ZIP with all binaries     |
-| `ARWtoJXL-{version}-win-x64.zip.sha256` | SHA-256 checksum for verification |
+| `RAWtoJXL-{version}-win-x64.zip`     | Portable ZIP with all binaries     |
+| `RAWtoJXL-{version}-win-x64.zip.sha256` | SHA-256 checksum for verification |
 
 ### Verifying a Download
 
 ```powershell
 # Download the ZIP and .sha256 file, then verify:
-$expected = Get-Content ARWtoJXL-1.2.0-win-x64.zip.sha256
-$actual   = (Get-FileHash ARWtoJXL-1.2.0-win-x64.zip -Algorithm SHA256).Hash
+$expected = Get-Content RAWtoJXL-1.2.0-win-x64.zip.sha256
+$actual   = (Get-FileHash RAWtoJXL-1.2.0-win-x64.zip -Algorithm SHA256).Hash
 if ($expected -eq $actual) {
     Write-Host "Checksum verified!" -ForegroundColor Green
 } else {
@@ -158,13 +158,13 @@ if ($expected -eq $actual) {
 ### `cjxl.exe not found`
 
 The build script downloads cjxl from the libjxl GitHub Releases page. If the
-download fails, place `cjxl.exe` manually in the `ARWtoJXL/` folder or use
+download fails, place `cjxl.exe` manually in the `RAWtoJXL/` folder or use
 `-SkipDownload` after a manual download from:
 <https://github.com/libjxl/libjxl/releases>
 
 ### `exiftool.exe not found`
 
-Same as above — download from <https://exiftool.org/> and place in `ARWtoJXL/`.
+Same as above — download from <https://exiftool.org/> and place in `RAWtoJXL/`.
 
 ### GitHub Release fails with "artifact not found"
 

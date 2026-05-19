@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/RAWtoJXL/">
+    <Project Path="RAWtoJXL/RAWtoJXL.Core/RAWtoJXL.Core.csproj" />
+    <Project Path="RAWtoJXL/RAWtoJXL.Tests/RAWtoJXL.Tests.csproj" />
+    <Project Path="RAWtoJXL/RAWtoJXL.Avalonia/RAWtoJXL.Avalonia.csproj" />
+  </Folder>
+</Solution>
