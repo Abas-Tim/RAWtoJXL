@@ -3,7 +3,7 @@
 #  Builds • Tests • Packages • Publishes GitHub Releases
 #
 #  Triggers:
-#    • push to main/develop          → build + upload artifacts
+#    • push to master/develop          → build + upload artifacts
 #    • push of v* tags              → build + create GitHub Release
 #    • pull_request                 → build + test only
 #    • workflow_dispatch            → manual trigger (optional version tag)
@@ -17,11 +17,11 @@ name: Build & Release
 
 on:
   push:
-    branches: [main, develop]
+    branches: [master, develop]
     tags:
       - "v*"
   pull_request:
-    branches: [main]
+    branches: [master]
   workflow_dispatch:
     inputs:
       version:

@@ -15,7 +15,7 @@ public class MainWindowStructuralTests
     public void MainWindow_Opens_And_HasExpectedTitle()
     {
         var window = GUITestHelpers.CreateWindow();
-        Assert.Equal("ARW to JXL Converter", window.Title);
+        Assert.Equal("RAW to JXL Converter", window.Title);
     }
 
     [AvaloniaFact]

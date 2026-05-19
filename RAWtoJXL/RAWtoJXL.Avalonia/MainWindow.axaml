@@ -9,7 +9,7 @@
         xmlns:layout="clr-namespace:Avalonia.Layout;assembly=Avalonia.Controls.ItemsRepeater"
         x:Class="RAWtoJXL.Avalonia.MainWindow"
         x:DataType="vm:MainViewModel"
-        Title="ARW to JXL Converter"
+        Title="RAW to JXL Converter"
         Width="1000" Height="750"
         MinWidth="800" MinHeight="600"
         WindowStartupLocation="CenterScreen">
