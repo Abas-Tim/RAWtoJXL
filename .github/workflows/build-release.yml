@@ -194,6 +194,15 @@ jobs:
           }
           Write-Output "version=$v"
           echo "version=$v" >> $env:GITHUB_OUTPUT
+          echo "$v" > "${{ github.workspace }}/version.txt"
+
+      # ── Upload version for release job ────────────────────────────────
+      - name: Upload version artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-version
+          path: ${{ github.workspace }}/version.txt
+          retention-days: 1
 
       # ── Pack ZIP ──────────────────────────────────────────────────────
       - name: Create portable ZIP
@@ -246,26 +255,27 @@ jobs:
       contents: write
 
     steps:
+      # ── Download resolved version from build job ─────────────────────
+      - name: Download version artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-version
+          path: ${{ github.workspace }}/version
+
+      - name: Read version
+        id: version
+        shell: pwsh
+        run: |
+          $v = Get-Content "${{ github.workspace }}/version/version.txt" -Raw | Trim
+          echo "version=$v" >> $env:GITHUB_OUTPUT
+          echo "tag=v$v" >> $env:GITHUB_OUTPUT
+
       # ── Download artifacts from build job ────────────────────────────
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
-          name: RAWtoJXL-${{ github.event.inputs.version || github.ref_name }}-win-x64
+          name: RAWtoJXL-${{ steps.version.outputs.version }}-win-x64
           path: ${{ github.workspace }}/artifacts
-
-      # ── Resolve version ──────────────────────────────────────────────
-      - name: Resolve version
-        id: version
-        shell: pwsh
-        run: |
-          $v = "${{ github.event.inputs.version }}"
-          if (-not $v) {
-            $ref = "${{ github.ref_name }}"
-            if ($ref -match '^v?') { $v = $ref -replace '^v', '' }
-            else { $v = "1.0.0" }
-          }
-          echo "version=$v" >> $env:GITHUB_OUTPUT
-          echo "tag=v$v" >> $env:GITHUB_OUTPUT
 
       # ── Create or update GitHub Release ──────────────────────────────
       - name: Create GitHub Release
