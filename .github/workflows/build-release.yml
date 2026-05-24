@@ -226,9 +226,8 @@ jobs:
           Write-Output "sha256=$hash"
           echo "sha256=$hash" >> $env:GITHUB_OUTPUT
 
-      # ── Upload artifacts (for non-tag builds) ─────────────────────────
+      # ── Upload artifacts ──────────────────────────────────────────────
       - name: Upload build artifacts
-        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.package.outputs.archive_name }}
