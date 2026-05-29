@@ -162,8 +162,7 @@ public class SettingsPersistenceTests
         using var _ = new GUITestHelpers.SettingsScope();
         var sw1 = new SettingsWindow();
         var tab = GUITestHelpers.SelectTab(sw1, "Presets");
-        var nameBox = GUITestHelpers.GetAllControls<TextBox>(tab).First();
-        nameBox.Text = "TestPreset";
+        sw1.Settings.NewPresetName = "TestPreset";
         var saveAsButton = GUITestHelpers.GetAllControls<Button>(tab)
             .First(b => b.Content?.ToString() == "Save As");
         saveAsButton.Command?.Execute(null);
