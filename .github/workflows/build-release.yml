@@ -267,7 +267,7 @@ jobs:
         id: version
         shell: pwsh
         run: |
-          $v = Get-Content "${{ github.workspace }}/version/version.txt" -Raw | Trim
+          $v = (Get-Content "${{ github.workspace }}/version/version.txt" -Raw).Trim()
           echo "version=$v" >> $env:GITHUB_OUTPUT
           echo "tag=v$v" >> $env:GITHUB_OUTPUT
 
