@@ -111,7 +111,7 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="Skip metadata:" VerticalAlignment="Center" FontSize="12"
                                    ToolTip.Tip="When enabled, skips EXIF/XMP/ICC extraction and embedding. Faster conversion but output files will have no metadata."/>
-                        <CheckBox Grid.Column="1" IsChecked="{Binding SkipMetadata}" VerticalAlignment="Center"/>
+                        <CheckBox Grid.Column="1" IsChecked="{Binding SkipMetadata, Mode=TwoWay}" VerticalAlignment="Center"/>
                     </Grid>
                 </StackPanel>
             </TabItem>
