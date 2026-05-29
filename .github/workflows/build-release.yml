@@ -180,7 +180,8 @@ jobs:
           $v = "${{ github.event.inputs.version }}"
           if (-not $v) {
             # Fall back to git tag (strip leading 'v')
-            if ($env:GITHUB_REF -match 'refs/tags/v?(.+)') {
+            $refName = $env:GITHUB_REF_NAME
+            if ($refName -match '^v(.+)$') {
               $v = $matches[1]
             } else {
               # Fall back to csproj <Version>
