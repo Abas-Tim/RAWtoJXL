@@ -166,3 +166,4 @@ Named preset: `Name`, `Quality`, `OutputFormat`, `ConflictResolution`, `UseSubfo
 - **Effort ComboBox**: Uses `SelectedValue` + `SelectedValueBinding` + `StringToIntConverter` to convert string `Tag` values to `int`.
 - **Recent Files**: Popup at `Placement="RightEdgeAlignedTop"`. 200ms `DispatcherTimer` keeps popup open during hover transitions. Click-in-progress tracking via `PointerPressed`/`PointerReleased`. Disabled when empty (`IsEnabled="{Binding HasRecentFiles}"`).
 - **Removed files**: `RemoveSelected` removes paths from `_addedFilePaths` via `BoundedFilePathSet.Remove()`, allowing re-add.
+- **CheckBox bindings**: All `CheckBox.IsChecked` bindings use explicit `Mode=TwoWay` to ensure programmatic property changes (e.g. in headless GUI tests) propagate back to the ViewModel.

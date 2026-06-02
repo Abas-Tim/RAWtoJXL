@@ -126,7 +126,7 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="Use subfolder:" VerticalAlignment="Center" FontSize="12"
                                    ToolTip.Tip="Place converted files in a subfolder inside the source directory instead of alongside the originals."/>
-                        <CheckBox Grid.Column="1" IsChecked="{Binding UseSubfolder}" VerticalAlignment="Center"/>
+                        <CheckBox Grid.Column="1" IsChecked="{Binding UseSubfolder, Mode=TwoWay}" VerticalAlignment="Center"/>
                     </Grid>
 
                     <Separator Margin="0,8"/>
@@ -153,7 +153,7 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="Custom output dir:" VerticalAlignment="Center" FontSize="12"
                                    ToolTip.Tip="When enabled, save all converted files to a specific directory of your choice instead of the source folder."/>
-                        <CheckBox Grid.Column="1" IsChecked="{Binding UseCustomOutputDirectory}" VerticalAlignment="Center"/>
+                        <CheckBox Grid.Column="1" IsChecked="{Binding UseCustomOutputDirectory, Mode=TwoWay}" VerticalAlignment="Center"/>
                     </Grid>
 
                     <Grid IsVisible="{Binding UseCustomOutputDirectory}">
@@ -175,7 +175,7 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="Recursive search:" VerticalAlignment="Center" FontSize="12"
                                    ToolTip.Tip="Search subdirectories for .ARW files when loading a folder. Disabling only scans the selected directory."/>
-                        <CheckBox Grid.Column="1" IsChecked="{Binding SearchRecursive}" VerticalAlignment="Center"/>
+                        <CheckBox Grid.Column="1" IsChecked="{Binding SearchRecursive, Mode=TwoWay}" VerticalAlignment="Center"/>
                     </Grid>
                 </StackPanel>
             </TabItem>
@@ -210,7 +210,7 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="Confirm overwrite:" VerticalAlignment="Center" FontSize="12"
                                    ToolTip.Tip="Show a confirmation dialog before overwriting existing files. Only applies when conflict resolution is set to Overwrite."/>
-                        <CheckBox Grid.Column="1" IsChecked="{Binding ConfirmOverwrite}" VerticalAlignment="Center"/>
+                        <CheckBox Grid.Column="1" IsChecked="{Binding ConfirmOverwrite, Mode=TwoWay}" VerticalAlignment="Center"/>
                     </Grid>
                 </StackPanel>
             </TabItem>
