@@ -49,7 +49,9 @@ Sony `.ARW` / `.SR2` / `.SRF` · Canon `.CRW` / `.CR2` / `.CR3` · Nikon `.NEF` 
 
 ## Screenshot
 
-> Drag RAW files into the gallery, adjust quality, and convert.
+<img width="1502" height="1165" alt="image" src="https://github.com/user-attachments/assets/fa4e747d-ef40-4554-b1d3-f891be82fa7c" />
+<img width="719" height="614" alt="image" src="https://github.com/user-attachments/assets/6c240378-7da6-4d03-8dfd-7f8753b31ae5" />
+
 
 ## Quick Start
 
