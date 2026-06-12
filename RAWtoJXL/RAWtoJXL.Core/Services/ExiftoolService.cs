@@ -100,7 +100,7 @@ public class ExiftoolService : IExiftoolService
 
             if (iptcData != null && iptcData.Length > 0)
             {
-                profiles.IptcPath = _fileService.SaveBytesToTemp(iptcData, "jbf");
+                profiles.IptcPath = _fileService.SaveBytesToTemp(iptcData, "iptc");
                 _logger.Write($"[ExiftoolService] IPTC extracted: {iptcData.Length} bytes -> {profiles.IptcPath}");
             }
         }
