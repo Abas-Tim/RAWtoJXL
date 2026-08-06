@@ -107,19 +107,35 @@ public class SystemProcessRunner : IProcessRunner
             CreateNoWindow = true
         };
 
-        using var process = Process.Start(startInfo);
+        using var process = StartProcess(startInfo);
         if (process == null)
         {
             return (-1, null, null);
         }
 
+        using var cancellationRegistration = cancellationToken.Register(() =>
+        {
+            KillProcess(process);
+        });
+
         var stdoutTask = process.StandardOutput.ReadToEndAsync();
         var stderrTask = process.StandardError.ReadToEndAsync();
-        var waitTask = process.WaitForExitAsync(cancellationToken);
 
-        await waitTask;
+        await process.WaitForExitAsync(CancellationToken.None);
+
+        if (cancellationToken.IsCancellationRequested)
+        {
+            try { await stdoutTask; } catch { }
+            try { await stderrTask; } catch { }
+            throw new OperationCanceledException(cancellationToken);
+        }
 
         return (process.ExitCode, await stdoutTask, await stderrTask);
+    }
+
+    private static void KillProcess(Process process)
+    {
+        try { if (!process.HasExited) process.Kill(); } catch { }
     }
 
     public async Task<(int ExitCode, string? Stdout, string? Stderr, bool TimedOut)> RunProcessWithTimeoutAsync(
