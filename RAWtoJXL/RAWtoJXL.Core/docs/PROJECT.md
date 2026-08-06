@@ -36,7 +36,7 @@ RAWtoJXL.Core/
 
 ## Architecture Pattern
 
-**Dependency Injection (DI)** — all services depend on abstractions (interfaces), not concrete implementations. Registered via `ServiceCollectionExtensions.AddCoreServices()` which configures all 8 services as singletons.
+**Dependency Injection (DI)** — all services depend on abstractions (interfaces), not concrete implementations. Registered via `ServiceCollectionExtensions.AddCoreServices()`: `ILogger` is a singleton, all other services are transient.
 
 **DI Registration Order** (resolved via `ServiceProvider`):
     ```
@@ -112,15 +112,15 @@ public ImageProcessingService(
   - `effort`: Optional effort override (1-9). Null uses auto based on quality
   - `threads`: Optional thread count override. Null uses `Environment.ProcessorCount`
 - `EncodeFromStreamAsync(Stream inputStream, ...)`: Encodes from a PPM stream piped to cjxl stdin via `IProcessRunner.RunProcessWithStdinAsync`
-- `EncodeFromStreamAsync(inputPath, originalSourcePath, outputPath, quality, ppmWriter, cancellationToken, timeoutSeconds, progress, effort, skipMetadata, threads)`: Encodes from a PPM writer delegate — `ppmWriter(Stream, CancellationToken)` writes PPM directly to cjxl stdin via `ExecuteEncodingProcessWithWriterAsync`, zero intermediate buffering. All parameters except `progress` and `effort` are required (no defaults).
+- `EncodeFromStreamAsync(inputPath, originalSourcePath, outputPath, quality, ppmWriter, cancellationToken, timeoutSeconds, progress, effort, skipMetadata, threads)`: Encodes from a PPM writer delegate — `ppmWriter(Stream, CancellationToken)` writes PPM directly to cjxl stdin via `IProcessRunner.RunProcessWithStdinWriterAsync`, zero intermediate buffering. All parameters except `progress` and `effort` are required (no defaults).
 - Uses `QualityCalculator` for distance/effort mapping when overrides not provided
 - Handles lossless (quality≥100) and lossy modes
 - No `-x` metadata flags passed to cjxl — cjxl's `-x` is unreliable (v0.11.2), metadata embedded post-encoding via exiftool
 - **cjxl progress estimation:** cjxl v0.11.2 does not output percentage progress during encoding. A background task (`ReportProgressAsync`) reports linear progress from 0.0 to 0.98 during cjxl encoding (updated every 100ms), then exits when elapsed ≥ timeout or when the token is cancelled. Mapped to 0.5→1.0 in the overall pipeline. A linked CTS cancels the progress task immediately after encoding completes, preventing hangs. Progress invocations are wrapped in try-catch so a failing callback does not abort encoding.
 - **Metadata embedding:** Delegates to `IExiftoolService.EmbedMetadataAsync()` for post-encoding metadata embedding via exiftool (when `!skipMetadata`).
-- **BuildEncodingArguments:** `protected internal` method for constructing cjxl CLI arguments. Accepts optional effort override and raw distance. Testable via subclass in test project (covered by `CjxlEncoderArgumentsTests`).
+- **BuildEncodingArguments:** `protected internal` method for constructing cjxl CLI arguments. Accepts optional effort and thread overrides. Testable via subclass in test project (covered by `CjxlEncoderArgumentsTests`).
 - **BuildStreamEncodingArguments:** `protected internal` method for constructing cjxl CLI arguments for stdin pipe encoding (input arg is `-`).
-- **Safe stream reading:** `ExecuteEncodingProcessWithWriterAsync` uses `SafeReadStreamAsync` for stdout/stderr capture — bounded 5s read timeout per stream, catches `OperationCanceledException` and `IOException` (broken pipe on process kill), returns partial output instead of hanging. On cancellation/timeout, a separate 2s drain window captures any remaining output from the killed process; drain errors catch `OperationCanceledException` and `IOException` silently, log unexpected exceptions.
+- **Process delegation:** `ExecuteEncodingProcessWithWriterAsync` delegates all process management to `IProcessRunner.RunProcessWithStdinWriterAsync` — timeout handling, stdin writer callback, stdout/stderr capture, and orphan process cleanup are handled by `SystemProcessRunner`, matching the other two encode methods.
 - **Constructor:** `CjxlEncoderService(IPathResolver pathResolver, IExiftoolService exiftoolService, ILogger logger, IProcessRunner processRunner)` — all required (non-nullable)
 
 ### CjxlEncodingException
@@ -149,6 +149,7 @@ Interface + implementation for process execution (replaces static `ProcessHelper
 - `RunProcessBinaryAsync(fileName, arguments, cancellationToken)`: Async process runner returning raw binary stdout; respects CancellationToken via process kill on cancellation
 - `RunProcessWithTimeoutAsync(fileName, arguments, timeoutSeconds, cancellationToken)`: Runs process with timeout, returns `(ExitCode, Stdout, Stderr, TimedOut)`. Kills orphan process on timeout via linked `CancellationTokenSource`. Post-timeout stdout/stderr drain catches `OperationCanceledException` and `IOException` silently; unexpected exceptions are logged. Injected into `CjxlEncoderService` for cjxl encoding with timeout protection.
 - `RunProcessWithStdinAsync(fileName, arguments, stdinStream, timeoutSeconds, cancellationToken)`: Runs process with a Stream piped to stdin. Post-timeout drain uses same exception handling as `RunProcessWithTimeoutAsync`. Used by `CjxlEncoderService.ExecuteEncodingProcessFromStreamAsync` for PPM→JXL encoding without intermediate files.
+- `RunProcessWithStdinWriterAsync(fileName, arguments, stdinWriter, timeoutSeconds, cancellationToken)`: Runs process with a custom `Func<Stream, CancellationToken, Task>` callback that writes to stdin on-the-fly. Same timeout, cancellation, and drain handling as other methods. Used by `CjxlEncoderService.ExecuteEncodingProcessWithWriterAsync` for PPM→JXL encoding with a writer delegate.
 - Injected into `ExiftoolService` for testability
 
 ### ILogger / FileLogger

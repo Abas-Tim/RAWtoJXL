@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -392,116 +391,40 @@ public class CjxlEncoderService : ICjxlEncoder
         _logger.Write($"[CjxlEncoder] Full cjxl command (stdin): {cjxlPath} {argumentsString}");
         _logger.Write($"[CjxlEncoder] Raw args ({args.Count}): [{string.Join("] [", args)}]");
 
-        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutCts.CancelAfter(TimeSpan.FromSeconds(timeoutSeconds));
-
         var startTime = DateTime.UtcNow;
-        var progressTask = ReportProgressAsync(startTime, TimeSpan.FromSeconds(timeoutSeconds), progress, timeoutCts.Token, _logger);
+        using var progressCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        progressCts.CancelAfter(TimeSpan.FromSeconds(timeoutSeconds));
+        var progressTask = ReportProgressAsync(startTime, TimeSpan.FromSeconds(timeoutSeconds), progress, progressCts.Token, _logger);
 
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = cjxlPath,
-            Arguments = argumentsString,
-            UseShellExecute = false,
-            RedirectStandardInput = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = true
-        };
+        var encodeTask = _processRunner.RunProcessWithStdinWriterAsync(cjxlPath, argumentsString, ppmWriter, timeoutSeconds, cancellationToken);
+        var result = await encodeTask;
 
-        using var process = System.Diagnostics.Process.Start(startInfo);
-        if (process == null)
+        progressCts.Cancel();
+
+        if (progressTask != null)
         {
-            throw new FileNotFoundException($"Failed to start cjxl: {cjxlPath}");
+            try { await progressTask; } catch { /* Progress reporting is best-effort */ }
         }
 
-        bool timedOut = false;
+        _logger.Write($"cjxl stdout: {result.Stdout}");
+        _logger.Write($"cjxl stderr: {result.Stderr}");
 
-        try
+        if (result.TimedOut)
         {
-            var stdoutTask = SafeReadStreamAsync(process.StandardOutput, timeoutCts.Token);
-            var stderrTask = SafeReadStreamAsync(process.StandardError, timeoutCts.Token);
-
-            await ppmWriter(process.StandardInput.BaseStream, cancellationToken);
-            process.StandardInput.Close();
-
-            await process.WaitForExitAsync(timeoutCts.Token);
-
-            string stdout = await stdoutTask;
-            string stderr = await stderrTask;
-
-            timeoutCts.Cancel();
-
-            if (progressTask != null)
-            {
-                try { await progressTask; } catch { /* Progress reporting is best-effort */ }
-            }
-
-            _logger.Write($"cjxl stdout: {stdout}");
-            _logger.Write($"cjxl stderr: {stderr}");
-
-            if (process.ExitCode != 0)
-            {
-                string errorMessage = string.IsNullOrWhiteSpace(stderr)
-                    ? "Unknown error occurred during encoding"
-                    : stderr.Trim();
-
-                throw new CjxlEncodingException(
-                    $"cjxl encoding failed with exit code {process.ExitCode}: {errorMessage}",
-                    process.ExitCode);
-            }
+            throw new TimeoutException(
+                $"cjxl encoding timed out after {timeoutSeconds} seconds. " +
+                "Consider increasing the timeout for large files.");
         }
-        catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested)
-        {
-            timedOut = !cancellationToken.IsCancellationRequested;
 
-            if (!process.HasExited)
-            {
-                try { process.Kill(); } catch { }
-                process.WaitForExit();
-            }
-
-            try
-            {
-                using var drainCts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
-                string stdout = await SafeReadStreamAsync(process.StandardOutput, drainCts.Token);
-                string stderr = await SafeReadStreamAsync(process.StandardError, drainCts.Token);
-                _logger.Write($"cjxl stdout (aborted): {stdout}");
-                _logger.Write($"cjxl stderr (aborted): {stderr}");
-            }
-            catch (OperationCanceledException)
-            {
-                // Drain timeout is expected when process was killed
-            }
-            catch (IOException)
-            {
-                // Pipe broken after process kill is expected
-            }
-            catch (Exception ex)
-            {
-                _logger.Write($"[CjxlEncoder] Error draining killed process output: {ex.Message}");
-            }
-
-            if (timedOut)
-            {
-                throw new TimeoutException(
-                    $"cjxl encoding timed out after {timeoutSeconds} seconds. " +
-                    "Consider increasing the timeout for large files.");
-            }
-            throw;
-        }
-        catch (CjxlEncodingException)
+        if (result.ExitCode != 0)
         {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            if (!process.HasExited)
-            {
-                try { process.Kill(); } catch { }
-                process.WaitForExit();
-            }
-            throw new Exception($"Failed to encode {Path.GetFileName(inputPath)}: {ex.Message}", ex);
+            string errorMessage = string.IsNullOrWhiteSpace(result.Stderr)
+                ? "Unknown error occurred during encoding"
+                : result.Stderr.Trim();
+
+            throw new CjxlEncodingException(
+                $"cjxl encoding failed with exit code {result.ExitCode}: {errorMessage}",
+                result.ExitCode);
         }
     }
 

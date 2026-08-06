@@ -84,7 +84,7 @@ Diagnostic test tagged with `[Trait("category", "manual")]` — does NOT run by 
 ### GUITests
 Avalonia Headless GUI tests (no DI, mocks services). Split into `GUITests/` folder by category. Shared utilities in `GUITestHelpers.cs` (`CreateViewModel`, `CreateWindow`, `GetAllControls`, `FindAll`, `SettingsScope`). All tagged `[Trait("category", "gui")]`.
 
-**MainWindowStructuralTests** (15 tests): Window opens with expected title, toolbar buttons, File/List menu items, gallery ItemsRepeater with UniformGridLayout, progress bar bound to TotalCount/CompletedCount, status bar, drag-drop enabled, min size 800x600, cancel button hidden by default, Convert button has accent class, SelectAll command bound.
+**MainWindowStructuralTests** (16 tests): Window opens with expected title, toolbar buttons, File/List menu items, gallery ItemsRepeater with UniformGridLayout, progress bar bound to TotalCount/CompletedCount, status bar, drag-drop enabled, min size 800x600, cancel button hidden by default, Convert button has accent class, SelectAll command bound.
 
 **MainWindowBehavioralTests** (14 tests): SelectAll toggling, RemoveSelected removal, Settings event firing, Convert pipeline with mock IImageService, StatusMessage→UI binding, Cancel visibility during conversion, gallery rendering/data context/updates, Convert disabled without selection, drag-drop behavior on root Grid, CheckBox→selection binding, quality slider→QualityOverride binding, per-item Open Folder button visibility.
 

@@ -100,7 +100,7 @@ public class ExiftoolService : IExiftoolService
 
             if (iptcData != null && iptcData.Length > 0)
             {
-                profiles.IptcPath = _fileService.SaveBytesToTemp(iptcData, "jbf");
+                profiles.IptcPath = _fileService.SaveBytesToTemp(iptcData, "iptc");
                 _logger.Write($"[ExiftoolService] IPTC extracted: {iptcData.Length} bytes -> {profiles.IptcPath}");
             }
         }
@@ -180,6 +180,10 @@ public class ExiftoolService : IExiftoolService
             if (IsFileLockError(stderr, sourcePath))
             {
                 throw new FileLockedException(sourcePath);
+            }
+            if (IsFileLockError(stderr, outputPath))
+            {
+                throw new FileLockedException(outputPath);
             }
             throw new IOException(
                 $"exiftool metadata embedding failed with exit code {exitCode}. " +

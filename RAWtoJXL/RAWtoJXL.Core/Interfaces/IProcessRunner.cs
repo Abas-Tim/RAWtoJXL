@@ -11,4 +11,5 @@ public interface IProcessRunner
     Task<(int ExitCode, string? Stdout, string? Stderr, bool TimedOut)> RunProcessWithTimeoutAsync(string fileName, string arguments, int timeoutSeconds, CancellationToken cancellationToken = default);
     Task<byte[]?> RunProcessBinaryAsync(string fileName, string arguments, CancellationToken cancellationToken = default);
     Task<(int ExitCode, string? Stdout, string? Stderr, bool TimedOut)> RunProcessWithStdinAsync(string fileName, string arguments, Stream stdinStream, int timeoutSeconds, CancellationToken cancellationToken = default);
+    Task<(int ExitCode, string? Stdout, string? Stderr, bool TimedOut)> RunProcessWithStdinWriterAsync(string fileName, string arguments, Func<Stream, CancellationToken, Task> stdinWriter, int timeoutSeconds, CancellationToken cancellationToken = default);
 }
