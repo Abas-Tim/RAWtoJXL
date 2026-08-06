@@ -9,6 +9,9 @@ public class SystemProcessRunner : IProcessRunner
 {
     private readonly ILogger _logger;
 
+    private static readonly object ExiftoolCacheLock = new();
+    private static string? _cachedExiftoolPath;
+
     protected internal virtual Process? StartProcess(ProcessStartInfo startInfo)
     {
         return Process.Start(startInfo);
@@ -30,12 +33,18 @@ public class SystemProcessRunner : IProcessRunner
     {
         string prefix = $"[{logPrefix ?? "SystemProcessRunner"}]";
 
+        string? cached = _cachedExiftoolPath;
+        if (cached != null && File.Exists(cached))
+        {
+            return cached;
+        }
+
         foreach (var path in CommonExiftoolPaths)
         {
             if (File.Exists(path) && await IsExiftoolWorkingAsync(path, prefix))
             {
                 _logger.Write($"{prefix} Found exiftool at: {path}");
-                return path;
+                return RememberExiftoolPath(path);
             }
         }
 
@@ -46,7 +55,7 @@ public class SystemProcessRunner : IProcessRunner
             if (File.Exists(candidate) && await IsExiftoolWorkingAsync(candidate, prefix))
             {
                 _logger.Write($"{prefix} Using PATH exiftool: {candidate}");
-                return candidate;
+                return RememberExiftoolPath(candidate);
             }
         }
 
@@ -57,11 +66,20 @@ public class SystemProcessRunner : IProcessRunner
             if (File.Exists(local) && await IsExiftoolWorkingAsync(local, prefix))
             {
                 _logger.Write($"{prefix} Using local exiftool: {local}");
-                return local;
+                return RememberExiftoolPath(local);
             }
         }
 
         return null;
+    }
+
+    private static string RememberExiftoolPath(string path)
+    {
+        lock (ExiftoolCacheLock)
+        {
+            _cachedExiftoolPath = path;
+        }
+        return path;
     }
 
     public async Task<bool> IsExiftoolWorkingAsync(string exiftoolPath, string? logPrefix = null)
