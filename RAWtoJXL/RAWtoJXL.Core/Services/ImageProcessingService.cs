@@ -71,37 +71,50 @@ public class ImageProcessingService : IImageService
         int? effort = null,
         int? threads = null)
     {
-        ReportProgress(progress, 0.1);
+        bool outputExisted = _fileService.FileExists(outputPath);
 
-        if (skipMetadata)
+        try
         {
-            _logger.Write($"[ImageProcessing] Metadata embedding skipped for {Path.GetFileName(inputPath)}");
+            ReportProgress(progress, 0.1);
+
+            if (skipMetadata)
+            {
+                _logger.Write($"[ImageProcessing] Metadata embedding skipped for {Path.GetFileName(inputPath)}");
+            }
+
+            ReportProgress(progress, 0.3);
+
+            await _cjxlEncoder.EncodeFromStreamAsync(
+                inputPath,
+                inputPath,
+                outputPath,
+                quality,
+                async (stream, ct) => await _imageConverterService.StreamPpmToAsync(inputPath, stream, ct),
+                cancellationToken,
+                timeoutSeconds: 300,
+                cjxlProgress => ReportProgress(progress, 0.35 + cjxlProgress * 0.63),
+                effort,
+                skipMetadata,
+                threads);
+
+            ReportProgress(progress, 1.0);
+
+            if (!_fileService.FileExists(outputPath))
+            {
+                throw new FileNotFoundException($"Conversion completed but output file not found at: {outputPath}");
+            }
         }
-
-        ReportProgress(progress, 0.3);
-
-        await _cjxlEncoder.EncodeFromStreamAsync(
-            inputPath,
-            inputPath,
-            outputPath,
-            quality,
-            async (stream, ct) => await _imageConverterService.StreamPpmToAsync(inputPath, stream, ct),
-            cancellationToken,
-            timeoutSeconds: 300,
-            cjxlProgress => ReportProgress(progress, 0.35 + cjxlProgress * 0.63),
-            effort,
-            skipMetadata,
-            threads);
-
-        ReportProgress(progress, 1.0);
-
-        if (!_fileService.FileExists(outputPath))
+        catch
         {
-            throw new FileNotFoundException($"Conversion completed but output file not found at: {outputPath}");
+            if (!outputExisted)
+            {
+                _fileService.DeleteFile(outputPath);
+            }
+            throw;
         }
     }
 
- private async Task ConvertToJpegAsync(
+    private async Task ConvertToJpegAsync(
         string inputPath,
         string outputPath,
         Action<double> progress,
@@ -109,26 +122,39 @@ public class ImageProcessingService : IImageService
         CancellationToken cancellationToken,
         bool skipMetadata = false)
     {
-        ReportProgress(progress, 0.1);
+        bool outputExisted = _fileService.FileExists(outputPath);
 
-        if (skipMetadata)
+        try
         {
-            _logger.Write($"[ImageProcessing] Metadata embedding skipped for {Path.GetFileName(inputPath)}");
+            ReportProgress(progress, 0.1);
+
+            if (skipMetadata)
+            {
+                _logger.Write($"[ImageProcessing] Metadata embedding skipped for {Path.GetFileName(inputPath)}");
+            }
+
+            await _imageConverterService.ConvertToJpegAsync(inputPath, outputPath, quality, cancellationToken);
+            ReportProgress(progress, 0.9);
+
+            if (!skipMetadata)
+            {
+                await _exiftoolService.EmbedMetadataAsync(inputPath, outputPath, cancellationToken);
+            }
+
+            ReportProgress(progress, 1.0);
+
+            if (!_fileService.FileExists(outputPath))
+            {
+                throw new FileNotFoundException($"Conversion completed but output file not found at: {outputPath}");
+            }
         }
-
-        await _imageConverterService.ConvertToJpegAsync(inputPath, outputPath, quality, cancellationToken);
-        ReportProgress(progress, 0.9);
-
-        if (!skipMetadata)
+        catch
         {
-            await _exiftoolService.EmbedMetadataAsync(inputPath, outputPath, cancellationToken);
-        }
-
-        ReportProgress(progress, 1.0);
-
-        if (!_fileService.FileExists(outputPath))
-        {
-            throw new FileNotFoundException($"Conversion completed but output file not found at: {outputPath}");
+            if (!outputExisted)
+            {
+                _fileService.DeleteFile(outputPath);
+            }
+            throw;
         }
     }
 
@@ -139,26 +165,39 @@ public class ImageProcessingService : IImageService
         CancellationToken cancellationToken,
         bool skipMetadata = false)
     {
-        ReportProgress(progress, 0.1);
+        bool outputExisted = _fileService.FileExists(outputPath);
 
-        if (skipMetadata)
+        try
         {
-            _logger.Write($"[ImageProcessing] Metadata embedding skipped for {Path.GetFileName(inputPath)}");
+            ReportProgress(progress, 0.1);
+
+            if (skipMetadata)
+            {
+                _logger.Write($"[ImageProcessing] Metadata embedding skipped for {Path.GetFileName(inputPath)}");
+            }
+
+            await _imageConverterService.ConvertToPngAsync(inputPath, outputPath, cancellationToken);
+            ReportProgress(progress, 0.7);
+
+            if (!skipMetadata)
+            {
+                await _exiftoolService.EmbedMetadataAsync(inputPath, outputPath, cancellationToken);
+            }
+
+            ReportProgress(progress, 1.0);
+
+            if (!_fileService.FileExists(outputPath))
+            {
+                throw new FileNotFoundException($"Conversion completed but output file not found at: {outputPath}");
+            }
         }
-
-        await _imageConverterService.ConvertToPngAsync(inputPath, outputPath, cancellationToken);
-        ReportProgress(progress, 0.7);
-
-        if (!skipMetadata)
+        catch
         {
-            await _exiftoolService.EmbedMetadataAsync(inputPath, outputPath, cancellationToken);
-        }
-
-        ReportProgress(progress, 1.0);
-
-        if (!_fileService.FileExists(outputPath))
-        {
-            throw new FileNotFoundException($"Conversion completed but output file not found at: {outputPath}");
+            if (!outputExisted)
+            {
+                _fileService.DeleteFile(outputPath);
+            }
+            throw;
         }
     }
 
