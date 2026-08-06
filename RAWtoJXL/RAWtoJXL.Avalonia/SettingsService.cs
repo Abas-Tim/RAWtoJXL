@@ -102,34 +102,43 @@ namespace RAWtoJXL.Avalonia
         private static readonly string SettingsDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "RAWtoJXL");
         private static readonly string SettingsPath = Path.Combine(SettingsDirectory, "settings.json");
         private const int MaxRecentFiles = 50;
+        private static readonly object FileLock = new();
 
         public static AppSettings Load()
         {
-            try
+            lock (FileLock)
             {
-                if (!File.Exists(SettingsPath))
-                    return new AppSettings();
+                try
+                {
+                    if (!File.Exists(SettingsPath))
+                        return new AppSettings();
 
-                var json = File.ReadAllText(SettingsPath);
-                var settings = JsonSerializer.Deserialize<AppSettings>(json);
-                return settings ?? new AppSettings();
-            }
-            catch
-            {
-                return new AppSettings();
+                    var json = File.ReadAllText(SettingsPath);
+                    var settings = JsonSerializer.Deserialize<AppSettings>(json);
+                    return settings ?? new AppSettings();
+                }
+                catch
+                {
+                    return new AppSettings();
+                }
             }
         }
 
         public static void Save(AppSettings settings)
         {
-            try
+            lock (FileLock)
             {
-                Directory.CreateDirectory(SettingsDirectory);
-                var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
-                File.WriteAllText(SettingsPath, json);
-            }
-            catch
-            {
+                try
+                {
+                    Directory.CreateDirectory(SettingsDirectory);
+                    var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
+                    var tempPath = SettingsPath + ".tmp";
+                    File.WriteAllText(tempPath, json);
+                    File.Move(tempPath, SettingsPath, overwrite: true);
+                }
+                catch
+                {
+                }
             }
         }
 
