@@ -27,7 +27,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
         private readonly IDispatcherService _dispatcherService;
         private readonly IFilePickerService _filePickerService;
         private readonly ObservableCollection<ImageItemViewModel> _selectedImages = new();
-        private readonly BoundedFilePathSet _addedFilePaths = new(maxBytes: 1 * 1024 * 1024);
+        private readonly HashSet<string> _addedFilePaths = new(StringComparer.OrdinalIgnoreCase);
         private CancellationTokenSource? _cancellationTokenSource;
 
         [ObservableProperty]
@@ -805,59 +805,6 @@ namespace RAWtoJXL.Avalonia.ViewModels
         {
             var ext = extension.ToLowerInvariant();
             return SupportedFormats.IsRawFile(ext) || ext == ".jxl";
-        }
-
-        private sealed class BoundedFilePathSet
-        {
-            private readonly HashSet<string> _set = new(StringComparer.OrdinalIgnoreCase);
-            private readonly LinkedList<string> _order = new();
-            private long _totalBytes;
-            private readonly long _maxBytes;
-
-            public BoundedFilePathSet(long maxBytes)
-            {
-                _maxBytes = maxBytes;
-            }
-
-            public bool Contains(string path) => _set.Contains(path);
-
-            public void Remove(string path)
-            {
-                if (_set.Remove(path))
-                {
-                    _order.Remove(path);
-                    _totalBytes -= EstimateBytes(path);
-                }
-            }
-
-            public void Add(string path)
-            {
-                if (_set.Contains(path)) return;
-
-                long entryBytes = EstimateBytes(path);
-                _set.Add(path);
-                _order.AddLast(path);
-                _totalBytes += entryBytes;
-                EvictOld();
-            }
-
-            private void EvictOld()
-            {
-                while (_totalBytes > _maxBytes && _order.Count > 0)
-                {
-                    string? oldest = _order.First?.Value;
-                    if (oldest == null) break;
-
-                    _order.RemoveFirst();
-                    _set.Remove(oldest);
-                    _totalBytes -= EstimateBytes(oldest);
-                }
-            }
-
-            private static long EstimateBytes(string path)
-            {
-                return (long)path.Length * 2 + 88;
-            }
         }
     }
 }
