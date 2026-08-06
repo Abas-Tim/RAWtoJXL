@@ -1,7 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Interactivity;
-using RAWtoJXL.Avalonia;
 using RAWtoJXL.Avalonia.Services;
 
 namespace RAWtoJXL.Tests.GUITests;

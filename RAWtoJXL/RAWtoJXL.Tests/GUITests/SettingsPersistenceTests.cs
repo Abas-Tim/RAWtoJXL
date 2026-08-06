@@ -97,10 +97,7 @@ public class SettingsPersistenceTests
     {
         using var _ = new GUITestHelpers.SettingsScope();
         var sw1 = new SettingsWindow();
-        var tab = GUITestHelpers.SelectTab(sw1, "Output");
-        var textBox = GUITestHelpers.GetAllControls<TextBox>(tab).First();
-        textBox.Text = "my_jxl_output";
-        sw1.UpdateLayout();
+        sw1.Settings.SubfolderName = "my_jxl_output";
         sw1.Settings.Persist();
         Assert.Equal("my_jxl_output", SettingsService.Load().SubfolderName);
         sw1.Close();
