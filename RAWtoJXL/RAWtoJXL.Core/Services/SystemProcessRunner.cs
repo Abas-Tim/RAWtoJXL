@@ -398,11 +398,6 @@ public class SystemProcessRunner : IProcessRunner
         return (process.ExitCode, stdout, stderr, timedOut);
     }
 
-    private static void KillProcess(Process process)
-    {
-        try { if (!process.HasExited) process.Kill(); } catch { }
-    }
-
     private static void CloseStdin(Process process)
     {
         try { process.StandardInput.Close(); } catch { }
