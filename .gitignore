@@ -49,3 +49,5 @@ artifacts/
 
 # Agent instructions
 AGENTS.md
+.env
+.urag/
