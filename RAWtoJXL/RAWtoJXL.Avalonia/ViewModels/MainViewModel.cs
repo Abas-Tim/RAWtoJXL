@@ -628,21 +628,19 @@ namespace RAWtoJXL.Avalonia.ViewModels
         public async Task AddFilesAsync(IEnumerable<string> filePaths)
         {
             var normalizedPaths = filePaths.Select(p => Path.GetFullPath(p)).Distinct().ToList();
-            var newPaths = normalizedPaths.Where(p => !_addedFilePaths.Contains(p)).ToList();
-            int skipped = normalizedPaths.Count - newPaths.Count;
-
-            foreach (var p in newPaths)
-            {
-                _addedFilePaths.Add(p);
-            }
 
             var validPaths = new List<string>();
-            foreach (var path in newPaths)
+            foreach (var path in normalizedPaths)
             {
+                if (_addedFilePaths.Contains(path)) continue;
                 if (string.IsNullOrEmpty(path) || !File.Exists(path)) continue;
-                var extension = Path.GetExtension(path).ToLower();
-                if (!IsSupportedFile(extension)) continue;
+                if (!IsSupportedFile(Path.GetExtension(path))) continue;
                 validPaths.Add(path);
+            }
+
+            foreach (var p in validPaths)
+            {
+                _addedFilePaths.Add(p);
             }
 
             var newItems = new List<ImageItemViewModel>(validPaths.Count);
