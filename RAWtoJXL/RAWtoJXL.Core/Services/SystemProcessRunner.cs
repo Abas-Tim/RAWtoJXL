@@ -9,6 +9,11 @@ public class SystemProcessRunner : IProcessRunner
 {
     private readonly ILogger _logger;
 
+    protected internal virtual Process? StartProcess(ProcessStartInfo startInfo)
+    {
+        return Process.Start(startInfo);
+    }
+
     private static readonly string[] CommonExiftoolPaths =
     [
         @"C:\Program Files\exiftool.exe",
@@ -236,7 +241,7 @@ public class SystemProcessRunner : IProcessRunner
             CreateNoWindow = true
         };
 
-        using var process = Process.Start(startInfo);
+        using var process = StartProcess(startInfo);
         if (process == null)
         {
             return (-1, null, null, false);
@@ -244,15 +249,25 @@ public class SystemProcessRunner : IProcessRunner
 
         using var cancellationRegistration = cancellationToken.Register(() =>
         {
-            try { if (!process.HasExited) process.Kill(); } catch { }
+            KillProcess(process);
         });
 
         var stdoutTask = process.StandardOutput.ReadToEndAsync();
         var stderrTask = process.StandardError.ReadToEndAsync();
-        var stdinTask = stdinStream.CopyToAsync(process.StandardInput.BaseStream, cancellationToken);
 
-        await stdinTask;
-        process.StandardInput.Close();
+        Exception? stdinError = null;
+        try
+        {
+            var stdinTask = stdinStream.CopyToAsync(process.StandardInput.BaseStream, cancellationToken);
+            await stdinTask;
+            process.StandardInput.Close();
+        }
+        catch (Exception ex)
+        {
+            stdinError = ex;
+            CloseStdin(process);
+            KillProcess(process);
+        }
 
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeoutCts.CancelAfter(TimeSpan.FromSeconds(timeoutSeconds));
@@ -265,11 +280,8 @@ public class SystemProcessRunner : IProcessRunner
         catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested)
         {
             timedOut = !cancellationToken.IsCancellationRequested;
-            if (!process.HasExited)
-            {
-                try { process.Kill(); } catch { }
-                process.WaitForExit();
-            }
+            KillProcess(process);
+            try { process.WaitForExit(); } catch { }
         }
 
         string? stdout = null;
@@ -282,6 +294,11 @@ public class SystemProcessRunner : IProcessRunner
         catch (OperationCanceledException) { }
         catch (IOException) { }
         catch (Exception ex) { _logger.Write($"[SystemProcessRunner] Failed to read stderr: {ex.Message}"); }
+
+        if (stdinError != null)
+        {
+            throw stdinError;
+        }
 
         return (process.ExitCode, stdout, stderr, timedOut);
     }
@@ -304,7 +321,7 @@ public class SystemProcessRunner : IProcessRunner
             CreateNoWindow = true
         };
 
-        using var process = Process.Start(startInfo);
+        using var process = StartProcess(startInfo);
         if (process == null)
         {
             return (-1, null, null, false);
@@ -312,14 +329,24 @@ public class SystemProcessRunner : IProcessRunner
 
         using var cancellationRegistration = cancellationToken.Register(() =>
         {
-            try { if (!process.HasExited) process.Kill(); } catch { }
+            KillProcess(process);
         });
 
         var stdoutTask = process.StandardOutput.ReadToEndAsync();
         var stderrTask = process.StandardError.ReadToEndAsync();
 
-        await stdinWriter(process.StandardInput.BaseStream, cancellationToken);
-        process.StandardInput.Close();
+        Exception? stdinError = null;
+        try
+        {
+            await stdinWriter(process.StandardInput.BaseStream, cancellationToken);
+            process.StandardInput.Close();
+        }
+        catch (Exception ex)
+        {
+            stdinError = ex;
+            CloseStdin(process);
+            KillProcess(process);
+        }
 
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeoutCts.CancelAfter(TimeSpan.FromSeconds(timeoutSeconds));
@@ -332,11 +359,8 @@ public class SystemProcessRunner : IProcessRunner
         catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested)
         {
             timedOut = !cancellationToken.IsCancellationRequested;
-            if (!process.HasExited)
-            {
-                try { process.Kill(); } catch { }
-                process.WaitForExit();
-            }
+            KillProcess(process);
+            try { process.WaitForExit(); } catch { }
         }
 
         string? stdout = null;
@@ -350,6 +374,21 @@ public class SystemProcessRunner : IProcessRunner
         catch (IOException) { }
         catch (Exception ex) { _logger.Write($"[SystemProcessRunner] Failed to read stderr: {ex.Message}"); }
 
+        if (stdinError != null)
+        {
+            throw stdinError;
+        }
+
         return (process.ExitCode, stdout, stderr, timedOut);
+    }
+
+    private static void KillProcess(Process process)
+    {
+        try { if (!process.HasExited) process.Kill(); } catch { }
+    }
+
+    private static void CloseStdin(Process process)
+    {
+        try { process.StandardInput.Close(); } catch { }
     }
 }
