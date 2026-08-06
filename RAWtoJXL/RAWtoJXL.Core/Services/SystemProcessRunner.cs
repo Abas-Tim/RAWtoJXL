@@ -245,10 +245,9 @@ public class SystemProcessRunner : IProcessRunner
         });
 
         using var ms = new MemoryStream();
-        using var stderrMs = new MemoryStream();
 
         var stdoutTask = process.StandardOutput.BaseStream.CopyToAsync(ms, cancellationToken);
-        var stderrTask = process.StandardError.BaseStream.CopyToAsync(stderrMs, cancellationToken);
+        var stderrTask = process.StandardError.BaseStream.CopyToAsync(Stream.Null, cancellationToken);
 
         await Task.WhenAll(stdoutTask, stderrTask);
         await process.WaitForExitAsync(cancellationToken);

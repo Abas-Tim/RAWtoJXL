@@ -51,3 +51,6 @@ artifacts/
 AGENTS.md
 .env
 .urag/
+
+# Local review notes
+REVIEW.md
