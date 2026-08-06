@@ -181,6 +181,10 @@ public class ExiftoolService : IExiftoolService
             {
                 throw new FileLockedException(sourcePath);
             }
+            if (IsFileLockError(stderr, outputPath))
+            {
+                throw new FileLockedException(outputPath);
+            }
             throw new IOException(
                 $"exiftool metadata embedding failed with exit code {exitCode}. " +
                 $"stdout: {stdout?.Trim() ?? "(empty)"} stderr: {stderr?.Trim() ?? "(empty)"}");
