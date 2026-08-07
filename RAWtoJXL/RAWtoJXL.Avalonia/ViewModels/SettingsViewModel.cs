@@ -19,6 +19,8 @@ namespace RAWtoJXL.Avalonia.ViewModels
         private readonly IFilePickerService _filePickerService;
         private readonly System.Timers.Timer _persistTimer;
         private readonly List<string> _recentFiles;
+        private readonly string _settingsDirectory;
+        private bool _disposed;
 
         private static readonly HashSet<string> _noPersistProperties = new()
         {
@@ -29,6 +31,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
         public SettingsViewModel(IFilePickerService filePickerService)
         {
             _filePickerService = filePickerService;
+            _settingsDirectory = SettingsService.SettingsDirectory;
             _persistTimer = new System.Timers.Timer(500) { AutoReset = false };
             _persistTimer.Elapsed += (_, _) => Persist();
             var saved = SettingsService.Load();
@@ -65,6 +68,11 @@ namespace RAWtoJXL.Avalonia.ViewModels
 
          public void Persist()
         {
+            if (_disposed || SettingsService.SettingsDirectory != _settingsDirectory)
+            {
+                return;
+            }
+
             SettingsService.Save(new AppSettings
             {
                 UseSubfolder = UseSubfolder,
@@ -88,6 +96,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
         {
             _persistTimer.Stop();
             Persist();
+            _disposed = true;
             _persistTimer.Dispose();
         }
 
