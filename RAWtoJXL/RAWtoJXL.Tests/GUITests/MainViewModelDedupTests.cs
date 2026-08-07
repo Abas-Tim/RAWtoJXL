@@ -19,7 +19,6 @@ public class MainViewModelDedupTests
     [AvaloniaFact]
     public void AddFilesAsync_SamePathTwice_AddedOnlyOnce()
     {
-        MainViewModel.HeadlessTestMode = true;
         var file = CreateTempArw(out var dir);
         try
         {
@@ -33,14 +32,12 @@ public class MainViewModelDedupTests
         finally
         {
             Directory.Delete(dir, true);
-            MainViewModel.HeadlessTestMode = false;
         }
     }
 
     [AvaloniaFact]
     public void RemoveSelected_ThenReAddSamePath_Allowed()
     {
-        MainViewModel.HeadlessTestMode = true;
         var file = CreateTempArw(out var dir);
         try
         {
@@ -57,7 +54,6 @@ public class MainViewModelDedupTests
         finally
         {
             Directory.Delete(dir, true);
-            MainViewModel.HeadlessTestMode = false;
         }
     }
 }

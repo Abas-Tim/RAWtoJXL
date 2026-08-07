@@ -20,26 +20,17 @@ namespace RAWtoJXL.Avalonia.ViewModels
 {
     public partial class MainViewModel : ObservableObject
     {
-        internal static bool HeadlessTestMode { get; set; }
-
         private readonly IImageService _imageService;
         private readonly IDialogService _dialogService;
         private readonly IDispatcherService _dispatcherService;
         private readonly IFilePickerService _filePickerService;
+        private readonly bool _generateThumbnails;
         private readonly ObservableCollection<ImageItemViewModel> _selectedImages = new();
         private readonly HashSet<string> _addedFilePaths = new(StringComparer.OrdinalIgnoreCase);
         private CancellationTokenSource? _cancellationTokenSource;
 
         [ObservableProperty]
         private ObservableCollection<ImageItemViewModel> _images = new();
-
-        [ObservableProperty]
-        private bool _isCancelRequested;
-
-        partial void OnIsCancelRequestedChanged(bool value)
-        {
-            CancelCommand.NotifyCanExecuteChanged();
-        }
 
         [ObservableProperty]
         private string _statusMessage = AppStrings.Ready;
@@ -179,7 +170,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
 
          public void RefreshSettings()
         {
-            var saved = SettingsService.Load();
+            var saved = SettingsService.Load().Clone();
             UseSubfolder = saved.UseSubfolder;
             SubfolderName = saved.SubfolderName;
             QualityPreset = saved.QualityPreset;
@@ -206,18 +197,26 @@ namespace RAWtoJXL.Avalonia.ViewModels
         public event Action? RequestOpenSettings;
         public event Action? RequestRefreshLayout;
 
-        public MainViewModel(IImageService imageService, IDialogService dialogService, IDispatcherService dispatcherService, IFilePickerService filePickerService)
+        public MainViewModel(IImageService imageService, IDialogService dialogService, IDispatcherService dispatcherService, IFilePickerService filePickerService, bool generateThumbnails = true)
         {
             _imageService = imageService;
             _dialogService = dialogService;
             _dispatcherService = dispatcherService;
             _filePickerService = filePickerService;
+            _generateThumbnails = generateThumbnails;
+            SettingsService.ErrorOccurred += OnSettingsError;
             LoadRecentFilesFromSettings();
+        }
+
+        private void OnSettingsError(object? sender, Exception ex)
+        {
+            var message = $"{AppStrings.SettingsErrorPrefix}{ex.Message}";
+            Dispatcher.UIThread.Post(() => StatusMessage = message);
         }
 
         private void LoadRecentFilesFromSettings()
         {
-            var saved = SettingsService.Load();
+            var saved = SettingsService.Load().Clone();
             RecentFiles = new ObservableCollection<string>(saved.RecentFiles);
             QualityPreset = saved.QualityPreset;
             UseSubfolder = saved.UseSubfolder;
@@ -247,7 +246,6 @@ namespace RAWtoJXL.Avalonia.ViewModels
             int convertedCount = 0, skippedCount = 0, failedCount = 0, cancelledCount = 0;
             StatusMessage = $"{AppStrings.ConvertingProgress}{0}{AppStrings.OfSuffix}{readySelected.Count} (0%)";
             IsConverting = true;
-            IsCancelRequested = false;
             RefreshAllCommands();
 
            foreach (var item in readySelected)
@@ -302,19 +300,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
                     await _imageService.ConvertToJxlAsync(
                         item.FilePath,
                         outputPath,
-                        p =>
-                        {
-                            var t = OnUiAsync(() => OnFileProgress(p));
-                            _ = t.ContinueWith(
-                                errorTask =>
-                                {
-                                    _ = OnUiAsync(() =>
-                                        StatusMessage = $"{AppStrings.ProgressErrorPrefix}{errorTask.Exception?.GetBaseException().Message}");
-                                },
-                                CancellationToken.None,
-                                TaskContinuationOptions.OnlyOnFaulted,
-                                TaskScheduler.Default);
-                        },
+                        p => _ = OnUiAsync(() => OnFileProgress(p)),
                         quality,
                         OutputFormat,
                         _cancellationTokenSource.Token,
@@ -386,7 +372,6 @@ namespace RAWtoJXL.Avalonia.ViewModels
             {
                 OutputDirectory = lastOutputDir;
                 IsConverting = false;
-                IsCancelRequested = false;
                 _cancellationTokenSource = null;
                 StatusMessage = BuildCompletionMessage(convertedCount, skippedCount, failedCount, cancelledCount, readySelected.Count);
                 CompletedCount = 0;
@@ -537,7 +522,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
         {
             var settings = SettingsService.Load();
             settings.RecentFiles.Clear();
-            SettingsService.Save(settings);
+            SettingsService.Save();
             RecentFiles = new ObservableCollection<string>();
         }
 
@@ -548,15 +533,20 @@ namespace RAWtoJXL.Avalonia.ViewModels
         {
             int completed = Interlocked.Increment(ref _completedCountField);
             CompletedCount = completed;
-            double overallPercent = total > 0 ? (completed - 1 + _currentFileProgress) / total * 100 : 0;
-            StatusMessage = $"{AppStrings.ConvertingProgress}{completed}{AppStrings.OfSuffix}{total} ({overallPercent:F0}%)";
+            _currentFileProgress = 0;
+            StatusMessage = FormatProgressMessage(completed, total);
         }
 
         private void UpdateProgressDisplay(int total)
         {
             int completed = Volatile.Read(ref _completedCountField);
+            StatusMessage = FormatProgressMessage(completed, total);
+        }
+
+        private string FormatProgressMessage(int completed, int total)
+        {
             double overallPercent = total > 0 ? (completed + _currentFileProgress) / total * 100 : 0;
-            StatusMessage = $"{AppStrings.ConvertingProgress}{completed}{AppStrings.OfSuffix}{total} ({overallPercent:F0}%)";
+            return $"{AppStrings.ConvertingProgress}{completed}{AppStrings.OfSuffix}{total} ({overallPercent:F0}%)";
         }
 
         private void OnFileProgress(double progress)
@@ -649,7 +639,6 @@ namespace RAWtoJXL.Avalonia.ViewModels
             var saved = SettingsService.Load();
             RecentFiles = new ObservableCollection<string>(saved.RecentFiles);
         }
-
         public async Task AddFilesAsync(IEnumerable<string> filePaths)
         {
             var normalizedPaths = filePaths.Select(p => Path.GetFullPath(p)).Distinct().ToList();
@@ -692,7 +681,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
                 }
             });
 
-            if (!HeadlessTestMode)
+            if (_generateThumbnails)
             {
                 var thumbnailTask = Task.Run(() => GenerateThumbnailsAsync(newItems));
                 _ = thumbnailTask.ContinueWith(
@@ -805,24 +794,20 @@ namespace RAWtoJXL.Avalonia.ViewModels
 
         private void SaveSettings()
         {
-            var saved = SettingsService.Load();
-            SettingsService.Save(new AppSettings
-            {
-                UseSubfolder = UseSubfolder,
-                SubfolderName = SubfolderName,
-                QualityPreset = QualityPreset,
-                SearchRecursive = SearchRecursive,
-                OutputFormat = OutputFormat,
-                ConflictResolution = ConflictResolution,
-                ConfirmOverwrite = ConfirmOverwrite,
-                UseCustomOutputDirectory = UseCustomOutputDirectory,
-                CustomOutputDirectory = CustomOutputDirectory,
-                Presets = saved.Presets,
-                RecentFiles = saved.RecentFiles,
-                SkipMetadata = SkipMetadata,
-                CjxlEffort = CjxlEffort,
-                CjxlThreads = CjxlThreads,
-            });
+            var settings = SettingsService.Load();
+            settings.UseSubfolder = UseSubfolder;
+            settings.SubfolderName = SubfolderName;
+            settings.QualityPreset = QualityPreset;
+            settings.SearchRecursive = SearchRecursive;
+            settings.OutputFormat = OutputFormat;
+            settings.ConflictResolution = ConflictResolution;
+            settings.ConfirmOverwrite = ConfirmOverwrite;
+            settings.UseCustomOutputDirectory = UseCustomOutputDirectory;
+            settings.CustomOutputDirectory = CustomOutputDirectory;
+            settings.SkipMetadata = SkipMetadata;
+            settings.CjxlEffort = CjxlEffort;
+            settings.CjxlThreads = CjxlThreads;
+            SettingsService.Save();
         }
 
         private static bool IsSupportedFile(string extension)

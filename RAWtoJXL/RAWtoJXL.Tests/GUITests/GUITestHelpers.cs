@@ -17,6 +17,7 @@ public static class GUITestHelpers
     {
         var dir = Path.Combine(Path.GetTempPath(), "RAWtoJXL_TestSettings_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(dir);
+        SettingsService.Reset();
         SettingsService.SettingsDirectory = dir;
         SettingsService.Save(new AppSettings());
     }
@@ -25,7 +26,8 @@ public static class GUITestHelpers
         Mock<IImageService>? imageService = null,
         Mock<IDialogService>? dialogService = null,
         Mock<IDispatcherService>? dispatcherService = null,
-        Mock<IFilePickerService>? filePickerService = null)
+        Mock<IFilePickerService>? filePickerService = null,
+        bool generateThumbnails = false)
     {
         NewSettingsSandbox();
 
@@ -48,7 +50,8 @@ public static class GUITestHelpers
             imageService.Object,
             dialogService.Object,
             dispatcherService.Object,
-            filePickerService.Object);
+            filePickerService.Object,
+            generateThumbnails);
     }
 
     public static MainWindow CreateWindow(MainViewModel? vm = null)
@@ -164,24 +167,16 @@ public static class GUITestHelpers
 
     public static void AddTestFiles(MainViewModel vm, int count)
     {
-        MainViewModel.HeadlessTestMode = true;
         var tmpDir = Path.Combine(Path.GetTempPath(), "RAWtoJXL_TestImages");
         Directory.CreateDirectory(tmpDir);
         var files = new List<string>();
-        try
+        for (int i = 0; i < count; i++)
         {
-            for (int i = 0; i < count; i++)
-            {
-                var tmpFile = Path.Combine(tmpDir, $"test_img_{Guid.NewGuid():N}.arw");
-                File.WriteAllText(tmpFile, "");
-                files.Add(tmpFile);
-            }
-            vm.AddFilesAsync(files).Wait();
+            var tmpFile = Path.Combine(tmpDir, $"test_img_{Guid.NewGuid():N}.arw");
+            File.WriteAllText(tmpFile, "");
+            files.Add(tmpFile);
         }
-        finally
-        {
-            MainViewModel.HeadlessTestMode = false;
-        }
+        vm.AddFilesAsync(files).Wait();
     }
 
     public static TabItem SelectTab(SettingsWindow window, string header)

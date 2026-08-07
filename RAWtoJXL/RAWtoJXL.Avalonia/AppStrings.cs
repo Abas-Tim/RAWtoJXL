@@ -24,6 +24,7 @@ namespace RAWtoJXL.Avalonia
             $"{SupportedFormats.ToFileFilter("RAW Files", SupportedFormats.RawExtensions)}|{SupportedFormats.ToFileFilter("JPEG XL Files", new[] { ".jxl" })}|All Files|*.*";
         public const string ThumbnailFailedPrefix = "Thumbnail failed: ";
         public const string ProgressErrorPrefix = "Progress error: ";
+        public const string SettingsErrorPrefix = "Settings error: ";
         public const string FileLockedPrefix = "File locked: ";
         public const string ItemsRemoved = "Removed ";
         public const string ItemsSuffix = " item(s).";

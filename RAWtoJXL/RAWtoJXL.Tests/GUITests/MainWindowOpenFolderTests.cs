@@ -26,7 +26,6 @@ public class MainWindowOpenFolderTests
     [AvaloniaFact]
     public async Task OpenFolder_AddsSupportedFilesFromPicker()
     {
-        MainViewModel.HeadlessTestMode = true;
         var dir = Path.Combine(Path.GetTempPath(), "RAWtoJXL_OpenFolder_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(dir);
         try
@@ -50,14 +49,12 @@ public class MainWindowOpenFolderTests
         finally
         {
             Directory.Delete(dir, true);
-            MainViewModel.HeadlessTestMode = false;
         }
     }
 
     [AvaloniaFact]
     public async Task OpenFolder_EmptyOrNoFiles_AddsNothing()
     {
-        MainViewModel.HeadlessTestMode = true;
         var dir = Path.Combine(Path.GetTempPath(), "RAWtoJXL_OpenFolder_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(dir);
         try
@@ -75,7 +72,6 @@ public class MainWindowOpenFolderTests
         finally
         {
             Directory.Delete(dir, true);
-            MainViewModel.HeadlessTestMode = false;
         }
     }
 }

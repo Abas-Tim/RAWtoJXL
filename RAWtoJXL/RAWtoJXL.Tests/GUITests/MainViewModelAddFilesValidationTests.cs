@@ -10,7 +10,6 @@ public class MainViewModelAddFilesValidationTests
     [AvaloniaFact]
     public void AddFilesAsync_InvalidPathThenValid_FileCanBeAddedLater()
     {
-        MainViewModel.HeadlessTestMode = true;
         var dir = Path.Combine(Path.GetTempPath(), "RAWtoJXL_Validation_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(dir);
         var file = Path.Combine(dir, "test.arw");
@@ -28,14 +27,12 @@ public class MainViewModelAddFilesValidationTests
         finally
         {
             Directory.Delete(dir, true);
-            MainViewModel.HeadlessTestMode = false;
         }
     }
 
     [AvaloniaFact]
     public void AddFilesAsync_UnsupportedExtension_FileCanBeAddedLaterWhenSupported()
     {
-        MainViewModel.HeadlessTestMode = true;
         var dir = Path.Combine(Path.GetTempPath(), "RAWtoJXL_Validation_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(dir);
         var file = Path.Combine(dir, "test.txt");
@@ -54,14 +51,12 @@ public class MainViewModelAddFilesValidationTests
         finally
         {
             Directory.Delete(dir, true);
-            MainViewModel.HeadlessTestMode = false;
         }
     }
 
     [AvaloniaFact]
     public void AddFilesAsync_ValidPathTwice_AddedOnlyOnce()
     {
-        MainViewModel.HeadlessTestMode = true;
         var dir = Path.Combine(Path.GetTempPath(), "RAWtoJXL_Validation_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(dir);
         var file = Path.Combine(dir, "test.arw");
@@ -78,7 +73,6 @@ public class MainViewModelAddFilesValidationTests
         finally
         {
             Directory.Delete(dir, true);
-            MainViewModel.HeadlessTestMode = false;
         }
     }
 }
