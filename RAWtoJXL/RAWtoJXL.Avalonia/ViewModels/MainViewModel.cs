@@ -91,6 +91,10 @@ namespace RAWtoJXL.Avalonia.ViewModels
         partial void OnQualityPresetChanged(int value)
         {
             SaveSettings();
+            foreach (var item in Images)
+            {
+                item.GlobalQualityPreset = value;
+            }
         }
 
         [ObservableProperty]
@@ -674,7 +678,8 @@ namespace RAWtoJXL.Avalonia.ViewModels
                     FilePath = path,
                     FileName = Path.GetFileName(path),
                     Status = ImageStatus.Ready,
-                    SourceFileSize = fileSize
+                    SourceFileSize = fileSize,
+                    GlobalQualityPreset = QualityPreset
                 });
             }
 
