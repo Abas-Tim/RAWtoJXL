@@ -48,4 +48,46 @@ public class ImageItemViewModelTests
         vm.QualityOverride = null;
         Assert.Equal(85, vm.EffectiveQuality(85));
     }
+
+    [Fact]
+    public void QualitySliderValue_NoOverride_ReflectsGlobalPreset()
+    {
+        var vm = new ImageItemViewModel { GlobalQualityPreset = 75 };
+        Assert.Equal(75, vm.QualitySliderValue);
+    }
+
+    [Fact]
+    public void QualitySliderValue_GlobalPresetChange_UpdatesDisplayedValue()
+    {
+        var vm = new ImageItemViewModel();
+        Assert.Equal(90, vm.QualitySliderValue);
+
+        vm.GlobalQualityPreset = 60;
+
+        Assert.Equal(60, vm.QualitySliderValue);
+    }
+
+    [Fact]
+    public void QualitySliderValue_WithOverride_ShowsOverrideNotPreset()
+    {
+        var vm = new ImageItemViewModel { GlobalQualityPreset = 75 };
+        vm.QualitySliderValue = 42;
+
+        Assert.Equal(42, vm.QualitySliderValue);
+        Assert.Equal(42, vm.QualityOverride);
+        Assert.Equal(42, vm.EffectiveQuality(75));
+
+        vm.GlobalQualityPreset = 50;
+        Assert.Equal(42, vm.QualitySliderValue);
+    }
+
+    [Fact]
+    public void QualitySliderValue_ClearingOverride_FallsBackToGlobalPreset()
+    {
+        var vm = new ImageItemViewModel { GlobalQualityPreset = 75 };
+        vm.QualitySliderValue = 42;
+        vm.QualityOverride = null;
+
+        Assert.Equal(75, vm.QualitySliderValue);
+    }
 }

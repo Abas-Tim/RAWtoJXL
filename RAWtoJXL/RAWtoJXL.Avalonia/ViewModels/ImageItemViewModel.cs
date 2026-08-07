@@ -35,9 +35,17 @@ namespace RAWtoJXL.Avalonia.ViewModels
         [ObservableProperty]
         private int? _qualityOverride;
 
+        [ObservableProperty]
+        private int _globalQualityPreset = 90;
+
+        partial void OnGlobalQualityPresetChanged(int value)
+        {
+            OnPropertyChanged(nameof(QualitySliderValue));
+        }
+
         public double QualitySliderValue
         {
-            get => QualityOverride ?? 90;
+            get => QualityOverride ?? GlobalQualityPreset;
             set
             {
                 int clamped = Math.Max(0, Math.Min(100, (int)value));
