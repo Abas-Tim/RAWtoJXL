@@ -6,12 +6,19 @@ namespace RAWtoJXL.Tests
     public class QualityCalculatorTests
     {
         [Theory]
-        [InlineData(0, 7)]
-        [InlineData(50, 7)]
-        [InlineData(70, 7)]
-        [InlineData(85, 7)]
-        [InlineData(95, 7)]
-        [InlineData(100, 7)]
+        [InlineData(0, 3)]
+        [InlineData(29, 3)]
+        [InlineData(30, 4)]
+        [InlineData(44, 4)]
+        [InlineData(45, 5)]
+        [InlineData(59, 5)]
+        [InlineData(60, 6)]
+        [InlineData(74, 6)]
+        [InlineData(75, 7)]
+        [InlineData(89, 7)]
+        [InlineData(90, 8)]
+        [InlineData(99, 8)]
+        [InlineData(100, 8)]
         public void CalculateEffort_ReturnsCorrectEffort(int quality, int expectedEffort)
         {
             var effort = QualityCalculator.CalculateEffort(quality);

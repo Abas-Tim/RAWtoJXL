@@ -11,7 +11,6 @@ public class ImageProcessingService : IImageService
     private readonly IImageConverterService _imageConverterService;
     private readonly ICjxlEncoder _cjxlEncoder;
     private readonly IFileService _fileService;
-    private readonly IPathResolver _pathResolver;
     private readonly ILogger _logger;
     private readonly IExiftoolService _exiftoolService;
 
@@ -19,14 +18,12 @@ public class ImageProcessingService : IImageService
         IImageConverterService imageConverterService,
         ICjxlEncoder cjxlEncoder,
         IFileService fileService,
-        IPathResolver pathResolver,
         ILogger logger,
         IExiftoolService exiftoolService)
     {
         _imageConverterService = imageConverterService ?? throw new ArgumentNullException(nameof(imageConverterService));
         _cjxlEncoder = cjxlEncoder ?? throw new ArgumentNullException(nameof(cjxlEncoder));
         _fileService = fileService ?? throw new ArgumentNullException(nameof(fileService));
-        _pathResolver = pathResolver ?? throw new ArgumentNullException(nameof(pathResolver));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _exiftoolService = exiftoolService ?? throw new ArgumentNullException(nameof(exiftoolService));
     }
@@ -86,7 +83,6 @@ public class ImageProcessingService : IImageService
 
             await _cjxlEncoder.EncodeFromStreamAsync(
                 inputPath,
-                inputPath,
                 outputPath,
                 quality,
                 async (stream, ct) => await _imageConverterService.StreamPpmToAsync(inputPath, stream, ct),
@@ -94,15 +90,14 @@ public class ImageProcessingService : IImageService
                 timeoutSeconds: 300,
                 cjxlProgress => ReportProgress(progress, 0.35 + cjxlProgress * 0.63),
                 effort,
-                skipMetadata,
                 threads);
 
-            ReportProgress(progress, 1.0);
-
-            if (!_fileService.FileExists(outputPath))
+            if (!skipMetadata)
             {
-                throw new FileNotFoundException($"Conversion completed but output file not found at: {outputPath}");
+                await _exiftoolService.EmbedMetadataAsync(inputPath, outputPath, cancellationToken);
             }
+
+            ReportProgress(progress, 1.0);
         }
         catch
         {
@@ -142,11 +137,6 @@ public class ImageProcessingService : IImageService
             }
 
             ReportProgress(progress, 1.0);
-
-            if (!_fileService.FileExists(outputPath))
-            {
-                throw new FileNotFoundException($"Conversion completed but output file not found at: {outputPath}");
-            }
         }
         catch
         {
@@ -185,11 +175,6 @@ public class ImageProcessingService : IImageService
             }
 
             ReportProgress(progress, 1.0);
-
-            if (!_fileService.FileExists(outputPath))
-            {
-                throw new FileNotFoundException($"Conversion completed but output file not found at: {outputPath}");
-            }
         }
         catch
         {
