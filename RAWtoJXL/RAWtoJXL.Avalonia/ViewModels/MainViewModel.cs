@@ -455,12 +455,11 @@ namespace RAWtoJXL.Avalonia.ViewModels
             if (!string.IsNullOrEmpty(folder))
             {
                 var searchOption = SearchRecursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
-                var files = Directory.GetFiles(folder, "*.*", searchOption)
-                    .Where(f => IsSupportedFile(Path.GetExtension(f)))
-                    .ToList();
-                if (files.Any())
+                var files = await Task.Run(() => Directory.GetFiles(folder, "*.*", searchOption)).ConfigureAwait(false);
+                var supportedFiles = files.Where(f => IsSupportedFile(Path.GetExtension(f))).ToList();
+                if (supportedFiles.Any())
                 {
-                    await AddFilesAsync(files);
+                    await AddFilesAsync(supportedFiles);
                 }
             }
         }
