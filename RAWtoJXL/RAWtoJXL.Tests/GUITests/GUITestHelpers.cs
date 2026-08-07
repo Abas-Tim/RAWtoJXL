@@ -35,11 +35,14 @@ public static class GUITestHelpers
         dispatcherService.Setup(x => x.InvokeAsync(It.IsAny<Action>()))
                          .Returns<Action>(a => { a(); return Task.CompletedTask; });
 
-        filePickerService ??= new Mock<IFilePickerService>();
-        filePickerService.Setup(x => x.PickFilesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()))
-                         .ReturnsAsync(Array.Empty<string>());
-        filePickerService.Setup(x => x.PickFolderAsync(It.IsAny<string>()))
-                         .ReturnsAsync((string?)null);
+        if (filePickerService is null)
+        {
+            filePickerService = new Mock<IFilePickerService>();
+            filePickerService.Setup(x => x.PickFilesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()))
+                             .ReturnsAsync(Array.Empty<string>());
+            filePickerService.Setup(x => x.PickFolderAsync(It.IsAny<string>()))
+                             .ReturnsAsync((string?)null);
+        }
 
         return new MainViewModel(
             imageService.Object,
