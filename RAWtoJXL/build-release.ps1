@@ -85,7 +85,6 @@ if (-not $OutputDir) {
         $OutputDir = Join-Path $scriptDir $OutputDir
     }
 }
-$OutputDir = Convert-Path $OutputDir -ErrorAction SilentlyContinue
 if (-not (Test-Path $OutputDir)) {
     New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
 }
