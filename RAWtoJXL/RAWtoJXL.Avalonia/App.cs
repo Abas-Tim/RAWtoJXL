@@ -49,18 +49,20 @@ public partial class App : Application
             desktop.MainWindow = mainWindow;
         }
 
+        var logger = Services?.GetService<ILogger>();
+
         AppDomain.CurrentDomain.UnhandledException += (_, args) =>
-            System.Diagnostics.Debug.WriteLine($"CRASH: {args.ExceptionObject}");
+            CrashReporter.Record(logger, "crash", args.ExceptionObject as Exception);
 
         Dispatcher.UIThread.UnhandledException += (_, args) =>
         {
-            System.Diagnostics.Debug.WriteLine($"UI CRASH: {args.Exception}");
+            CrashReporter.Record(logger, "ui", args.Exception);
             args.Handled = true;
         };
 
         TaskScheduler.UnobservedTaskException += (_, args) =>
         {
-            System.Diagnostics.Debug.WriteLine($"TASK CRASH: {args.Exception}");
+            CrashReporter.Record(logger, "task", args.Exception);
             args.SetObserved();
         };
 
