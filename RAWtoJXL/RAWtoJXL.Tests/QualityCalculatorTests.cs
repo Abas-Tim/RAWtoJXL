@@ -18,7 +18,7 @@ namespace RAWtoJXL.Tests
         [InlineData(89, 7)]
         [InlineData(90, 8)]
         [InlineData(99, 8)]
-        [InlineData(100, 9)]
+        [InlineData(100, 8)]
         public void CalculateEffort_ReturnsCorrectEffort(int quality, int expectedEffort)
         {
             var effort = QualityCalculator.CalculateEffort(quality);

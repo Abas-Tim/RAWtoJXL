@@ -42,7 +42,7 @@ public class CjxlEncoderArgumentsTests
     [InlineData(70, 6)]
     [InlineData(85, 7)]
     [InlineData(95, 8)]
-    [InlineData(100, 9)]
+    [InlineData(100, 8)]
     public void BuildStreamEncodingArguments_EffortMatchesCalculator(int quality, int expectedEffort)
     {
         var service = CreateTestEncoder();
@@ -99,6 +99,16 @@ public class CjxlEncoderArgumentsTests
         var args = service.BuildStreamEncodingArguments(50, @"C:\output.jxl", effortOverride: null);
 
         Assert.Contains("--effort=5", args);
+    }
+
+    [Fact]
+    public void BuildStreamEncodingArguments_EffortOverride9_StillAllowed()
+    {
+        var service = CreateTestEncoder();
+        var args = service.BuildStreamEncodingArguments(100, @"C:\output.jxl", effortOverride: 9);
+
+        Assert.Contains("--effort=9", args);
+        Assert.DoesNotContain("--effort=8", args);
     }
 
     private static TestEncoder CreateTestEncoder()

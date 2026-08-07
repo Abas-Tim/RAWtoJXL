@@ -17,7 +17,6 @@ namespace RAWtoJXL.Core.Models
         {
             return quality switch
             {
-                >= 100 => 9,
                 >= 90 => 8,
                 >= 75 => 7,
                 >= 60 => 6,
