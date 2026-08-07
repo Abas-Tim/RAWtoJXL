@@ -15,6 +15,8 @@ namespace RAWtoJXL.Avalonia
         public const string Pending = "Pending";
         public const string Cancelled = "Cancelled";
         public const string ConversionComplete = "Conversion complete.";
+        public const string ConversionCancelled = "Conversion cancelled.";
+        public const string ConversionSummary = "{0} converted, {1} skipped, {2} failed.";
         public const string Cancelling = "Cancelling...";
         public const string FailedToOpenOutputFolder = "Failed to open output folder.";
         public const string OpenFileDialogTitle = "Open Image Files";

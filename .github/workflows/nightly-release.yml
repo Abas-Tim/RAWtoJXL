@@ -36,23 +36,38 @@ jobs:
           $zip = "artifacts/RAWtoJXL-$version-win-x64.zip"
           (Get-FileHash $zip -Algorithm SHA256).Hash | Out-File "$zip.sha256" -Encoding ASCII
 
-      - name: Move nightly tag to current master
-        shell: bash
-        run: |
-          git tag -f nightly
-          git push -f origin nightly
-
-      - name: Create or update the Nightly prerelease
+      - name: Tag and publish nightly prerelease
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          DATE=$(date -u +%Y%m%d)
+          # Unique per run: GitHub permanently protects a tag name once a
+          # release has been attached to it (even after the release is
+          # deleted), so a fixed daily tag breaks re-runs. The run number
+          # guarantees a fresh, never-burned name every time.
+          TAG="nightly-$DATE-r${{ github.run_number }}"
           COMMIT=$(git rev-parse --short HEAD)
-          DATE=$(date -u +%Y-%m-%d)
-          printf '**Nightly build of master** (%s, commit `%s`).\n\nAutomated build of the latest master. Not a stable release.\n\nAssets: `RAWtoJXL-nightly-win-x64.zip` (+ .sha256). Versioned stable releases are created manually from `v*` tags.' "$DATE" "$COMMIT" > notes.md
+          git tag "$TAG"
+          git push origin "$TAG"
+          printf '**Nightly build** (%s, commit `%s`).\n\nAutomated build of the latest master. Not a stable release.\n\nAssets: `RAWtoJXL-nightly-win-x64.zip` (+ .sha256).' "$DATE" "$COMMIT" > notes.md
+          gh release create "$TAG" RAWtoJXL/artifacts/* --title "Nightly Build $DATE" --prerelease --notes-file notes.md
+
+      - name: Clean up previous nightly tag and release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          NEWEST=$(gh release list --json tagName --jq '.[].tagName' | grep -E '^nightly-[0-9]{8}-r[0-9]+$' | sort | tail -n 1)
+          for OLD in $(gh release list --json tagName --jq '.[].tagName' | grep -E '^nightly-[0-9]{8}-r[0-9]+$'); do
+            if [ "$OLD" != "$NEWEST" ]; then
+              echo "Removing stale nightly release: $OLD"
+              gh release delete "$OLD" --cleanup-tag --yes || true
+            fi
+          done
+          # Remove the legacy frozen 'nightly' release (its tag name is
+          # burned and cannot be reused, so only the release is cleaned).
           if gh release view nightly >/dev/null 2>&1; then
-            gh release upload nightly RAWtoJXL/artifacts/* --clobber
-            gh release edit nightly --title "Nightly Build" --prerelease --notes-file notes.md
-          else
-            gh release create nightly RAWtoJXL/artifacts/* --title "Nightly Build" --prerelease --notes-file notes.md
+            echo "Removing legacy nightly release"
+            gh release delete nightly --cleanup-tag --yes || true
           fi

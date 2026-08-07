@@ -91,6 +91,10 @@ namespace RAWtoJXL.Avalonia.ViewModels
         partial void OnQualityPresetChanged(int value)
         {
             SaveSettings();
+            foreach (var item in Images)
+            {
+                item.GlobalQualityPreset = value;
+            }
         }
 
         [ObservableProperty]
@@ -240,6 +244,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
             _currentFileProgress = 0;
             CompletedCount = 0;
             TotalCount = readySelected.Count;
+            int convertedCount = 0, skippedCount = 0, failedCount = 0, cancelledCount = 0;
             StatusMessage = $"{AppStrings.ConvertingProgress}{0}{AppStrings.OfSuffix}{readySelected.Count} (0%)";
             IsConverting = true;
             IsCancelRequested = false;
@@ -264,6 +269,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
                         item.Status = ImageStatus.Failed;
                         item.ErrorMessage = AppStrings.FileSkipped;
                     });
+                    skippedCount++;
                     UpdateProgress(readySelected.Count);
                     continue;
                 }
@@ -280,6 +286,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
                             item.Status = ImageStatus.Failed;
                             item.ErrorMessage = AppStrings.FileSkippedByUser;
                         });
+                        skippedCount++;
                         UpdateProgress(readySelected.Count);
                         continue;
                     }
@@ -332,6 +339,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
                             OutputDirectory = Path.GetDirectoryName(outputPath) ?? string.Empty;
                         }
                     });
+                    convertedCount++;
                 }
                 catch (OperationCanceledException)
                 {
@@ -340,6 +348,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
                         item.Status = ImageStatus.Pending;
                         item.ErrorMessage = AppStrings.Cancelled;
                     });
+                    cancelledCount++;
                 }
                 catch (FileLockedException ex)
                 {
@@ -348,6 +357,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
                         item.Status = ImageStatus.Failed;
                         item.ErrorMessage = $"{AppStrings.FileLockedPrefix}{ex.Message}";
                     });
+                    failedCount++;
                 }
                 catch (Exception ex)
                 {
@@ -356,6 +366,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
                         item.Status = ImageStatus.Failed;
                         item.ErrorMessage = ex.Message;
                     });
+                    failedCount++;
                 }
 
                 UpdateProgress(readySelected.Count);
@@ -377,12 +388,27 @@ namespace RAWtoJXL.Avalonia.ViewModels
                 IsConverting = false;
                 IsCancelRequested = false;
                 _cancellationTokenSource = null;
-                StatusMessage = AppStrings.ConversionComplete;
+                StatusMessage = BuildCompletionMessage(convertedCount, skippedCount, failedCount, cancelledCount, readySelected.Count);
                 CompletedCount = 0;
                 TotalCount = 0;
                 RefreshAllCommands();
                 RequestRefreshLayout?.Invoke();
             });
+        }
+
+        private static string BuildCompletionMessage(int converted, int skipped, int failed, int cancelled, int total)
+        {
+            if (cancelled > 0)
+            {
+                return $"{AppStrings.ConversionCancelled} {string.Format(AppStrings.ConversionSummary, converted, skipped, failed)}";
+            }
+
+            if (converted == total && skipped == 0 && failed == 0)
+            {
+                return AppStrings.ConversionComplete;
+            }
+
+            return $"{AppStrings.ConversionComplete} {string.Format(AppStrings.ConversionSummary, converted, skipped, failed)}";
         }
 
         private bool CanExecuteConvertSelected() =>
@@ -455,12 +481,11 @@ namespace RAWtoJXL.Avalonia.ViewModels
             if (!string.IsNullOrEmpty(folder))
             {
                 var searchOption = SearchRecursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
-                var files = Directory.GetFiles(folder, "*.*", searchOption)
-                    .Where(f => IsSupportedFile(Path.GetExtension(f)))
-                    .ToList();
-                if (files.Any())
+                var files = await Task.Run(() => Directory.GetFiles(folder, "*.*", searchOption)).ConfigureAwait(false);
+                var supportedFiles = files.Where(f => IsSupportedFile(Path.GetExtension(f))).ToList();
+                if (supportedFiles.Any())
                 {
-                    await AddFilesAsync(files);
+                    await AddFilesAsync(supportedFiles);
                 }
             }
         }
@@ -653,7 +678,8 @@ namespace RAWtoJXL.Avalonia.ViewModels
                     FilePath = path,
                     FileName = Path.GetFileName(path),
                     Status = ImageStatus.Ready,
-                    SourceFileSize = fileSize
+                    SourceFileSize = fileSize,
+                    GlobalQualityPreset = QualityPreset
                 });
             }
 

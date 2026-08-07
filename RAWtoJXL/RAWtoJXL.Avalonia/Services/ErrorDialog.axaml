@@ -1,0 +1,21 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="RAWtoJXL.Avalonia.Services.ErrorDialog"
+        Title="{Binding TitleText}"
+        SizeToContent="WidthAndHeight"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        WindowDecorations="Full">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0"
+                   Text="{Binding MessageText}"
+                   TextWrapping="Wrap"
+                   MaxWidth="500"
+                   Margin="0,0,0,12"/>
+        <Button Grid.Row="1" Content="OK" Width="80" HorizontalAlignment="Right" Click="OkButton_Click" IsDefault="True" IsCancel="True"/>
+    </Grid>
+</Window>

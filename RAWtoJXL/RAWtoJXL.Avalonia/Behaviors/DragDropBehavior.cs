@@ -62,7 +62,7 @@ namespace RAWtoJXL.Avalonia.Behaviors
                                 var option = viewModel.SearchRecursive
                                     ? SearchOption.AllDirectories
                                     : SearchOption.TopDirectoryOnly;
-                                allFiles.AddRange(Directory.GetFiles(path, "*.*", option));
+                                allFiles.AddRange(await Task.Run(() => Directory.GetFiles(path, "*.*", option)).ConfigureAwait(false));
                             }
                             else
                             {
@@ -88,7 +88,7 @@ namespace RAWtoJXL.Avalonia.Behaviors
                                 var option = viewModel.SearchRecursive
                                     ? SearchOption.AllDirectories
                                     : SearchOption.TopDirectoryOnly;
-                                allFiles.AddRange(Directory.GetFiles(path, "*.*", option));
+                                allFiles.AddRange(await Task.Run(() => Directory.GetFiles(path, "*.*", option)).ConfigureAwait(false));
                             }
                             else if (File.Exists(path))
                             {
