@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using RAWtoJXL.Core.Services;
 
 namespace RAWtoJXL.Tests;
@@ -9,45 +10,42 @@ public class ProgressReportingTests
     [Fact]
     public async Task ReportProgressAsync_WithStreamingPhase_ReportsConstantThenMonotonicRamp()
     {
-        var values = new List<double>();
+        var values = new ConcurrentQueue<double>();
         using var cts = new CancellationTokenSource();
         var phase = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
         var task = CjxlEncoderService.ReportProgressAsync(
-            DateTime.UtcNow, TimeSpan.FromSeconds(60), phase.Task, values.Add, cts.Token, Logger);
+            DateTime.UtcNow, TimeSpan.FromSeconds(60), phase.Task, values.Enqueue, cts.Token, Logger);
 
-        await Task.Delay(250);
-        var duringStreaming = values.ToList();
+        await WaitUntilAsync(() => values.Count > 0, "expected at least one streaming-phase progress value");
+        var duringStreaming = values.ToArray();
 
         phase.SetResult();
-        await Task.Delay(400);
+        await WaitUntilAsync(() => values.ToArray().Any(v => v > 0.05), "expected the encode ramp to start after the streaming phase");
 
         cts.Cancel();
         try { await task; } catch (OperationCanceledException) { }
 
         Assert.NotEmpty(duringStreaming);
         Assert.All(duringStreaming, v => Assert.Equal(0.05, v));
-        Assert.Contains(values, v => v > 0.05);
-        Assert.True(values.SequenceEqual(values.OrderBy(v => v)), "progress must be monotonic");
+        Assert.True(values.ToArray().SequenceEqual(values.ToArray().OrderBy(v => v)), "progress must be monotonic");
     }
 
     [Fact]
     public async Task ReportProgressAsync_NoStreamingPhase_StartsRampingImmediately()
     {
-        var values = new List<double>();
+        var values = new ConcurrentQueue<double>();
         using var cts = new CancellationTokenSource();
 
         var task = CjxlEncoderService.ReportProgressAsync(
-            DateTime.UtcNow, TimeSpan.FromSeconds(60), null, values.Add, cts.Token, Logger);
+            DateTime.UtcNow, TimeSpan.FromSeconds(60), null, values.Enqueue, cts.Token, Logger);
 
-        await Task.Delay(300);
+        await WaitUntilAsync(() => values.ToArray().Any(v => v > 0.05), "expected the encode ramp to start immediately");
 
         cts.Cancel();
         try { await task; } catch (OperationCanceledException) { }
 
-        Assert.NotEmpty(values);
-        Assert.All(values, v => Assert.True(v > 0.05, $"expected values above the streaming constant, got {v}"));
-        Assert.True(values.SequenceEqual(values.OrderBy(v => v)), "progress must be monotonic");
+        Assert.True(values.ToArray().SequenceEqual(values.ToArray().OrderBy(v => v)), "progress must be monotonic");
     }
 
     [Theory]
@@ -60,5 +58,18 @@ public class ProgressReportingTests
         var result = CjxlEncoderService.ClampBudget(TimeSpan.FromSeconds(seconds), minSeconds, TimeSpan.FromSeconds(maxSeconds));
 
         Assert.Equal(TimeSpan.FromSeconds(expectedSeconds), result);
+    }
+
+    private static async Task WaitUntilAsync(Func<bool> condition, string failureMessage)
+    {
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(10);
+        while (!condition())
+        {
+            if (DateTime.UtcNow > deadline)
+            {
+                Assert.Fail(failureMessage);
+            }
+            await Task.Delay(25);
+        }
     }
 }

@@ -11,6 +11,7 @@ using Moq;
 namespace RAWtoJXL.Tests.GUITests;
 
 [Trait("category", "gui")]
+[Collection("Settings")]
 public class MainWindowBehavioralTests
 {
     [AvaloniaFact]

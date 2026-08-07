@@ -99,8 +99,8 @@ namespace RAWtoJXL.Avalonia
 
     public static class SettingsService
     {
-        private static readonly string SettingsDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "RAWtoJXL");
-        private static readonly string SettingsPath = Path.Combine(SettingsDirectory, "settings.json");
+        internal static string SettingsDirectory { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "RAWtoJXL");
+        internal static string SettingsPath => Path.Combine(SettingsDirectory, "settings.json");
         private const int MaxRecentFiles = 50;
         private static readonly object FileLock = new();
 
