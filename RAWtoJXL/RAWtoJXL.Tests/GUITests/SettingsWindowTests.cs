@@ -8,6 +8,7 @@ using RAWtoJXL.Core.Interfaces;
 namespace RAWtoJXL.Tests.GUITests;
 
 [Trait("category", "gui")]
+[Collection("Settings")]
 public class SettingsWindowTests
 {
     [AvaloniaFact]

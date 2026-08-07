@@ -13,12 +13,22 @@ namespace RAWtoJXL.Tests.GUITests;
 [Trait("category", "gui")]
 public static class GUITestHelpers
 {
+    public static void NewSettingsSandbox()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "RAWtoJXL_TestSettings_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        SettingsService.SettingsDirectory = dir;
+        SettingsService.Save(new AppSettings());
+    }
+
     public static MainViewModel CreateViewModel(
         Mock<IImageService>? imageService = null,
         Mock<IDialogService>? dialogService = null,
         Mock<IDispatcherService>? dispatcherService = null,
         Mock<IFilePickerService>? filePickerService = null)
     {
+        NewSettingsSandbox();
+
         imageService ??= new Mock<IImageService>();
         dialogService ??= new Mock<IDialogService>();
         dispatcherService ??= new Mock<IDispatcherService>();
@@ -182,21 +192,11 @@ public static class GUITestHelpers
 
     public sealed class SettingsScope : IDisposable
     {
-        readonly string _settingsPath;
-        readonly string _backupPath;
-        readonly bool _fileExisted;
         readonly IServiceProvider _testServiceProvider;
 
         public SettingsScope()
         {
-            _settingsPath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "RAWtoJXL", "settings.json");
-            _backupPath = _settingsPath + ".gui_test_backup_" + Guid.NewGuid().ToString("N");
-            _fileExisted = File.Exists(_settingsPath);
-            if (_fileExisted)
-                File.Copy(_settingsPath, _backupPath, overwrite: true);
-            SettingsService.Save(new AppSettings());
+            NewSettingsSandbox();
 
             var services = new ServiceCollection();
             services.AddSingleton<IFilePickerService>(CreateMockFilePicker());
@@ -206,16 +206,6 @@ public static class GUITestHelpers
 
         public void Dispose()
         {
-            try
-            {
-                if (File.Exists(_settingsPath))
-                    File.Delete(_settingsPath);
-                if (_fileExisted && File.Exists(_backupPath))
-                    File.Copy(_backupPath, _settingsPath, overwrite: true);
-                if (File.Exists(_backupPath))
-                    File.Delete(_backupPath);
-            }
-            catch { }
         }
 
         private static IFilePickerService CreateMockFilePicker()

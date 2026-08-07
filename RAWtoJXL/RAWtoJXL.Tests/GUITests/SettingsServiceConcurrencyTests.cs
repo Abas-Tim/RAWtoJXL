@@ -4,11 +4,10 @@ using RAWtoJXL.Avalonia;
 
 namespace RAWtoJXL.Tests.GUITests;
 
+[Collection("Settings")]
 public class SettingsServiceConcurrencyTests
 {
-    private static string SettingsPath => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "RAWtoJXL", "settings.json");
+    private static string SettingsPath => SettingsService.SettingsPath;
 
     [Fact]
     public async Task ConcurrentWritesAndReads_NeverObserveTornJson()
