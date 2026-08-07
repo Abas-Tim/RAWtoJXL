@@ -55,7 +55,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TODAY=$(date -u +%Y%m%d)
-          for OLD in $(gh release list --json tagName --jq '.[].tagName' | grep -E '^nightly-[0-9]{8}$' | grep -v "^$TODAY$"); do
+          for OLD in $(gh release list --json tagName --jq '.[].tagName' | grep -E '^nightly-[0-9]{8}$' | grep -v "nightly-${TODAY}$"); do
             echo "Removing stale nightly release: $OLD"
             gh release delete "$OLD" --cleanup-tag --yes || true
           done

@@ -8,13 +8,13 @@ namespace RAWtoJXL.Avalonia.Services
         public string MessageText
         {
             get => _messageText;
-            set { _messageText = value; Title = value; }
+            set => _messageText = value;
         }
         private string _messageText = string.Empty;
 
         public string TitleText
         {
-            get => Title;
+            get => Title ?? string.Empty;
             set => Title = value;
         }
 
