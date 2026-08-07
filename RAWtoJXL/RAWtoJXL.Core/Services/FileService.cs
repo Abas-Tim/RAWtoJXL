@@ -44,11 +44,6 @@ namespace RAWtoJXL.Core.Services
             return Path.Combine(path1, path2);
         }
 
-        public string GetTempFileName()
-        {
-            return Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".png");
-        }
-
         public string? SaveBytesToTemp(byte[] data, string extension)
         {
             if (data == null || data.Length == 0)

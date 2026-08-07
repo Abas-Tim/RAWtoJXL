@@ -201,63 +201,6 @@ namespace RAWtoJXL.Core.Services;
         return await _exiftoolService.ExtractMetadataProfilesAsync(filePath, cancellationToken);
     }
 
-    public async Task<byte[]> ExtractToRawRgb16Async(string inputPath, CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrWhiteSpace(inputPath))
-        {
-            throw new ArgumentException("Input path cannot be null or empty.", nameof(inputPath));
-        }
-
-        if (!File.Exists(inputPath))
-        {
-            throw new FileNotFoundException($"Input file not found: {inputPath}");
-        }
-
-        return await Task.Run(() =>
-        {
-            try
-            {
-                using var image = new MagickImage(inputPath);
-                image.Depth = 16;
-                image.ColorSpace = ColorSpace.sRGB;
-
-                var width = image.Width;
-                var height = image.Height;
-
-                var pixels = image.GetPixels();
-                long pixelCount = pixels.Count();
-
-                var result = new byte[pixelCount * 6];
-                int resultIndex = 0;
-
-                foreach (var pixel in pixels)
-                {
-                    ushort r = pixel[0];
-                    ushort g = pixel[1];
-                    ushort b = pixel[2];
-
-                    result[resultIndex++] = (byte)(r >> 8);
-                    result[resultIndex++] = (byte)(r & 0xFF);
-                    result[resultIndex++] = (byte)(g >> 8);
-                    result[resultIndex++] = (byte)(g & 0xFF);
-                    result[resultIndex++] = (byte)(b >> 8);
-                    result[resultIndex++] = (byte)(b & 0xFF);
-                }
-
-                _logger.Write($"[ImageConverterService] Extracted RGB16: {width}x{height}, {result.Length} bytes");
-                return result;
-            }
-            catch (IOException ex) when (FileLockedException.IsFileLocked(ex))
-            {
-                throw new FileLockedException(inputPath, ex);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Failed to extract RGB16 from {Path.GetFileName(inputPath)}: {ex.Message}", ex);
-            }
-        }, cancellationToken);
-    }
-
     public async Task StreamPpmToAsync(string inputPath, Stream output, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(inputPath))

@@ -15,7 +15,16 @@ namespace RAWtoJXL.Core.Models
 
         public static int CalculateEffort(int quality)
         {
-            return 7;
+            return quality switch
+            {
+                >= 100 => 9,
+                >= 90 => 8,
+                >= 75 => 7,
+                >= 60 => 6,
+                >= 45 => 5,
+                >= 30 => 4,
+                _ => 3
+            };
         }
 
         public static bool IsLossless(int quality)

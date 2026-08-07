@@ -9,13 +9,7 @@ public class ImageProcessingServiceCleanupTests
 {
     private sealed class ThrowingEncoder : ICjxlEncoder
     {
-        public Task EncodeAsync(string inputPath, string originalSourcePath, string outputPath, int quality, CancellationToken cancellationToken = default, int timeoutSeconds = 300, Action<double>? progress = null, int? effort = null, bool skipMetadata = false, int? threads = null)
-            => throw new NotImplementedException();
-
-        public Task EncodeFromStreamAsync(Stream inputStream, string originalSourcePath, string outputPath, int quality, CancellationToken cancellationToken = default, int timeoutSeconds = 300, Action<double>? progress = null, int? effort = null, bool skipMetadata = false, int? threads = null)
-            => throw new NotImplementedException();
-
-        public Task EncodeFromStreamAsync(string inputPath, string originalSourcePath, string outputPath, int quality, Func<Stream, CancellationToken, Task> ppmWriter, CancellationToken cancellationToken, int timeoutSeconds, Action<double>? progress, int? effort, bool skipMetadata = false, int? threads = null)
+        public Task EncodeFromStreamAsync(string inputPath, string outputPath, int quality, Func<Stream, CancellationToken, Task> ppmWriter, CancellationToken cancellationToken, int timeoutSeconds, Action<double>? progress, int? effort, int? threads = null)
         {
             File.WriteAllText(outputPath, "partial");
             return Task.FromException(new IOException("simulated encoding failure"));
@@ -32,7 +26,6 @@ public class ImageProcessingServiceCleanupTests
             converter ?? new Mock<IImageConverterService>().Object,
             encoder ?? new Mock<ICjxlEncoder>().Object,
             new FileService(logger),
-            new PathResolverService(),
             logger,
             exiftool ?? new Mock<IExiftoolService>().Object);
     }

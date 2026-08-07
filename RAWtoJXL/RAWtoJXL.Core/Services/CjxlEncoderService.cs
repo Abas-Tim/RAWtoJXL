@@ -12,106 +12,22 @@ namespace RAWtoJXL.Core.Services;
 public class CjxlEncoderService : ICjxlEncoder
 {
     private readonly IPathResolver _pathResolver;
-    private readonly IExiftoolService _exiftoolService;
     private readonly ILogger _logger;
     private readonly IProcessRunner _processRunner;
     private const int DefaultTimeoutSeconds = 300;
 
     public CjxlEncoderService(
         IPathResolver pathResolver,
-        IExiftoolService exiftoolService,
         ILogger logger,
         IProcessRunner processRunner)
     {
         _pathResolver = pathResolver ?? throw new ArgumentNullException(nameof(pathResolver));
-        _exiftoolService = exiftoolService ?? throw new ArgumentNullException(nameof(exiftoolService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _processRunner = processRunner ?? throw new ArgumentNullException(nameof(processRunner));
     }
 
-    public async Task EncodeAsync(
-        string inputPath,
-        string originalSourcePath,
-        string outputPath,
-        int quality,
-        CancellationToken cancellationToken = default,
-        int timeoutSeconds = DefaultTimeoutSeconds,
-        Action<double>? progress = null,
-        int? effort = null,
-        bool skipMetadata = false,
-        int? threads = null)
-    {
-        ValidateInputParameters(inputPath, outputPath, quality);
-        cancellationToken.ThrowIfCancellationRequested();
-
-        if (!File.Exists(inputPath))
-        {
-            throw new FileNotFoundException($"Input file not found: {inputPath}", inputPath);
-        }
-
-        EnsureOutputDirectoryExists(outputPath);
-
-        string cjxlPath = await ResolveCjxlExecutableAsync(cancellationToken);
-
-        var args = BuildEncodingArguments(quality, inputPath, outputPath, effort, threads);
-
-        await ExecuteEncodingProcessAsync(
-            cjxlPath, args, usesStdin: false, cancellationToken, timeoutSeconds, progress, streamingPhase: null,
-            argumentsString => _processRunner.RunProcessWithTimeoutAsync(cjxlPath, argumentsString, timeoutSeconds, cancellationToken));
-
-        VerifyOutputFile(outputPath);
-
-        if (!skipMetadata)
-        {
-            await _exiftoolService.EmbedMetadataAsync(originalSourcePath, outputPath, cancellationToken);
-        }
-    }
-
-    public async Task EncodeFromStreamAsync(
-        Stream inputStream,
-        string originalSourcePath,
-        string outputPath,
-        int quality,
-        CancellationToken cancellationToken = default,
-        int timeoutSeconds = DefaultTimeoutSeconds,
-        Action<double>? progress = null,
-        int? effort = null,
-        bool skipMetadata = false,
-        int? threads = null)
-    {
-        if (string.IsNullOrWhiteSpace(outputPath))
-        {
-            throw new ArgumentNullException(nameof(outputPath), "Output path cannot be null or empty.");
-        }
-
-        if (quality < 0 || quality > 100)
-        {
-            throw new ArgumentOutOfRangeException(nameof(quality), "Quality must be between 0 and 100.");
-        }
-
-        cancellationToken.ThrowIfCancellationRequested();
-
-        EnsureOutputDirectoryExists(outputPath);
-
-        string cjxlPath = await ResolveCjxlExecutableAsync(cancellationToken);
-
-        var args = BuildStreamEncodingArguments(quality, outputPath, effort, threads);
-
-        await ExecuteEncodingProcessAsync(
-            cjxlPath, args, usesStdin: true, cancellationToken, timeoutSeconds, progress, streamingPhase: null,
-            argumentsString => _processRunner.RunProcessWithStdinAsync(cjxlPath, argumentsString, inputStream, timeoutSeconds, cancellationToken));
-
-        VerifyOutputFile(outputPath);
-
-        if (!skipMetadata)
-        {
-            await _exiftoolService.EmbedMetadataAsync(originalSourcePath, outputPath, cancellationToken);
-        }
-    }
-
     public async Task EncodeFromStreamAsync(
         string inputPath,
-        string originalSourcePath,
         string outputPath,
         int quality,
         Func<Stream, CancellationToken, Task> ppmWriter,
@@ -119,7 +35,6 @@ public class CjxlEncoderService : ICjxlEncoder
         int timeoutSeconds,
         Action<double>? progress,
         int? effort,
-        bool skipMetadata = false,
         int? threads = null)
     {
         if (string.IsNullOrWhiteSpace(outputPath))
@@ -160,39 +75,6 @@ public class CjxlEncoderService : ICjxlEncoder
             argumentsString => _processRunner.RunProcessWithStdinWriterAsync(cjxlPath, argumentsString, timedWriter, timeoutSeconds, cancellationToken));
 
         VerifyOutputFile(outputPath);
-
-        if (!skipMetadata)
-        {
-            await _exiftoolService.EmbedMetadataAsync(originalSourcePath, outputPath, cancellationToken);
-        }
-    }
-
-    private static void ValidateInputParameters(string inputPath, string outputPath, int quality)
-    {
-        if (string.IsNullOrWhiteSpace(inputPath))
-        {
-            throw new ArgumentNullException(nameof(inputPath), "Input path cannot be null or empty.");
-        }
-
-        if (string.IsNullOrWhiteSpace(outputPath))
-        {
-            throw new ArgumentNullException(nameof(outputPath), "Output path cannot be null or empty.");
-        }
-
-        if (!Path.IsPathRooted(inputPath) && !inputPath.StartsWith("."))
-        {
-            throw new ArgumentException($"Input path must be a valid file path: {inputPath}", nameof(inputPath));
-        }
-
-        if (!Path.IsPathRooted(outputPath) && !outputPath.StartsWith("."))
-        {
-            throw new ArgumentException($"Output path must be a valid file path: {outputPath}", nameof(outputPath));
-        }
-
-        if (quality < 0 || quality > 100)
-        {
-            throw new ArgumentOutOfRangeException(nameof(quality), "Quality must be between 0 and 100.");
-        }
     }
 
     private static void EnsureOutputDirectoryExists(string outputPath)
@@ -228,43 +110,7 @@ public class CjxlEncoderService : ICjxlEncoder
         return cjxlPath;
     }
 
-    protected internal List<string> BuildEncodingArguments(
-        int quality,
-        string inputPath,
-        string outputPath,
-        int? effortOverride = null,
-        int? threadsOverride = null)
-    {
-        var args = new List<string>(10);
-
-        float distance = QualityCalculator.CalculateDistance(quality);
-        int effort = effortOverride ?? QualityCalculator.CalculateEffort(quality);
-        bool isLossless = QualityCalculator.IsLossless(quality);
-        int threads = threadsOverride ?? Environment.ProcessorCount;
-
-        args.Add(isLossless ? "--distance=0" : $"--distance={distance:F2}");
-        args.Add($"--effort={effort}");
-        args.Add($"--num_threads={threads}");
-        args.Add("--container=1");
-
-        if (isLossless)
-        {
-            args.Add("--modular=1");
-        }
-        else
-        {
-            args.Add("--progressive_dc=1");
-        }
-
-        _logger.Write($"[CjxlEncoder] Building args: quality={quality}, effort={effort}, distance={distance:F2}");
-
-        args.Add(inputPath);
-        args.Add(outputPath);
-
-        return args;
-    }
-
-     protected internal List<string> BuildStreamEncodingArguments(
+    protected internal List<string> BuildStreamEncodingArguments(
         int quality,
         string outputPath,
         int? effortOverride = null,
