@@ -64,7 +64,9 @@ namespace RAWtoJXL.Tests
                 p => { lock (lockObj) progressValues.Add(p); },
                 50,
                 OutputFormat.Jxl,
-                TestContext.Current.CancellationToken);
+                TestContext.Current.CancellationToken,
+                skipMetadata: false,
+                effort: 9);
 
             Assert.True(File.Exists(outputPath));
             Assert.True(progressValues.Count > 2, $"Expected multiple progress updates, got {progressValues.Count}");

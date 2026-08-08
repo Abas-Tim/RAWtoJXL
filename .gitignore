@@ -36,6 +36,8 @@ MediaCache/
 
 # Bundled binaries — downloaded at build time by build.ps1
 cjxl.exe
+exiftool.exe
+exiftool_files/
 
 # Release / Publish outputs
 **/publish/

@@ -204,7 +204,6 @@ jobs:
           name: build-version
           path: ${{ github.workspace }}/version.txt
           retention-days: 1
-
       # ── Pack ZIP ──────────────────────────────────────────────────────
       - name: Create portable ZIP
         id: package
@@ -244,7 +243,7 @@ jobs:
           path: |
             ${{ steps.package.outputs.archive_path }}
             ${{ steps.package.outputs.archive_path }}.sha256
-          retention-days: 14
+          retention-days: 1
 
   # ── 2. Publish GitHub Release ──────────────────────────────────────────
   release:

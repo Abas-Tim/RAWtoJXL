@@ -6,18 +6,18 @@ namespace RAWtoJXL.Tests;
 
 public class Startup
 {
-    protected static readonly string TestArwPath = GetTestArwPath();
+    protected static readonly string TestArwPath = GetTestAssetPath();
 
-    private static string GetTestArwPath()
+    private static string GetTestAssetPath()
     {
         var assemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
         var assemblyDir = Path.GetDirectoryName(assemblyLocation) ?? Directory.GetCurrentDirectory();
-        var testFile = Path.Combine(assemblyDir, "test1.ARW");
+        var testFile = Path.Combine(assemblyDir, "test1.dng");
 
         if (File.Exists(testFile))
             return testFile;
 
-        throw new InvalidOperationException($"Test ARW file not found at: {testFile}");
+        throw new InvalidOperationException($"Test RAW file not found at: {testFile}");
     }
 
     protected IServiceProvider Services { get; }
