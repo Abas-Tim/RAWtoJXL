@@ -103,36 +103,45 @@ jobs:
         shell: pwsh
         run: |
           $version = "${{ env.EXIFTOOL_VERSION }}"
-          # Replace dots with nothing for the filename: 13.57 → 1357  (SourceForge convention)
-          $verNoDot = $version -replace '\.'
-          $url = "https://sourceforge.net/projects/exiftool/files/exiftool-${version}_64.zip/download"
+          $url = "https://downloads.sourceforge.net/project/exiftool/exiftool-${version}_64.zip"
           $zip = Join-Path $env:TEMP "exiftool.zip"
 
-          curl.exe -L -s `
-            -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" `
-            -H "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" `
-            -o $zip $url
+          curl.exe -L -s -o $zip $url
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "exiftool download failed (curl exit $LASTEXITCODE). URL: $url"
+            exit 1
+          }
 
           $bytes = [System.IO.File]::ReadAllBytes($zip)
-          if ($bytes[0] -eq 80 -and $bytes[1] -eq 75) {
-            $dest = Join-Path $env:TEMP "exiftool-extract"
-            New-Item -ItemType Directory -Path $dest -Force | Out-Null
-            Expand-Archive -Path $zip -DestinationPath $dest -Force
-
-            $exe = Get-ChildItem $dest -Filter "exiftool*.exe" -Recurse | Select-Object -First 1
-            if ($exe) {
-              Copy-Item $exe.FullName "${{ github.workspace }}/RAWtoJXL/exiftool.exe" -Force
-            }
-
-            $filesDir = Get-ChildItem $dest -Filter "exiftool_files" -Directory -Recurse | Select-Object -First 1
-            if ($filesDir) {
-              Copy-Item $filesDir.FullName "${{ github.workspace }}/RAWtoJXL/exiftool_files" -Recurse -Force
-            }
-
-            Remove-Item $dest -Recurse -Force
+          if (-not ($bytes[0] -eq 80 -and $bytes[1] -eq 75)) {
+            Write-Error "exiftool download failed: expected a ZIP archive but got $($bytes.Length) bytes. URL: $url"
+            exit 1
           }
-          Remove-Item $zip -Force -ErrorAction SilentlyContinue
-          Write-Output "exiftool downloaded successfully."
+
+          $dest = Join-Path $env:TEMP "exiftool-extract"
+          New-Item -ItemType Directory -Path $dest -Force | Out-Null
+          Expand-Archive -Path $zip -DestinationPath $dest -Force
+
+          $exe = Get-ChildItem $dest -Filter "exiftool*.exe" -Recurse | Select-Object -First 1
+          if (-not $exe) {
+            Write-Error "exiftool.exe not found in archive!"
+            exit 1
+          }
+          Copy-Item $exe.FullName "${{ github.workspace }}/RAWtoJXL/exiftool.exe" -Force
+
+          $filesDir = Get-ChildItem $dest -Filter "exiftool_files" -Directory -Recurse | Select-Object -First 1
+          if ($filesDir) {
+            Copy-Item $filesDir.FullName "${{ github.workspace }}/RAWtoJXL/exiftool_files" -Recurse -Force
+          }
+
+          & "${{ github.workspace }}/RAWtoJXL/exiftool.exe" -ver | Out-Null
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "exiftool.exe version check failed (exit $LASTEXITCODE)"
+            exit 1
+          }
+
+          Remove-Item $zip, $dest -Recurse -Force -ErrorAction SilentlyContinue
+          Write-Output "exiftool downloaded and verified."
 
       # ── Restore ────────────────────────────────────────────────────────
       - name: Restore dependencies
