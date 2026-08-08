@@ -51,7 +51,6 @@ public class MainWindowConversionSummaryTests
     [AvaloniaFact]
     public async Task ConvertSelectedAsync_AllSucceed_ShowsPlainCompletionMessage()
     {
-        MainViewModel.HeadlessTestMode = true;
         var dir = CreateTempDir(out var files, 2);
         try
         {
@@ -68,14 +67,12 @@ public class MainWindowConversionSummaryTests
         finally
         {
             Directory.Delete(dir, true);
-            MainViewModel.HeadlessTestMode = false;
         }
     }
 
     [AvaloniaFact]
     public async Task ConvertSelectedAsync_WithConflicts_ShowsSkippedInSummary()
     {
-        MainViewModel.HeadlessTestMode = true;
         var dir = CreateTempDir(out var files, 1);
         try
         {
@@ -97,14 +94,12 @@ public class MainWindowConversionSummaryTests
         finally
         {
             Directory.Delete(dir, true);
-            MainViewModel.HeadlessTestMode = false;
         }
     }
 
     [AvaloniaFact]
     public async Task ConvertSelectedAsync_WithFailure_ShowsFailedInSummary()
     {
-        MainViewModel.HeadlessTestMode = true;
         var dir = CreateTempDir(out var files, 1);
         try
         {
@@ -129,7 +124,6 @@ public class MainWindowConversionSummaryTests
         finally
         {
             Directory.Delete(dir, true);
-            MainViewModel.HeadlessTestMode = false;
         }
     }
 }

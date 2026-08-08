@@ -10,7 +10,6 @@ public class MainWindowQualityPresetPropagationTests
     [AvaloniaFact]
     public void QualityPresetChange_PropagatesToExistingItems()
     {
-        MainViewModel.HeadlessTestMode = true;
         var dir = Path.Combine(Path.GetTempPath(), "RAWtoJXL_Preset_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(dir);
         try
@@ -37,14 +36,12 @@ public class MainWindowQualityPresetPropagationTests
         finally
         {
             Directory.Delete(dir, true);
-            MainViewModel.HeadlessTestMode = false;
         }
     }
 
     [AvaloniaFact]
     public void NewlyAddedItems_ReceiveCurrentGlobalPreset()
     {
-        MainViewModel.HeadlessTestMode = true;
         var dir = Path.Combine(Path.GetTempPath(), "RAWtoJXL_Preset_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(dir);
         try
@@ -62,7 +59,6 @@ public class MainWindowQualityPresetPropagationTests
         finally
         {
             Directory.Delete(dir, true);
-            MainViewModel.HeadlessTestMode = false;
         }
     }
 }

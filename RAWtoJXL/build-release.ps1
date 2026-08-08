@@ -93,7 +93,6 @@ if (-not (Test-Path $OutputDir)) {
 $cjxlVersion = "0.11.2"
 $cjxlUrl = "https://github.com/libjxl/libjxl/releases/download/v$cjxlVersion/jxl-x64-windows-static.zip"
 $exiftoolVersion = "13.57"
-$exiftoolUrl = "https://sourceforge.net/projects/exiftool/files/exiftool-$exiftoolVersion_64.zip/download"
 
 if (-not $SkipDownload) {
     # ── cjxl ──────────────────────────────────────────────────────────────
@@ -125,42 +124,44 @@ if (-not $SkipDownload) {
     if (-not (Test-Path $exiftoolPath)) {
         Write-Host "Downloading exiftool v$exiftoolVersion..." -ForegroundColor Cyan
         $tempZip = Join-Path $env:TEMP "exiftool.zip"
+        $url = "https://downloads.sourceforge.net/project/exiftool/exiftool-${exiftoolVersion}_64.zip"
         try {
-            curl.exe -L -s `
-                -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36" `
-                -H "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" `
-                -H "Accept-Language: en-US,en;q=0.9" `
-                -o $tempZip $exiftoolUrl
-            $bytes = [System.IO.File]::ReadAllBytes($tempZip)
-            if ($bytes[0] -eq 80 -and $bytes[1] -eq 75) {
-                $tempExtract = Join-Path $env:TEMP "exiftool-extract"
-                if (Test-Path $tempExtract) { Remove-Item $tempExtract -Recurse -Force }
-                New-Item -ItemType Directory -Path $tempExtract -Force | Out-Null
-                Expand-Archive -Path $tempZip -DestinationPath $tempExtract -Force
-
-                # Find exiftool executable (may have special chars in name)
-                $foundExiftool = Get-ChildItem $tempExtract -Filter "exiftool*.exe" -Recurse | Select-Object -First 1
-                if ($foundExiftool) {
-                    Copy-Item $foundExiftool.FullName $exiftoolPath -Force
-                    Write-Host "exiftool.exe downloaded successfully." -ForegroundColor Green
-                } else {
-                    Write-Host "Warning: exiftool executable not found in archive." -ForegroundColor Yellow
-                }
-
-                # Copy exiftool_files folder if present
-                $foundFilesDir = Get-ChildItem $tempExtract -Filter "exiftool_files" -Directory -Recurse | Select-Object -First 1
-                if ($foundFilesDir -and -not (Test-Path $exiftoolFilesDir)) {
-                    Copy-Item $foundFilesDir.FullName $exiftoolFilesDir -Recurse -Force
-                    Write-Host "exiftool_files copied successfully." -ForegroundColor Green
-                }
-
-                Remove-Item $tempExtract -Recurse -Force -ErrorAction SilentlyContinue
-            } else {
-                throw "Downloaded file is not a valid ZIP archive."
+            curl.exe -L -s -o $tempZip $url
+            if ($LASTEXITCODE -ne 0) {
+                throw "exiftool download failed (curl exit $LASTEXITCODE). URL: $url"
             }
+            $bytes = [System.IO.File]::ReadAllBytes($tempZip)
+            if (-not ($bytes[0] -eq 80 -and $bytes[1] -eq 75)) {
+                throw "exiftool download failed: expected a ZIP archive but got $($bytes.Length) bytes. URL: $url"
+            }
+            $tempExtract = Join-Path $env:TEMP "exiftool-extract"
+            if (Test-Path $tempExtract) { Remove-Item $tempExtract -Recurse -Force }
+            New-Item -ItemType Directory -Path $tempExtract -Force | Out-Null
+            Expand-Archive -Path $tempZip -DestinationPath $tempExtract -Force
+
+            $foundExiftool = Get-ChildItem $tempExtract -Filter "exiftool*.exe" -Recurse | Select-Object -First 1
+            if (-not $foundExiftool) {
+                throw "exiftool.exe not found in downloaded archive."
+            }
+            Copy-Item $foundExiftool.FullName $exiftoolPath -Force
+            Write-Host "exiftool.exe downloaded successfully." -ForegroundColor Green
+
+            $foundFilesDir = Get-ChildItem $tempExtract -Filter "exiftool_files" -Directory -Recurse | Select-Object -First 1
+            if ($foundFilesDir -and -not (Test-Path $exiftoolFilesDir)) {
+                Copy-Item $foundFilesDir.FullName $exiftoolFilesDir -Recurse -Force
+                Write-Host "exiftool_files copied successfully." -ForegroundColor Green
+            }
+
+            & $exiftoolPath -ver | Out-Null
+            if ($LASTEXITCODE -ne 0) {
+                throw "exiftool.exe version check failed (exit $LASTEXITCODE)"
+            }
+
+            Remove-Item $tempExtract -Recurse -Force -ErrorAction SilentlyContinue
         } catch {
-            Write-Host "Warning: Failed to download exiftool: $_" -ForegroundColor Yellow
-            Write-Host "Please download manually from https://exiftool.org/" -ForegroundColor Yellow
+            Write-Error "Failed to download exiftool: $_"
+            Write-Host "Please download manually from https://exiftool.org/ and place exiftool.exe + exiftool_files next to this script." -ForegroundColor Yellow
+            exit 1
         } finally {
             Remove-Item $tempZip -Force -ErrorAction SilentlyContinue
         }

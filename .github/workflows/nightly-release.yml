@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: nightly-release
@@ -71,3 +72,25 @@ jobs:
             echo "Removing legacy nightly release"
             gh release delete nightly --cleanup-tag --yes || true
           fi
+
+      - name: Prune old workflow runs and caches
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          REPO="${{ github.repository }}"
+          CUTOFF=$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%SZ)
+          echo "Deleting workflow runs created before $CUTOFF..."
+          for PAGE in 1 2 3; do
+            RUNS=$(gh api "repos/$REPO/actions/runs?per_page=100&page=$PAGE" --jq '.workflow_runs[] | select(.created_at < "'"$CUTOFF"'") | .id')
+            [ -z "$RUNS" ] && break
+            for ID in $RUNS; do
+              echo "  deleting run $ID"
+              gh api -X DELETE "repos/$REPO/actions/runs/$ID" || true
+            done
+          done
+          echo "Deleting caches last used before $CUTOFF..."
+          for ID in $(gh api "repos/$REPO/actions/caches" --paginate --jq '.actions_caches[] | select(.last_used_at == null or .last_used_at < "'"$CUTOFF"'") | .id'); do
+            echo "  deleting cache $ID"
+            gh api -X DELETE "repos/$REPO/actions/caches/$ID" || true
+          done

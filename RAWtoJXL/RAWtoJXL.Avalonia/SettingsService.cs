@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using RAWtoJXL.Core.Interfaces;
@@ -95,6 +96,41 @@ namespace RAWtoJXL.Avalonia
 
         [JsonPropertyName("cjxlThreads")]
         public int CjxlThreads { get; set; } = -1;
+
+        public AppSettings Clone()
+        {
+            return new AppSettings
+            {
+                UseSubfolder = UseSubfolder,
+                SubfolderName = SubfolderName,
+                QualityPreset = QualityPreset,
+                SearchRecursive = SearchRecursive,
+                RecentFiles = new List<string>(RecentFiles),
+                OutputFormat = OutputFormat,
+                ConflictResolution = ConflictResolution,
+                ConfirmOverwrite = ConfirmOverwrite,
+                UseCustomOutputDirectory = UseCustomOutputDirectory,
+                CustomOutputDirectory = CustomOutputDirectory,
+                Presets = Presets.Select(p => new ConversionPreset
+                {
+                    Name = p.Name,
+                    Quality = p.Quality,
+                    OutputFormat = p.OutputFormat,
+                    ConflictResolution = p.ConflictResolution,
+                    UseSubfolder = p.UseSubfolder,
+                    SubfolderName = p.SubfolderName,
+                    UseCustomOutputDirectory = p.UseCustomOutputDirectory,
+                    CustomOutputDirectory = p.CustomOutputDirectory,
+                    ConfirmOverwrite = p.ConfirmOverwrite,
+                    SkipMetadata = p.SkipMetadata,
+                    CjxlEffort = p.CjxlEffort,
+                    CjxlThreads = p.CjxlThreads
+                }).ToList(),
+                SkipMetadata = SkipMetadata,
+                CjxlEffort = CjxlEffort,
+                CjxlThreads = CjxlThreads
+            };
+        }
     }
 
     public static class SettingsService
@@ -102,42 +138,87 @@ namespace RAWtoJXL.Avalonia
         internal static string SettingsDirectory { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "RAWtoJXL");
         internal static string SettingsPath => Path.Combine(SettingsDirectory, "settings.json");
         private const int MaxRecentFiles = 50;
-        private static readonly object FileLock = new();
+        private const int PersistDebounceMs = 500;
+        private static readonly object Gate = new();
+        private static AppSettings? _current;
+        private static string? _currentDirectory;
+        private static readonly System.Timers.Timer SaveTimer = new(PersistDebounceMs) { AutoReset = false };
+
+        public static event EventHandler<Exception>? ErrorOccurred;
+
+        static SettingsService()
+        {
+            SaveTimer.Elapsed += (_, _) => Flush();
+        }
+
+        internal static void Reset()
+        {
+            lock (Gate)
+            {
+                SaveTimer.Stop();
+                _current = null;
+                _currentDirectory = null;
+            }
+        }
 
         public static AppSettings Load()
         {
-            lock (FileLock)
+            lock (Gate)
             {
+                if (_current != null && _currentDirectory == SettingsDirectory)
+                {
+                    return _current;
+                }
+
+                _currentDirectory = SettingsDirectory;
                 try
                 {
                     if (!File.Exists(SettingsPath))
-                        return new AppSettings();
+                    {
+                        _current = new AppSettings();
+                        return _current;
+                    }
 
                     var json = File.ReadAllText(SettingsPath);
-                    var settings = JsonSerializer.Deserialize<AppSettings>(json);
-                    return settings ?? new AppSettings();
+                    _current = JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
                 }
-                catch
+                catch (Exception ex)
                 {
-                    return new AppSettings();
+                    _current = new AppSettings();
+                    OnError(ex);
                 }
+
+                return _current;
+            }
+        }
+
+        public static void Save()
+        {
+            Load();
+            lock (Gate)
+            {
+                SaveTimer.Stop();
+                SaveTimer.Start();
             }
         }
 
         public static void Save(AppSettings settings)
         {
-            lock (FileLock)
+            lock (Gate)
             {
-                try
+                _current = settings;
+                _currentDirectory = SettingsDirectory;
+                Persist(settings);
+            }
+        }
+
+        public static void Flush()
+        {
+            lock (Gate)
+            {
+                if (_current != null && _currentDirectory == SettingsDirectory)
                 {
-                    Directory.CreateDirectory(SettingsDirectory);
-                    var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
-                    var tempPath = SettingsPath + ".tmp";
-                    File.WriteAllText(tempPath, json);
-                    File.Move(tempPath, SettingsPath, overwrite: true);
-                }
-                catch
-                {
+                    Persist(_current);
                 }
             }
         }
@@ -145,13 +226,37 @@ namespace RAWtoJXL.Avalonia
         public static void AddRecentFile(string filePath)
         {
             var settings = Load();
-            settings.RecentFiles.RemoveAll(p => p == filePath);
-            settings.RecentFiles.Insert(0, Path.GetFullPath(filePath));
-            while (settings.RecentFiles.Count > MaxRecentFiles)
+            lock (Gate)
             {
-                settings.RecentFiles.RemoveAt(settings.RecentFiles.Count - 1);
+                settings.RecentFiles.RemoveAll(p => p == filePath);
+                settings.RecentFiles.Insert(0, Path.GetFullPath(filePath));
+                while (settings.RecentFiles.Count > MaxRecentFiles)
+                {
+                    settings.RecentFiles.RemoveAt(settings.RecentFiles.Count - 1);
+                }
             }
-            Save(settings);
+            Save();
+        }
+
+        private static void Persist(AppSettings settings)
+        {
+            try
+            {
+                Directory.CreateDirectory(SettingsDirectory);
+                var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
+                var tempPath = SettingsPath + ".tmp";
+                File.WriteAllText(tempPath, json);
+                File.Move(tempPath, SettingsPath, overwrite: true);
+            }
+            catch (Exception ex)
+            {
+                OnError(ex);
+            }
+        }
+
+        private static void OnError(Exception ex)
+        {
+            ErrorOccurred?.Invoke(null, ex);
         }
     }
 }

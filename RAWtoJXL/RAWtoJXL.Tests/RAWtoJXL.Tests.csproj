@@ -37,7 +37,7 @@
       <Link>exiftool_files\%(RecursiveDir)%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="test1.ARW" Condition="Exists('test1.ARW')" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="test1.dng" Condition="Exists('test1.dng')" CopyToOutputDirectory="PreserveNewest" />
     <None Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

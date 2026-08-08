@@ -17,8 +17,6 @@ namespace RAWtoJXL.Avalonia.ViewModels
         public event EventHandler? RequestClose;
 
         private readonly IFilePickerService _filePickerService;
-        private readonly System.Timers.Timer _persistTimer;
-        private readonly List<string> _recentFiles;
         private readonly string _settingsDirectory;
         private bool _disposed;
 
@@ -32,10 +30,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
         {
             _filePickerService = filePickerService;
             _settingsDirectory = SettingsService.SettingsDirectory;
-            _persistTimer = new System.Timers.Timer(500) { AutoReset = false };
-            _persistTimer.Elapsed += (_, _) => Persist();
-            var saved = SettingsService.Load();
-            _recentFiles = saved.RecentFiles;
+            var saved = SettingsService.Load().Clone();
             UseSubfolder = saved.UseSubfolder;
             SubfolderName = saved.SubfolderName;
             QualityPreset = saved.QualityPreset;
@@ -61,43 +56,44 @@ namespace RAWtoJXL.Avalonia.ViewModels
             base.OnPropertyChanged(e);
             if (!string.IsNullOrEmpty(e.PropertyName) && !_noPersistProperties.Contains(e.PropertyName))
             {
-                _persistTimer.Stop();
-                _persistTimer.Start();
+                ApplyToSettings();
+                SettingsService.Save();
             }
         }
 
-         public void Persist()
+        public void Persist()
         {
             if (_disposed || SettingsService.SettingsDirectory != _settingsDirectory)
             {
                 return;
             }
 
-            SettingsService.Save(new AppSettings
-            {
-                UseSubfolder = UseSubfolder,
-                SubfolderName = SubfolderName,
-                QualityPreset = QualityPreset,
-                SearchRecursive = SearchRecursive,
-                OutputFormat = OutputFormat,
-                ConflictResolution = ConflictResolution,
-                ConfirmOverwrite = ConfirmOverwrite,
-                UseCustomOutputDirectory = UseCustomOutputDirectory,
-                CustomOutputDirectory = CustomOutputDirectory,
-                Presets = Presets.ToList(),
-                RecentFiles = _recentFiles,
-                SkipMetadata = SkipMetadata,
-                CjxlEffort = CjxlEffort,
-                CjxlThreads = CjxlThreads,
-            });
+            ApplyToSettings();
+            SettingsService.Flush();
         }
 
         public void Dispose()
         {
-            _persistTimer.Stop();
             Persist();
             _disposed = true;
-            _persistTimer.Dispose();
+        }
+
+        private void ApplyToSettings()
+        {
+            var settings = SettingsService.Load();
+            settings.UseSubfolder = UseSubfolder;
+            settings.SubfolderName = SubfolderName;
+            settings.QualityPreset = QualityPreset;
+            settings.SearchRecursive = SearchRecursive;
+            settings.OutputFormat = OutputFormat;
+            settings.ConflictResolution = ConflictResolution;
+            settings.ConfirmOverwrite = ConfirmOverwrite;
+            settings.UseCustomOutputDirectory = UseCustomOutputDirectory;
+            settings.CustomOutputDirectory = CustomOutputDirectory;
+            settings.Presets = Presets.ToList();
+            settings.SkipMetadata = SkipMetadata;
+            settings.CjxlEffort = CjxlEffort;
+            settings.CjxlThreads = CjxlThreads;
         }
 
         [ObservableProperty]
@@ -392,24 +388,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
         [RelayCommand]
         private void Save()
         {
-            var saved = SettingsService.Load();
-            SettingsService.Save(new AppSettings
-            {
-                UseSubfolder = UseSubfolder,
-                SubfolderName = SubfolderName,
-                QualityPreset = QualityPreset,
-                SearchRecursive = SearchRecursive,
-                OutputFormat = OutputFormat,
-                ConflictResolution = ConflictResolution,
-                ConfirmOverwrite = ConfirmOverwrite,
-                UseCustomOutputDirectory = UseCustomOutputDirectory,
-                CustomOutputDirectory = CustomOutputDirectory,
-                Presets = Presets.ToList(),
-                RecentFiles = saved.RecentFiles,
-                SkipMetadata = SkipMetadata,
-                CjxlEffort = CjxlEffort,
-                CjxlThreads = CjxlThreads,
-            });
+            Persist();
             IsSaving = false;
             RequestClose?.Invoke(this, EventArgs.Empty);
         }

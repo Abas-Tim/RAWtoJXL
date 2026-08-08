@@ -63,64 +63,56 @@ public class MainWindowBehavioralTests
     [AvaloniaFact]
     public void MainWindow_ConvertButton_InvokesConversion()
     {
-        MainViewModel.HeadlessTestMode = true;
+        var tempDir = Path.Combine(Path.GetTempPath(), "RAWtoJXL_Test_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        var arwFile = Path.Combine(tempDir, "test.arw");
+        File.WriteAllText(arwFile, "");
+
         try
         {
-            var tempDir = Path.Combine(Path.GetTempPath(), "RAWtoJXL_Test_" + Guid.NewGuid().ToString("N"));
-            Directory.CreateDirectory(tempDir);
-            var arwFile = Path.Combine(tempDir, "test.arw");
-            File.WriteAllText(arwFile, "");
+            var mockImageService = new Mock<IImageService>();
+       mockImageService
+                 .Setup(x => x.ConvertToJxlAsync(
+                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Action<double>>(),
+                    It.IsAny<int>(), It.IsAny<OutputFormat>(), It.IsAny<CancellationToken>(),
+                    It.IsAny<bool>(), It.IsAny<int?>(), It.IsAny<int?>()))
+                .Returns(Task.CompletedTask);
 
-            try
-            {
-                var mockImageService = new Mock<IImageService>();
-           mockImageService
-                     .Setup(x => x.ConvertToJxlAsync(
-                        It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Action<double>>(),
-                        It.IsAny<int>(), It.IsAny<OutputFormat>(), It.IsAny<CancellationToken>(),
-                        It.IsAny<bool>(), It.IsAny<int?>(), It.IsAny<int?>()))
-                    .Returns(Task.CompletedTask);
+            mockImageService
+                .Setup(x => x.GetThumbnailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(Array.Empty<byte>());
 
-                mockImageService
-                    .Setup(x => x.GetThumbnailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(Array.Empty<byte>());
+            var mockDialog = new Mock<IDialogService>();
+            mockDialog
+                .Setup(x => x.ShowConfirmAsync(It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(true);
 
-                var mockDialog = new Mock<IDialogService>();
-                mockDialog
-                    .Setup(x => x.ShowConfirmAsync(It.IsAny<string>(), It.IsAny<string>()))
-                    .ReturnsAsync(true);
+            var vm = GUITestHelpers.CreateViewModel(
+                imageService: mockImageService,
+                dialogService: mockDialog);
+            vm.UseSubfolder = false;
+            vm.OutputDirectory = tempDir;
 
-                var vm = GUITestHelpers.CreateViewModel(
-                    imageService: mockImageService,
-                    dialogService: mockDialog);
-                vm.UseSubfolder = false;
-                vm.OutputDirectory = tempDir;
+            vm.AddFilesAsync(new[] { arwFile }).Wait();
+            vm.Images[0].IsSelected = true;
 
-                vm.AddFilesAsync(new[] { arwFile }).Wait();
-                vm.Images[0].IsSelected = true;
+            Assert.True(vm.ConvertSelectedCommand.CanExecute(null));
 
-                Assert.True(vm.ConvertSelectedCommand.CanExecute(null));
+            vm.ConvertSelectedCommand.Execute(null);
 
-                vm.ConvertSelectedCommand.Execute(null);
+            Assert.Equal(ImageStatus.Converted, vm.Images[0].Status);
 
-                Assert.Equal(ImageStatus.Converted, vm.Images[0].Status);
-
-                mockImageService.Verify(
-                    x => x.ConvertToJxlAsync(
-                        arwFile, It.IsAny<string>(), It.IsAny<Action<double>>(),
-                        It.IsAny<int>(), It.IsAny<OutputFormat>(), It.IsAny<CancellationToken>(),
-                        It.IsAny<bool>(), It.IsAny<int?>(), It.IsAny<int?>()),
-                    Times.Once);
-            }
-            finally
-            {
-                try { File.Delete(arwFile); } catch { }
-                try { Directory.Delete(tempDir, true); } catch { }
-            }
+            mockImageService.Verify(
+                x => x.ConvertToJxlAsync(
+                    arwFile, It.IsAny<string>(), It.IsAny<Action<double>>(),
+                    It.IsAny<int>(), It.IsAny<OutputFormat>(), It.IsAny<CancellationToken>(),
+                    It.IsAny<bool>(), It.IsAny<int?>(), It.IsAny<int?>()),
+                Times.Once);
         }
         finally
         {
-            MainViewModel.HeadlessTestMode = false;
+            try { File.Delete(arwFile); } catch { }
+            try { Directory.Delete(tempDir, true); } catch { }
         }
     }
 
