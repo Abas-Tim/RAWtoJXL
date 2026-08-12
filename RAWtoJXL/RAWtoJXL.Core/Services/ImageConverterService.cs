@@ -15,6 +15,8 @@ namespace RAWtoJXL.Core.Services;
         private readonly IFileService _fileService;
         private readonly ILogger _logger;
 
+        private const uint MaxThumbnailDimension = 300;
+
         public ImageConverterService(IExiftoolService exiftoolService, IFileService fileService, ILogger logger)
         {
             _exiftoolService = exiftoolService ?? throw new ArgumentNullException(nameof(exiftoolService));
@@ -39,13 +41,13 @@ namespace RAWtoJXL.Core.Services;
             var preview = await _exiftoolService.ExtractPreviewImageAsync(filePath, cancellationToken);
             if (preview != null)
             {
-                return preview;
+                return DownscalePreview(preview, MaxThumbnailDimension, _logger);
             }
 
             var dngThumbnail = TryGetDngThumbnail(filePath);
             if (dngThumbnail != null)
             {
-                return dngThumbnail;
+                return DownscalePreview(dngThumbnail, MaxThumbnailDimension, _logger);
             }
 
             return await Task.Run(() => FallbackDecodeThumbnail(filePath), cancellationToken);
@@ -92,9 +94,35 @@ namespace RAWtoJXL.Core.Services;
             thumbnail.Write(ms);
             return ms.ToArray();
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.Write($"[ImageConverterService] DNG thumbnail extraction failed for {Path.GetFileName(filePath)}: {ex.Message}");
             return null;
+        }
+    }
+
+    internal static byte[] DownscalePreview(byte[] imageData, uint maxDimension, ILogger logger)
+    {
+        try
+        {
+            using var image = new MagickImage(imageData);
+            if (image.Width <= maxDimension && image.Height <= maxDimension)
+            {
+                return imageData;
+            }
+
+            image.Thumbnail(maxDimension, maxDimension);
+            image.Format = MagickFormat.Jpg;
+            image.Quality = 85;
+            image.Strip();
+            using var ms = new MemoryStream();
+            image.Write(ms);
+            return ms.ToArray();
+        }
+        catch (Exception ex)
+        {
+            logger.Write($"[ImageConverterService] Thumbnail downscale failed, returning original bytes: {ex.Message}");
+            return imageData;
         }
     }
 
@@ -105,7 +133,7 @@ namespace RAWtoJXL.Core.Services;
 
         using var image = new MagickImage(filePath, settings);
         image.ColorSpace = ColorSpace.sRGB;
-        image.Thumbnail(300, 300);
+        image.Thumbnail(MaxThumbnailDimension, MaxThumbnailDimension);
         image.Format = MagickFormat.Jpg;
         image.Quality = 80;
         image.Strip();

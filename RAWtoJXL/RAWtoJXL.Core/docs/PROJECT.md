@@ -54,7 +54,7 @@ RAWtoJXL.Core/
 
 ### IImageService (Primary Interface)
 Defines two async operations:
-- `GetThumbnailAsync(filePath, cancellationToken)` → `byte[]`: Three-stage thumbnail: (1) exiftool `-b -PreviewImage` direct read (~10ms), (2) Magick.NET `dng:thumbnail` profile via LibRaw, (3) fast decode fallback with camera LUT disabled + nearest-neighbor resampling (300x300 JPG)
+- `GetThumbnailAsync(filePath, cancellationToken)` → `byte[]`: Three-stage thumbnail: (1) exiftool `-b -PreviewImage` direct read (~10ms), (2) Magick.NET `dng:thumbnail` profile via LibRaw, (3) fast decode fallback with camera LUT disabled + nearest-neighbor resampling. Stage 1-2 outputs larger than 300x300 are downscaled via Magick `Thumbnail()` (shrink-only) before being handed to the UI grid
 - `ConvertToJxlAsync(inputPath, outputPath, progress, quality, outputFormat, cancellationToken, skipMetadata, effort)`: Orchestrates conversion pipeline
    - `progress` is a required `Action<double>` callback (non-nullable, no default). Fault-tolerant: exceptions from the callback are caught and logged, preventing pipeline breakage and orphaned temp files.
    - `outputFormat = OutputFormat.Jxl`: Direct PPM streaming to cjxl stdin via `StreamPpmToAsync` + writer delegate — zero intermediate disk I/O, single file open, native ImageMagick C-code encoding, followed by exiftool metadata embedding
