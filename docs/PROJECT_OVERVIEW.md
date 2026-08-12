@@ -9,7 +9,6 @@ Windows desktop app (.NET 8, Avalonia 12 UI) that converts RAW camera files to J
 ```
 RAWtoJXL/
 ├── .gitignore
-├── RAWtoJXL.slnx                          # Solution matrix
 ├── THIRD-PARTY-NOTICES.md                 # License notices for all dependencies
 ├── docs/
 │   └── PROJECT_OVERVIEW.md               # This file
