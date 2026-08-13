@@ -31,6 +31,7 @@
   <ItemGroup>
     <ProjectReference Include="..\RAWtoJXL.Core\RAWtoJXL.Core.csproj" />
     <ProjectReference Include="..\RAWtoJXL.Avalonia\RAWtoJXL.Avalonia.csproj" />
+    <ProjectReference Include="..\RAWtoJXL.Cli\RAWtoJXL.Cli.csproj" />
     <None Include="..\cjxl.exe" Condition="Exists('..\cjxl.exe')" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\exiftool.exe" Condition="Exists('..\exiftool.exe')" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\exiftool_files\**\*.*" Condition="Exists('..\exiftool_files')">
