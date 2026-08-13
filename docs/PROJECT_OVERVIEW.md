@@ -13,15 +13,17 @@ RAWtoJXL/
 ├── docs/
 │   └── PROJECT_OVERVIEW.md               # This file
 └── RAWtoJXL/
-    ├── build.ps1                          # Build script (restore, download deps, publish)
+    ├── build.ps1                          # Build script (restore, download deps, publish GUI + CLI)
     ├── cjxl.exe                           # JPEG XL encoder v0.11.2 (downloaded at build time)
     ├── exiftool.exe                       # Metadata tool v13.57 (downloaded at build time)
     ├── exiftool_files/                    # exiftool companion Perl runtime DLLs
     ├── RAWtoJXL.sln
-    ├── RAWtoJXL.Core/                     # Business logic layer
+    ├── RAWtoJXL.Core/                     # Business logic layer (pipeline, settings, path/enumeration helpers)
     │   └── docs/PROJECT.md               # Core project documentation
-    ├── RAWtoJXL.Avalonia/                      # Avalonia UI presentation layer
+    ├── RAWtoJXL.Avalonia/                 # Avalonia UI presentation layer
     │   └── docs/PROJECT.md               # Avalonia project documentation
+    ├── RAWtoJXL.Cli/                      # Headless CLI (convert/list/presets, parallel batch, JSON output)
+    │   └── docs/PROJECT.md               # CLI project documentation
     └── RAWtoJXL.Tests/                    # xUnit test suite
         └── docs/PROJECT.md               # Tests project documentation
 ```
