@@ -3,6 +3,7 @@
         xmlns:local="using:RAWtoJXL.Avalonia"
         xmlns:vm="using:RAWtoJXL.Avalonia.ViewModels"
         xmlns:core="using:RAWtoJXL.Core.Interfaces"
+        xmlns:settings="using:RAWtoJXL.Core.Settings"
         xmlns:conv="using:RAWtoJXL.Avalonia.Converters"
         x:Class="RAWtoJXL.Avalonia.SettingsWindow"
         x:DataType="vm:SettingsViewModel"
@@ -194,7 +195,7 @@
                                   ItemsSource="{Binding ConflictResolutionOptions}"
                                   SelectedItem="{Binding ConflictResolution}">
                             <ComboBox.ItemTemplate>
-                                <DataTemplate x:DataType="local:ConflictResolution">
+                                <DataTemplate x:DataType="settings:ConflictResolution">
                                     <TextBlock Text="{Binding}"/>
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>

@@ -12,6 +12,8 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="RAWtoJXL.Tests" />
+    <InternalsVisibleTo Include="RAWtoJXL.Avalonia" />
+    <InternalsVisibleTo Include="RAWtoJXL.Cli" />
   </ItemGroup>
 
   <ItemGroup>

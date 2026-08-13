@@ -19,7 +19,9 @@ RAWtoJXL.Core/
 │   ├── FileLockedException.cs     # Custom exception for file-lock errors (IOException wrapper)
 │   ├── MetadataProfiles.cs        # Metadata container (EXIF, XMP, ICC, IPTC profiles) with disposable temp file cleanup and logging
 │   ├── QualityCalculator.cs       # Static helper for quality→distance/effort mapping
-    │   └── SupportedFormats.cs        # Static list of supported RAW extensions (ARW, CR2, CR3, NEF, RAF, ORF, RW2, DNG, etc.) and helper methods
+│   └── SupportedFormats.cs        # Static list of supported RAW extensions (ARW, CR2, CR3, NEF, RAF, ORF, RW2, DNG, etc.) and helper methods
+├── Settings/
+│   └── SettingsService.cs         # AppSettings/ConversionPreset/ConflictResolution models + %APPDATA% persistence (shared by GUI and CLI)
 ├── Services/
 │   ├── ImageProcessingService.cs  # Main service orchestrating conversion pipeline
 │   ├── ImageConverterService.cs   # Magick.NET implementation (thumbnails, RAW extraction, metadata)
@@ -29,6 +31,8 @@ RAWtoJXL.Core/
 │   ├── FileService.cs             # File system operations implementation
 │   ├── PathResolverService.cs     # Path resolution implementation
 │   ├── FileLogger.cs              # ILogger implementation (file-based logger)
+│   ├── OutputPathResolver.cs      # Output directory/subfolder/extension/conflict resolution (GUI + CLI)
+│   ├── ImageFileEnumerator.cs     # Deduped, sorted scan of files/folders for supported extensions
 │   └── ServiceCollectionExtensions.cs # IServiceCollection extension for AddCoreServices()
 └── docs/
     └── PROJECT.md                 # This file

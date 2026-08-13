@@ -11,6 +11,8 @@ using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using RAWtoJXL.Core.Interfaces;
 using RAWtoJXL.Core.Models;
+using RAWtoJXL.Core.Services;
+using RAWtoJXL.Core.Settings;
 using RAWtoJXL.Avalonia.Services;
 using RAWtoJXL.Avalonia;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -465,12 +467,13 @@ namespace RAWtoJXL.Avalonia.ViewModels
             var folder = await _filePickerService.PickFolderAsync(string.Empty);
             if (!string.IsNullOrEmpty(folder))
             {
-                var searchOption = SearchRecursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
-                var files = await Task.Run(() => Directory.GetFiles(folder, "*.*", searchOption)).ConfigureAwait(false);
-                var supportedFiles = files.Where(f => IsSupportedFile(Path.GetExtension(f))).ToList();
-                if (supportedFiles.Any())
+                var files = await Task.Run(() => ImageFileEnumerator.Enumerate(
+                    new[] { folder },
+                    SearchRecursive,
+                    SupportedFormats.RawExtensions.Concat(new[] { ".jxl" }))).ConfigureAwait(false);
+                if (files.Any())
                 {
-                    await AddFilesAsync(supportedFiles);
+                    await AddFilesAsync(files);
                 }
             }
         }
@@ -728,63 +731,14 @@ namespace RAWtoJXL.Avalonia.ViewModels
 
         private string? ResolveOutputPath(string inputPath)
         {
-            string directory;
-            if (UseCustomOutputDirectory && !string.IsNullOrEmpty(CustomOutputDirectory))
-            {
-                directory = CustomOutputDirectory;
-            }
-            else
-            {
-                directory = UseSubfolder
-                    ? Path.Combine(Path.GetDirectoryName(inputPath)!, SubfolderName)
-                    : Path.GetDirectoryName(inputPath)!;
-            }
-            Directory.CreateDirectory(directory);
-
-            string baseName = Path.GetFileNameWithoutExtension(inputPath);
-            string extension = GetOutputExtension();
-            string outputPath = Path.Combine(directory, baseName + extension);
-
-            return ResolveConflict(outputPath);
-        }
-
-        private string GetOutputExtension()
-        {
-            return OutputFormat switch
-            {
-                OutputFormat.Jxl => ".jxl",
-                OutputFormat.Jpeg => ".jpg",
-                OutputFormat.Png => ".png",
-                _ => ".jxl"
-            };
-        }
-
-        private string? ResolveConflict(string outputPath)
-        {
-            if (!File.Exists(outputPath))
-                return outputPath;
-
-            switch (ConflictResolution)
-            {
-                case ConflictResolution.Skip:
-                    return null;
-                case ConflictResolution.Overwrite:
-                    return outputPath;
-                case ConflictResolution.AppendNumber:
-                    int counter = 1;
-                    string directory = Path.GetDirectoryName(outputPath)!;
-                    string baseName = Path.GetFileNameWithoutExtension(outputPath);
-                    string extension = Path.GetExtension(outputPath);
-                    string candidate;
-                    do
-                    {
-                        candidate = Path.Combine(directory, $"{baseName}_{counter}{extension}");
-                        counter++;
-                    } while (File.Exists(candidate));
-                    return candidate;
-                default:
-                    return outputPath;
-            }
+            return OutputPathResolver.Resolve(
+                inputPath,
+                OutputFormat,
+                ConflictResolution,
+                UseCustomOutputDirectory,
+                CustomOutputDirectory,
+                UseSubfolder,
+                SubfolderName);
         }
 
         private Task OnUiAsync(Action action)

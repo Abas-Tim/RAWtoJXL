@@ -7,6 +7,7 @@ using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using RAWtoJXL.Core.Interfaces;
+using RAWtoJXL.Core.Settings;
 using RAWtoJXL.Avalonia;
 using RAWtoJXL.Avalonia.Services;
 
