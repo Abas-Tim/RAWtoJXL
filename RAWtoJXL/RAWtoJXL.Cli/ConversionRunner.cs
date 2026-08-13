@@ -50,7 +50,7 @@ namespace RAWtoJXL.Cli
         {
             if (jobs <= 0)
             {
-                jobs = ParallelismPolicy.DefaultJobs;
+                jobs = ParallelismPolicy.ResolveDefaultJobs();
             }
             jobs = Math.Min(jobs, files.Count == 0 ? 1 : files.Count);
 

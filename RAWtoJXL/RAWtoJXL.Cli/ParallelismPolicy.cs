@@ -12,6 +12,11 @@ namespace RAWtoJXL.Cli
             Environment.ProcessorCount,
             GC.GetGCMemoryInfo().TotalAvailableMemoryBytes);
 
+        public static int ResolveDefaultJobs() => ResolveDefaultJobs(SafeMaxJobs);
+
+        internal static int ResolveDefaultJobs(int safeMaxJobs) =>
+            Math.Min(DefaultJobs, Math.Max(1, safeMaxJobs));
+
         internal static int ComputeSafeMax(int logicalProcessors, long availableMemoryBytes)
         {
             var byCpu = Math.Max(1, (int)Math.Round(logicalProcessors / 4.0));

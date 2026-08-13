@@ -353,7 +353,18 @@ public class CliApplicationTests : Startup, IDisposable
     {
         CopyFixture("a.dng");
 
-        var (exit, _, stderr) = await RunAsync("convert", _sandbox, "--no-subfolder", "--jobs", "2", "--json");
+        var (exit, _, stderr) = await RunAsync("convert", _sandbox, "--no-subfolder", "--jobs", "1", "--json");
+
+        Assert.Equal(ExitCodes.Success, exit);
+        Assert.DoesNotContain("warning:", stderr);
+    }
+
+    [Fact]
+    public async Task Convert_DefaultJobs_NoWarningOnAnyHost()
+    {
+        CopyFixture("a.dng");
+
+        var (exit, _, stderr) = await RunAsync("convert", _sandbox, "--no-subfolder", "--json");
 
         Assert.Equal(ExitCodes.Success, exit);
         Assert.DoesNotContain("warning:", stderr);
@@ -364,7 +375,7 @@ public class CliApplicationTests : Startup, IDisposable
     {
         CopyFixture("a.dng");
 
-        var (exit, stdout, stderr) = await RunAsync("convert", _sandbox, "--no-subfolder", "--quiet", "--json");
+        var (exit, stdout, stderr) = await RunAsync("convert", _sandbox, "--no-subfolder", "--jobs", "1", "--quiet", "--json");
 
         Assert.Equal(ExitCodes.Success, exit);
         Assert.StartsWith("{", stdout);

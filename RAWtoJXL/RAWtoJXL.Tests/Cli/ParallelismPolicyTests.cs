@@ -13,6 +13,23 @@ public class ParallelismPolicyTests
     }
 
     [Fact]
+    public void ResolveDefaultJobs_NeverExceedsSafeMax()
+    {
+        var defaultJobs = ParallelismPolicy.ResolveDefaultJobs();
+
+        Assert.InRange(defaultJobs, 1, ParallelismPolicy.SafeMaxJobs);
+    }
+
+    [Theory]
+    [InlineData(1, 1)]
+    [InlineData(2, 2)]
+    [InlineData(4, 2)]
+    public void ResolveDefaultJobs_IsMinOfTwoAndSafeMax(int safeMaxJobs, int expected)
+    {
+        Assert.Equal(expected, ParallelismPolicy.ResolveDefaultJobs(safeMaxJobs));
+    }
+
+    [Fact]
     public void SafeMaxJobs_IsWithinHardCap()
     {
         Assert.InRange(ParallelismPolicy.SafeMaxJobs, 1, ParallelismPolicy.HardCap);

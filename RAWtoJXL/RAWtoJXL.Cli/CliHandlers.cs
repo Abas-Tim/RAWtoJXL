@@ -43,7 +43,7 @@ namespace RAWtoJXL.Cli
                 return ExitCodes.NoFiles;
             }
 
-            var requestedJobs = cli.Jobs > 0 ? cli.Jobs : ParallelismPolicy.DefaultJobs;
+            var requestedJobs = cli.Jobs > 0 ? cli.Jobs : ParallelismPolicy.ResolveDefaultJobs();
             if (ParallelismPolicy.IsAboveSafeMax(requestedJobs))
             {
                 var extra = requestedJobs > ParallelismPolicy.HardCap
