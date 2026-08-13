@@ -170,14 +170,28 @@ jobs:
             -p:DebugSymbols=false `
             -o "${{ github.workspace }}/publish"
 
+      - name: Publish CLI self-contained win-x64
+        shell: pwsh
+        run: |
+          $project = "RAWtoJXL/RAWtoJXL.Cli/RAWtoJXL.Cli.csproj"
+          dotnet publish $project `
+            -c Release `
+            -r win-x64 `
+            --self-contained true `
+            -p:DebugType=None `
+            -p:DebugSymbols=false `
+            -o "${{ github.workspace }}/publish-cli"
+
       # ── Copy dependencies to publish ───────────────────────────────────
       - name: Bundle dependencies
         shell: pwsh
         run: |
-          Copy-Item "${{ github.workspace }}/RAWtoJXL/cjxl.exe" "${{ github.workspace }}/publish/" -Force
-          Copy-Item "${{ github.workspace }}/RAWtoJXL/exiftool.exe" "${{ github.workspace }}/publish/" -Force
-          if (Test-Path "${{ github.workspace }}/RAWtoJXL/exiftool_files") {
-            Copy-Item "${{ github.workspace }}/RAWtoJXL/exiftool_files" "${{ github.workspace }}/publish/" -Recurse -Force
+          foreach ($dir in @("publish", "publish-cli")) {
+            Copy-Item "${{ github.workspace }}/RAWtoJXL/cjxl.exe" "${{ github.workspace }}/$dir/" -Force
+            Copy-Item "${{ github.workspace }}/RAWtoJXL/exiftool.exe" "${{ github.workspace }}/$dir/" -Force
+            if (Test-Path "${{ github.workspace }}/RAWtoJXL/exiftool_files") {
+              Copy-Item "${{ github.workspace }}/RAWtoJXL/exiftool_files" "${{ github.workspace }}/$dir/" -Recurse -Force
+            }
           }
 
       # ── Resolve version ───────────────────────────────────────────────
@@ -232,12 +246,41 @@ jobs:
           echo "archive_name=$name" >> $env:GITHUB_OUTPUT
           echo "archive_path=$zipPath" >> $env:GITHUB_OUTPUT
 
+      - name: Create CLI portable ZIP
+        id: cli-package
+        shell: pwsh
+        run: |
+          $version   = "${{ steps.version.outputs.version }}"
+          $name      = "RAWtoJXL-cli-${version}-win-x64"
+          $zipPath   = "${{ github.workspace }}/${name}.zip"
+          Compress-Archive `
+            -Path "${{ github.workspace }}/publish-cli/*" `
+            -DestinationPath $zipPath `
+            -CompressionLevel Optimal
+          $sizeMB = [math]::Round((Get-Item $zipPath).Length / 1MB, 2)
+          Write-Output "archive_name=$name"
+          Write-Output "archive_path=$zipPath"
+          Write-Output "archive_size=${sizeMB}MB"
+          echo "archive_name=$name" >> $env:GITHUB_OUTPUT
+          echo "archive_path=$zipPath" >> $env:GITHUB_OUTPUT
+
       # ── Compute checksums ─────────────────────────────────────────────
       - name: Compute SHA-256 checksum
         id: checksum
         shell: pwsh
         run: |
           $zip   = "${{ steps.package.outputs.archive_path }}"
+          $hash  = (Get-FileHash -Path $zip -Algorithm SHA256).Hash
+          $sha   = "${zip}.sha256"
+          $hash  | Out-File -FilePath $sha -Encoding ASCII
+          Write-Output "sha256=$hash"
+          echo "sha256=$hash" >> $env:GITHUB_OUTPUT
+
+      - name: Compute CLI SHA-256 checksum
+        id: cli-checksum
+        shell: pwsh
+        run: |
+          $zip   = "${{ steps.cli-package.outputs.archive_path }}"
           $hash  = (Get-FileHash -Path $zip -Algorithm SHA256).Hash
           $sha   = "${zip}.sha256"
           $hash  | Out-File -FilePath $sha -Encoding ASCII
@@ -252,6 +295,15 @@ jobs:
           path: |
             ${{ steps.package.outputs.archive_path }}
             ${{ steps.package.outputs.archive_path }}.sha256
+          retention-days: 1
+
+      - name: Upload CLI build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.cli-package.outputs.archive_name }}
+          path: |
+            ${{ steps.cli-package.outputs.archive_path }}
+            ${{ steps.cli-package.outputs.archive_path }}.sha256
           retention-days: 1
 
   # ── 2. Publish GitHub Release ──────────────────────────────────────────
@@ -290,6 +342,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: RAWtoJXL-${{ steps.version.outputs.version }}-win-x64
+          path: ${{ github.workspace }}/artifacts
+
+      - name: Download CLI build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: RAWtoJXL-cli-${{ steps.version.outputs.version }}-win-x64
           path: ${{ github.workspace }}/artifacts
 
       # ── Create or update GitHub Release ──────────────────────────────

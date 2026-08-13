@@ -76,6 +76,32 @@ dotnet run --project RAWtoJXL/RAWtoJXL.Avalonia
 dotnet test RAWtoJXL/RAWtoJXL.Tests
 ```
 
+## Command Line Interface
+
+The repository also ships a headless CLI (`rawtojxl-cli`) built on the same Core
+pipeline — for scripts, scheduled automation, and LLM agents.
+
+```powershell
+# Convert every RAW in a folder (recursively), 4 files in parallel
+rawtojxl-cli convert H:\sort\2025 -r --jobs 4
+
+# Preview what would be converted (dry run, no writes)
+rawtojxl-cli list H:\sort\2025 --json
+
+# Advanced filtering
+rawtojxl-cli convert H:\photos --ext arw,cr3 --include "IMG*" --exclude "*_burst*" `
+  --modified-after 2025-01-01 --quality 95 --conflict skip
+```
+
+- Uses the GUI's `settings.json` as defaults (read-only); flags override, `--preset` loads named presets
+- `--json` emits machine-readable results on stdout; progress goes to stderr
+- Stable exit codes: 0 success, 1 partial failure, 2 usage error, 3 no files, 4 tool missing
+- `--jobs N` converts files in parallel (default 2); a hardware-specific stable limit is
+  computed per machine and exceeding it prints a warning to stderr
+- Published by `build.ps1` and CI as `RAWtoJXL-cli-<version>-win-x64.zip`
+
+See `RAWtoJXL/RAWtoJXL.Cli/docs/PROJECT.md` for the full option reference.
+
 ## Conversion Pipeline
 
 ```

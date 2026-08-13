@@ -1,6 +1,6 @@
 using System.IO;
 using System.Text.Json;
-using RAWtoJXL.Avalonia;
+using RAWtoJXL.Core.Settings;
 
 namespace RAWtoJXL.Tests.GUITests;
 

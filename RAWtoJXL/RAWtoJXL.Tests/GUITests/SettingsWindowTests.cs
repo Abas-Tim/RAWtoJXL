@@ -4,6 +4,7 @@ using RAWtoJXL.Avalonia;
 using RAWtoJXL.Avalonia.Services;
 using RAWtoJXL.Avalonia.ViewModels;
 using RAWtoJXL.Core.Interfaces;
+using RAWtoJXL.Core.Settings;
 
 namespace RAWtoJXL.Tests.GUITests;
 

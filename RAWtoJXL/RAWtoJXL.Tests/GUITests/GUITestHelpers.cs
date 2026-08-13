@@ -5,6 +5,7 @@ using RAWtoJXL.Avalonia;
 using RAWtoJXL.Avalonia.Services;
 using RAWtoJXL.Avalonia.ViewModels;
 using RAWtoJXL.Core.Interfaces;
+using RAWtoJXL.Core.Settings;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 

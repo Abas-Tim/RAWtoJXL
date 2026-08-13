@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>rawtojxl-cli</AssemblyName>
+    <RootNamespace>RAWtoJXL.Cli</RootNamespace>
+    <Version>1.0.1</Version>
+    <Authors>Timur Abasov</Authors>
+    <Description>Command-line interface converting RAW camera files to JPEG-XL, JPEG, or PNG.</Description>
+    <RepositoryUrl>https://github.com/Abas-Tim/RAWtoJXL</RepositoryUrl>
+    <PackageTags>raw;jxl;jpeg-xl;image-conversion;photography</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="RAWtoJXL.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RAWtoJXL.Core\RAWtoJXL.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
+    <PackageReference Include="System.CommandLine" Version="2.0.11" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\cjxl.exe" Condition="Exists('..\cjxl.exe')" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\exiftool.exe" Condition="Exists('..\exiftool.exe')" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\exiftool_files\**\*.*" Condition="Exists('..\exiftool_files')">
+      <Link>exiftool_files\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

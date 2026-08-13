@@ -16,7 +16,15 @@ RAWtoJXL.Tests/
 ├── SubfolderValidationTests.cs   # Unit tests for SettingsViewModel.ValidateSubfolderName() (no DI)
 ├── ImageItemViewModelTests.cs    # Unit tests for EffectiveQuality fallback logic (no DI)
 ├── CjxlEncoderArgumentsTests.cs  # Unit tests for BuildEncodingArguments() via protected internal test subclass (Moq)
-├── test1.ARW                     # Test fixture ARW file for integration tests
+├── test1.dng                     # Test fixture DNG file for integration tests
+├── Cli/                          # CLI test suite (RAWtoJXL.Cli)
+│   ├── OutputPathResolverTests.cs       # Output dir/subfolder/extension/conflict resolution
+│   ├── ImageFileEnumeratorTests.cs      # Recursive scan, dedupe, ordering, extensions
+│   ├── SettingsMergerTests.cs           # Flag > preset > settings > default precedence matrix
+│   ├── FileFilterTests.cs               # Wildcard and date filtering
+│   ├── CliOptionsBindingTests.cs        # Argument parsing and validation via the real parser
+│   ├── ConversionRunnerTests.cs         # Sequential/parallel batch behavior (mocked IImageService)
+│   └── CliApplicationTests.cs           # End-to-end runs with real cjxl/exiftool
 ├── GUITests/                     # Avalonia Headless GUI tests (split by category)
 │   ├── GUITestHelpers.cs         # Shared helpers: CreateViewModel, CreateWindow, GetAllControls, FindAll, SettingsScope, AddTestFiles
 │   ├── MainWindowStructuralTests.cs     # MainWindow structure + functional structural checks: title, buttons, ItemsRepeater binding, ProgressBar binding, drag-drop, min size, layout

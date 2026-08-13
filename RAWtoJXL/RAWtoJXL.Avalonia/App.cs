@@ -5,6 +5,7 @@ using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
 using RAWtoJXL.Core;
 using RAWtoJXL.Core.Interfaces;
+using RAWtoJXL.Core.Settings;
 using RAWtoJXL.Avalonia.Services;
 using RAWtoJXL.Avalonia.ViewModels;
 

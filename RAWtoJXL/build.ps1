@@ -4,6 +4,7 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 if ([string]::IsNullOrEmpty($scriptDir)) { $scriptDir = Get-Location }
 
 $projectName = "RAWtoJXL.Avalonia/RAWtoJXL.Avalonia.csproj"
+$cliProjectName = "RAWtoJXL.Cli/RAWtoJXL.Cli.csproj"
 $testProject = "RAWtoJXL.Tests/RAWtoJXL.Tests.csproj"
 $runtime = "win-x64"
 $configuration = "Release"
@@ -14,6 +15,7 @@ $exiftoolVersion = "13.57"
 $exiftoolUrl = "https://sourceforge.net/projects/exiftool/files/exiftool-$exiftoolVersion_64.zip/download"
 $exiftoolPath = Join-Path $scriptDir "exiftool.exe"
 $publishDir = Join-Path $scriptDir "RAWtoJXL.Avalonia\bin\$configuration\net8.0\$runtime\publish"
+$cliPublishDir = Join-Path $scriptDir "RAWtoJXL.Cli\bin\$configuration\net8.0\$runtime\publish"
 
 Write-Host "Starting build process from $scriptDir..." -ForegroundColor Cyan
 
@@ -63,13 +65,15 @@ if (-not (Test-Path $exiftoolPath)) {
     Write-Host "exiftool.exe found at $exiftoolPath" -ForegroundColor Cyan
 }
 
-Write-Host "Copying cjxl and exiftool to publish directory..." -ForegroundColor Cyan
-if (-not (Test-Path $publishDir)) {
-    New-Item -ItemType Directory -Path $publishDir -Force | Out-Null
-}
-Copy-Item $cjxlPath -Destination (Join-Path $publishDir "cjxl.exe") -Force
-if (Test-Path $exiftoolPath) {
-    Copy-Item $exiftoolPath -Destination (Join-Path $publishDir "exiftool.exe") -Force
+Write-Host "Copying cjxl and exiftool to publish directories..." -ForegroundColor Cyan
+foreach ($dir in @($publishDir, $cliPublishDir)) {
+    if (-not (Test-Path $dir)) {
+        New-Item -ItemType Directory -Path $dir -Force | Out-Null
+    }
+    Copy-Item $cjxlPath -Destination (Join-Path $dir "cjxl.exe") -Force
+    if (Test-Path $exiftoolPath) {
+        Copy-Item $exiftoolPath -Destination (Join-Path $dir "exiftool.exe") -Force
+    }
 }
 
 Write-Host "Building project..." -ForegroundColor Cyan
@@ -89,10 +93,19 @@ dotnet publish "$scriptDir/$projectName" `
     -p:DebugType=None `
     -p:DebugSymbols=false
 
+Write-Host "Publishing CLI..." -ForegroundColor Cyan
+dotnet publish "$scriptDir/$cliProjectName" `
+    -c $configuration `
+    -r $runtime `
+    --self-contained true `
+    -p:DebugType=None `
+    -p:DebugSymbols=false
+
 if ($LASTEXITCODE -eq 0) {
     Write-Host "`nBuild Successful!" -ForegroundColor Green
-    Write-Host "The executable can be found in: $publishDir" -ForegroundColor Green
-    Write-Host "cjxl.exe is included in the publish directory." -ForegroundColor Green
+    Write-Host "GUI executable: $publishDir" -ForegroundColor Green
+    Write-Host "CLI executable: $cliPublishDir\rawtojxl-cli.exe" -ForegroundColor Green
+    Write-Host "cjxl.exe is included in both publish directories." -ForegroundColor Green
 } else {
     Write-Host "`nBuild Failed!" -ForegroundColor Red
 }

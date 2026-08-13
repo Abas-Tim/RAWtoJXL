@@ -6,7 +6,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using RAWtoJXL.Core.Interfaces;
 
-namespace RAWtoJXL.Avalonia
+namespace RAWtoJXL.Core.Settings
 {
     public enum ConflictResolution
     {

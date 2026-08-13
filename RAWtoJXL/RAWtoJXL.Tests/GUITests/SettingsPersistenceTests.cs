@@ -3,6 +3,7 @@ using Avalonia.Headless.XUnit;
 using RAWtoJXL.Avalonia;
 using RAWtoJXL.Avalonia.ViewModels;
 using RAWtoJXL.Core.Interfaces;
+using RAWtoJXL.Core.Settings;
 
 namespace RAWtoJXL.Tests.GUITests;
 
