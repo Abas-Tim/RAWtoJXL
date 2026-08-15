@@ -17,9 +17,9 @@ namespace RAWtoJXL.Core.Interfaces
 
     public enum OutputFormat
     {
-        Jxl,
-        Jpeg,
-        Png
+        Jxl = 0,
+        Jpeg = 1,
+        Avif = 3
     }
 
     public interface IImageService

@@ -470,7 +470,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
                 var files = await Task.Run(() => ImageFileEnumerator.Enumerate(
                     new[] { folder },
                     SearchRecursive,
-                    SupportedFormats.RawExtensions.Concat(new[] { ".jxl" }))).ConfigureAwait(false);
+                    SupportedFormats.AllInputExtensions)).ConfigureAwait(false);
                 if (files.Any())
                 {
                     await AddFilesAsync(files);
@@ -766,8 +766,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
 
         private static bool IsSupportedFile(string extension)
         {
-            var ext = extension.ToLowerInvariant();
-            return SupportedFormats.IsRawFile(ext) || ext == ".jxl";
+            return SupportedFormats.IsSupportedInput(extension);
         }
     }
 }

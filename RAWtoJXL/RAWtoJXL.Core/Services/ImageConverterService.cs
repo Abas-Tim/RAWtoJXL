@@ -14,14 +14,16 @@ namespace RAWtoJXL.Core.Services;
         private readonly IExiftoolService _exiftoolService;
         private readonly IFileService _fileService;
         private readonly ILogger _logger;
+        private readonly IJxlDecoder _jxlDecoder;
 
         private const uint MaxThumbnailDimension = 300;
 
-        public ImageConverterService(IExiftoolService exiftoolService, IFileService fileService, ILogger logger)
+        public ImageConverterService(IExiftoolService exiftoolService, IFileService fileService, ILogger logger, IJxlDecoder jxlDecoder)
         {
             _exiftoolService = exiftoolService ?? throw new ArgumentNullException(nameof(exiftoolService));
             _fileService = fileService ?? throw new ArgumentNullException(nameof(fileService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _jxlDecoder = jxlDecoder ?? throw new ArgumentNullException(nameof(jxlDecoder));
         }
 
     public async Task<byte[]> ExtractThumbnailAsync(string filePath, CancellationToken cancellationToken = default)
@@ -48,6 +50,15 @@ namespace RAWtoJXL.Core.Services;
             if (dngThumbnail != null)
             {
                 return DownscalePreview(dngThumbnail, MaxThumbnailDimension, _logger);
+            }
+
+            if (Models.SupportedFormats.IsJxlFile(Path.GetExtension(filePath)))
+            {
+                var jxlThumbnail = await DecodeJxlThumbnailAsync(filePath, cancellationToken);
+                if (jxlThumbnail != null)
+                {
+                    return DownscalePreview(jxlThumbnail, MaxThumbnailDimension, _logger);
+                }
             }
 
             return await Task.Run(() => FallbackDecodeThumbnail(filePath), cancellationToken);
@@ -101,8 +112,26 @@ namespace RAWtoJXL.Core.Services;
         }
     }
 
-    internal static byte[] DownscalePreview(byte[] imageData, uint maxDimension, ILogger logger)
+    private async Task<byte[]?> DecodeJxlThumbnailAsync(string filePath, CancellationToken cancellationToken)
     {
+        string tempPng = Path.Combine(Path.GetTempPath(), $"jxl_thumb_{Guid.NewGuid():N}.png");
+        try
+        {
+            await _jxlDecoder.DecodeToPngAsync(filePath, tempPng, cancellationToken);
+            return await File.ReadAllBytesAsync(tempPng, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.Write($"[ImageConverterService] JXL thumbnail decode failed for {Path.GetFileName(filePath)}: {ex.Message}");
+            return null;
+        }
+        finally
+        {
+            _fileService.DeleteFile(tempPng);
+        }
+    }
+
+    internal static byte[] DownscalePreview(byte[] imageData, uint maxDimension, ILogger logger)    {
         try
         {
             using var image = new MagickImage(imageData);
@@ -143,44 +172,7 @@ namespace RAWtoJXL.Core.Services;
         return ms.ToArray();
     }
 
-   public async Task ConvertToPngAsync(string inputPath, string outputPath, CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrWhiteSpace(inputPath))
-        {
-            throw new ArgumentException("Input path cannot be null or empty.", nameof(inputPath));
-        }
-
-        if (string.IsNullOrWhiteSpace(outputPath))
-        {
-            throw new ArgumentException("Output path cannot be null or empty.", nameof(outputPath));
-        }
-
-        if (!File.Exists(inputPath))
-        {
-            throw new FileNotFoundException($"Input file not found: {inputPath}");
-        }
-
-        await Task.Run(() =>
-        {
-            try
-            {
-                using var image = new MagickImage(inputPath);
-                image.Depth = 16;
-                image.Format = MagickFormat.Png;
-                image.Write(outputPath);
-            }
-            catch (IOException ex) when (FileLockedException.IsFileLocked(ex))
-            {
-                throw new FileLockedException(inputPath, ex);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Failed to convert {Path.GetFileName(inputPath)} to PNG: {ex.Message}", ex);
-            }
-        }, cancellationToken);
-    }
-
-    public async Task ConvertToJpegAsync(string inputPath, string outputPath, int quality, CancellationToken cancellationToken = default)
+   public async Task ConvertToJpegAsync(string inputPath, string outputPath, int quality, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(inputPath))
         {
@@ -220,6 +212,55 @@ namespace RAWtoJXL.Core.Services;
             catch (Exception ex)
             {
                 throw new Exception($"Failed to convert {Path.GetFileName(inputPath)} to JPEG: {ex.Message}", ex);
+            }
+        }, cancellationToken);
+    }
+
+    public async Task ConvertToAvifAsync(string inputPath, string outputPath, int quality, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(inputPath))
+        {
+            throw new ArgumentException("Input path cannot be null or empty.", nameof(inputPath));
+        }
+
+        if (string.IsNullOrWhiteSpace(outputPath))
+        {
+            throw new ArgumentException("Output path cannot be null or empty.", nameof(outputPath));
+        }
+
+        if (!File.Exists(inputPath))
+        {
+            throw new FileNotFoundException($"Input file not found: {inputPath}");
+        }
+
+        await Task.Run(() =>
+        {
+            try
+            {
+                using var image = new MagickImage(inputPath);
+                image.Quality = (uint)Math.Max(1, Math.Min(100, quality));
+                if (image.Depth > 8)
+                {
+                    image.Depth = 16;
+                }
+                image.ColorSpace = ColorSpace.sRGB;
+                image.Format = MagickFormat.Avif;
+
+                var outputDir = Path.GetDirectoryName(outputPath);
+                if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+                {
+                    Directory.CreateDirectory(outputDir);
+                }
+
+                image.Write(outputPath);
+            }
+            catch (IOException ex) when (FileLockedException.IsFileLocked(ex))
+            {
+                throw new FileLockedException(inputPath, ex);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Failed to convert {Path.GetFileName(inputPath)} to AVIF: {ex.Message}", ex);
             }
         }, cancellationToken);
     }

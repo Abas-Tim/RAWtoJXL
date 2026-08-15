@@ -61,7 +61,7 @@ namespace RAWtoJXL.Cli
                 return ExitCodes.Success;
             }
 
-            if (!await ToolPreflight.VerifyAsync(services, stderr))
+            if (!await ToolPreflight.VerifyAsync(services, stderr, files))
             {
                 return ExitCodes.ToolMissing;
             }

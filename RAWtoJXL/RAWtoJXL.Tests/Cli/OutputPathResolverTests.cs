@@ -82,7 +82,7 @@ public class OutputPathResolverTests : IDisposable
     [Theory]
     [InlineData(OutputFormat.Jxl, ".jxl")]
     [InlineData(OutputFormat.Jpeg, ".jpg")]
-    [InlineData(OutputFormat.Png, ".png")]
+    [InlineData(OutputFormat.Avif, ".avif")]
     public void Resolve_UsesCorrectExtension(OutputFormat format, string expectedExtension)
     {
         var source = CreateSource();
@@ -97,7 +97,7 @@ public class OutputPathResolverTests : IDisposable
     {
         Assert.Equal(".jxl", OutputPathResolver.GetOutputExtension(OutputFormat.Jxl));
         Assert.Equal(".jpg", OutputPathResolver.GetOutputExtension(OutputFormat.Jpeg));
-        Assert.Equal(".png", OutputPathResolver.GetOutputExtension(OutputFormat.Png));
+        Assert.Equal(".avif", OutputPathResolver.GetOutputExtension(OutputFormat.Avif));
     }
 
     [Fact]

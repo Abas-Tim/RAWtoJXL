@@ -65,12 +65,16 @@ if (-not (Test-Path $exiftoolPath)) {
     Write-Host "exiftool.exe found at $exiftoolPath" -ForegroundColor Cyan
 }
 
-Write-Host "Copying cjxl and exiftool to publish directories..." -ForegroundColor Cyan
+Write-Host "Copying cjxl, djxl and exiftool to publish directories..." -ForegroundColor Cyan
 foreach ($dir in @($publishDir, $cliPublishDir)) {
     if (-not (Test-Path $dir)) {
         New-Item -ItemType Directory -Path $dir -Force | Out-Null
     }
     Copy-Item $cjxlPath -Destination (Join-Path $dir "cjxl.exe") -Force
+    $djxlPath = Join-Path $scriptDir "djxl.exe"
+    if (Test-Path $djxlPath) {
+        Copy-Item $djxlPath -Destination (Join-Path $dir "djxl.exe") -Force
+    }
     if (Test-Path $exiftoolPath) {
         Copy-Item $exiftoolPath -Destination (Join-Path $dir "exiftool.exe") -Force
     }
@@ -105,7 +109,7 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "`nBuild Successful!" -ForegroundColor Green
     Write-Host "GUI executable: $publishDir" -ForegroundColor Green
     Write-Host "CLI executable: $cliPublishDir\rawtojxl-cli.exe" -ForegroundColor Green
-    Write-Host "cjxl.exe is included in both publish directories." -ForegroundColor Green
+    Write-Host "cjxl.exe and djxl.exe are included in both publish directories." -ForegroundColor Green
 } else {
     Write-Host "`nBuild Failed!" -ForegroundColor Red
 }

@@ -1,8 +1,8 @@
 # RAWtoJXL
 
-Convert RAW camera files to JPEG-XL, JPEG, or PNG — with a fast, modern desktop UI.
+Convert RAW camera files to JPEG-XL, JPEG, or AVIF — with a fast, modern desktop UI. Also converts between the raster formats: JPEG, JPEG-XL and AVIF.
 
-Built on .NET 8 and Avalonia. Uses Magick.NET for RAW decoding, `cjxl` for JPEG-XL encoding, and `exiftool` for metadata preservation.
+Built on .NET 8 and Avalonia. Uses Magick.NET for RAW/JPEG/AVIF decoding and encoding, `cjxl` for JPEG-XL encoding, `djxl` for JPEG-XL decoding, and `exiftool` for metadata preservation.
 
 ## Why JPEG-XL?
 
@@ -27,11 +27,22 @@ JXL also supports:
 
 ## Supported Formats
 
-### Input (RAW)
-Sony `.ARW` / `.SR2` / `.SRF` · Canon `.CRW` / `.CR2` / `.CR3` · Nikon `.NEF` / `.NRW` · Fujifilm `.RAF` · Olympus / OM System `.ORF` · Panasonic `.RW2` · Adobe `.DNG`
+### Input
+RAW: Sony `.ARW` / `.SR2` / `.SRF` · Canon `.CRW` / `.CR2` / `.CR3` · Nikon `.NEF` / `.NRW` · Fujifilm `.RAF` · Olympus / OM System `.ORF` · Panasonic `.RW2` · Adobe `.DNG`
+
+Raster: `.JXL` (JPEG-XL) · `.JPG` / `.JPEG` · `.AVIF`
 
 ### Output
-`.JXL` (JPEG-XL) · `.JPG` (JPEG) · `.PNG` (16-bit lossless)
+`.JXL` (JPEG-XL) · `.JPG` (JPEG) · `.AVIF`
+
+RAW files are inputs only and can never be produced as output. Converting a file to its own format (e.g. JPEG → JPEG) is rejected.
+
+| Input | JXL | JPEG | AVIF |
+|---|---|---|---|
+| RAW (ARW/CR2/CR3/NEF/RAF/ORF/RW2/DNG/...) | cjxl (16-bit stream) | Magick.NET | Magick.NET |
+| JPEG | cjxl | — | Magick.NET |
+| JXL | — | djxl → Magick.NET | djxl → Magick.NET |
+| AVIF | cjxl | Magick.NET | — |
 
 ## Features
 
@@ -62,7 +73,7 @@ cd RAWtoJXL
 ./build.ps1
 ```
 
-The build script downloads `cjxl.exe` and `exiftool` if missing, restores NuGet packages, and publishes a self-contained Windows executable.
+The build script downloads `cjxl.exe`, `djxl.exe` and `exiftool` if missing, restores NuGet packages, and publishes a self-contained Windows executable.
 
 ### Run
 

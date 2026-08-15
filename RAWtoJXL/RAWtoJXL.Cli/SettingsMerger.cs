@@ -54,7 +54,7 @@ namespace RAWtoJXL.Cli
                     : (settings.CjxlThreads > 0 ? settings.CjxlThreads : (int?)null));
 
             var recursive = cli.Recursive || settings.SearchRecursive;
-            var extensions = cli.Extensions.Length > 0 ? cli.Extensions : SupportedFormats.RawExtensions;
+            var extensions = cli.Extensions.Length > 0 ? cli.Extensions : SupportedFormats.AllInputExtensions;
             var modifiedAfter = ParseDate(cli.ModifiedAfter);
             var modifiedBefore = ParseDate(cli.ModifiedBefore);
 

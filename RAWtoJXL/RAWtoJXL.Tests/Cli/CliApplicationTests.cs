@@ -166,7 +166,7 @@ public class CliApplicationTests : Startup, IDisposable
         File.WriteAllText(existing, "pre-existing");
         var content = File.ReadAllBytes(existing);
 
-        var (exit, stdout, _) = await RunAsync("convert", _sandbox, "--no-subfolder", "--conflict", "skip", "--json");
+        var (exit, stdout, _) = await RunAsync("convert", _sandbox, "--no-subfolder", "--conflict", "skip", "--json", "--ext", "dng");
 
         Assert.Equal(ExitCodes.Success, exit);
         using var doc = ParseJson(stdout);
@@ -182,7 +182,7 @@ public class CliApplicationTests : Startup, IDisposable
         var source = CopyFixture("a.dng");
         File.WriteAllText(Path.ChangeExtension(source, ".jxl"), "pre-existing");
 
-        var (exit, stdout, _) = await RunAsync("convert", _sandbox, "--no-subfolder", "--conflict", "rename", "--json");
+        var (exit, stdout, _) = await RunAsync("convert", _sandbox, "--no-subfolder", "--conflict", "rename", "--json", "--ext", "dng");
 
         Assert.Equal(ExitCodes.Success, exit);
         using var doc = ParseJson(stdout);
@@ -302,7 +302,7 @@ public class CliApplicationTests : Startup, IDisposable
         {
             Name = "p1",
             Quality = 95,
-            OutputFormat = RAWtoJXL.Core.Interfaces.OutputFormat.Png,
+            OutputFormat = RAWtoJXL.Core.Interfaces.OutputFormat.Avif,
             CjxlEffort = 9
         });
         SettingsService.Save(settings);
@@ -314,7 +314,7 @@ public class CliApplicationTests : Startup, IDisposable
         var preset = doc.RootElement.GetProperty("presets")[0];
         Assert.Equal("p1", preset.GetProperty("name").GetString());
         Assert.Equal(95, preset.GetProperty("quality").GetInt32());
-        Assert.Equal("Png", preset.GetProperty("outputFormat").GetString());
+        Assert.Equal("Avif", preset.GetProperty("outputFormat").GetString());
         Assert.Equal(9, preset.GetProperty("cjxlEffort").GetInt32());
     }
 

@@ -12,13 +12,13 @@ namespace RAWtoJXL.Cli.Options
     {
         public Argument<string[]> Paths { get; } = new("paths")
         {
-            Description = "RAW files or folders to process",
+            Description = "Image files (RAW, JPEG, JXL, AVIF) or folders to process",
             Arity = ArgumentArity.OneOrMore
         };
 
         public Option<string> Format { get; } = new("--format", "-f")
         {
-            Description = "Output format: jxl, jpg or png"
+            Description = "Output format: jxl, jpg or avif"
         };
 
         public Option<int> Quality { get; } = new("--quality", "-q")
@@ -59,7 +59,7 @@ namespace RAWtoJXL.Cli.Options
 
         public Option<string[]> Extensions { get; } = new("--ext")
         {
-            Description = "Only these RAW extensions, e.g. --ext arw,cr3 (put paths before this option)",
+            Description = "Only these input extensions, e.g. --ext arw,cr3,jxl (put paths before this option)",
             AllowMultipleArgumentsPerToken = true,
             Arity = ArgumentArity.OneOrMore
         };
@@ -196,8 +196,8 @@ namespace RAWtoJXL.Cli.Options
             {
                 "jxl" => "Jxl",
                 "jpg" or "jpeg" => "Jpeg",
-                "png" => "Png",
-                _ => throw new UsageException($"invalid --format '{value}'. Expected jxl, jpg or png.")
+                "avif" => "Avif",
+                _ => throw new UsageException($"invalid --format '{value}'. Expected jxl, jpg or avif.")
             };
         }
 
@@ -231,9 +231,9 @@ namespace RAWtoJXL.Cli.Options
                 {
                     var ext = part.Trim().TrimStart('.').ToLowerInvariant();
                     if (ext.Length == 0) continue;
-                    if (!SupportedFormats.RawExtensions.Contains("." + ext))
+                    if (!SupportedFormats.AllInputExtensions.Contains("." + ext))
                     {
-                        throw new UsageException($"unsupported extension '{ext}'. Supported: {string.Join(", ", SupportedFormats.RawExtensions.Select(e => e.TrimStart('.')))}.");
+                        throw new UsageException($"unsupported extension '{ext}'. Supported: {string.Join(", ", SupportedFormats.AllInputExtensions.Select(e => e.TrimStart('.')))}.");
                     }
                     normalized.Add("." + ext);
                 }
