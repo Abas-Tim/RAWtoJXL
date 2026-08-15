@@ -56,6 +56,7 @@ $scriptDir = Convert-Path $scriptDir
 $projectName = "RAWtoJXL.Avalonia/RAWtoJXL.Avalonia.csproj"
 $solutionFile = "RAWtoJXL.sln"
 $cjxlPath = Join-Path $scriptDir "cjxl.exe"
+$djxlPath = Join-Path $scriptDir "djxl.exe"
 $exiftoolPath = Join-Path $scriptDir "exiftool.exe"
 $exiftoolFilesDir = Join-Path $scriptDir "exiftool_files"
 $publishDir = Join-Path $scriptDir "RAWtoJXL.Avalonia\bin\$Configuration\net8.0\$Runtime\publish"
@@ -95,9 +96,9 @@ $cjxlUrl = "https://github.com/libjxl/libjxl/releases/download/v$cjxlVersion/jxl
 $exiftoolVersion = "13.57"
 
 if (-not $SkipDownload) {
-    # ── cjxl ──────────────────────────────────────────────────────────────
-    if (-not (Test-Path $cjxlPath)) {
-        Write-Host "Downloading cjxl v$cjxlVersion..." -ForegroundColor Cyan
+    # ── cjxl + djxl ───────────────────────────────────────────────────────
+    if (-not (Test-Path $cjxlPath) -or -not (Test-Path $djxlPath)) {
+        Write-Host "Downloading libjxl tools v$cjxlVersion..." -ForegroundColor Cyan
         $cjxlZip = Join-Path $env:TEMP "jxl-cjxl.zip"
         try {
             curl.exe -L -s -o $cjxlZip $cjxlUrl
@@ -105,19 +106,30 @@ if (-not $SkipDownload) {
             if (Test-Path $tempExtract) { Remove-Item $tempExtract -Recurse -Force }
             New-Item -ItemType Directory -Path $tempExtract -Force | Out-Null
             Expand-Archive -Path $cjxlZip -DestinationPath $tempExtract -Force
-            $foundCjxl = Get-ChildItem $tempExtract -Filter "cjxl.exe" -Recurse | Select-Object -First 1
-            if ($foundCjxl) {
-                Copy-Item $foundCjxl.FullName $cjxlPath -Force
-                Write-Host "cjxl.exe downloaded successfully." -ForegroundColor Green
-            } else {
-                Write-Host "Warning: cjxl.exe not found in downloaded archive." -ForegroundColor Yellow
+            if (-not (Test-Path $cjxlPath)) {
+                $foundCjxl = Get-ChildItem $tempExtract -Filter "cjxl.exe" -Recurse | Select-Object -First 1
+                if ($foundCjxl) {
+                    Copy-Item $foundCjxl.FullName $cjxlPath -Force
+                    Write-Host "cjxl.exe downloaded successfully." -ForegroundColor Green
+                } else {
+                    Write-Host "Warning: cjxl.exe not found in downloaded archive." -ForegroundColor Yellow
+                }
+            }
+            if (-not (Test-Path $djxlPath)) {
+                $foundDjxl = Get-ChildItem $tempExtract -Filter "djxl.exe" -Recurse | Select-Object -First 1
+                if ($foundDjxl) {
+                    Copy-Item $foundDjxl.FullName $djxlPath -Force
+                    Write-Host "djxl.exe downloaded successfully." -ForegroundColor Green
+                } else {
+                    Write-Host "Warning: djxl.exe not found in downloaded archive." -ForegroundColor Yellow
+                }
             }
             Remove-Item $tempExtract -Recurse -Force -ErrorAction SilentlyContinue
         } finally {
             Remove-Item $cjxlZip -Force -ErrorAction SilentlyContinue
         }
     } else {
-        Write-Host "cjxl.exe already exists at $cjxlPath" -ForegroundColor Gray
+        Write-Host "cjxl.exe and djxl.exe already exist" -ForegroundColor Gray
     }
 
     # ── exiftool ──────────────────────────────────────────────────────────

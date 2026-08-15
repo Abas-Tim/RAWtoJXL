@@ -19,7 +19,8 @@ public class ImageProcessingServiceCleanupTests
     private static ImageProcessingService CreateService(
         ICjxlEncoder? encoder = null,
         IImageConverterService? converter = null,
-        IExiftoolService? exiftool = null)
+        IExiftoolService? exiftool = null,
+        IJxlDecoder? jxlDecoder = null)
     {
         var logger = new FileLogger();
         return new ImageProcessingService(
@@ -27,7 +28,8 @@ public class ImageProcessingServiceCleanupTests
             encoder ?? new Mock<ICjxlEncoder>().Object,
             new FileService(logger),
             logger,
-            exiftool ?? new Mock<IExiftoolService>().Object);
+            exiftool ?? new Mock<IExiftoolService>().Object,
+            jxlDecoder ?? new Mock<IJxlDecoder>().Object);
     }
 
     [Fact]
@@ -100,23 +102,94 @@ public class ImageProcessingServiceCleanupTests
     }
 
     [Fact]
-    public async Task ConvertToPngOutputAsync_ConverterFailsAfterWritingOutput_DeletesPartialOutput()
+    public async Task ConvertToAvifOutputAsync_ConverterFailsAfterWritingOutput_DeletesPartialOutput()
     {
         var dir = Path.Combine(Path.GetTempPath(), "RAWtoJXL_Cleanup_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(dir);
-        var output = Path.Combine(dir, "out.png");
+        var output = Path.Combine(dir, "out.avif");
         try
         {
             var converter = new Mock<IImageConverterService>();
-            converter.Setup(x => x.ConvertToPngAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .Callback<string, string, CancellationToken>((_, outPath, _) => File.WriteAllText(outPath, "partial"))
-                .ThrowsAsync(new IOException("simulated PNG failure"));
+            converter.Setup(x => x.ConvertToAvifAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Callback<string, string, int, CancellationToken>((_, outPath, _, _) => File.WriteAllText(outPath, "partial"))
+                .ThrowsAsync(new IOException("simulated AVIF failure"));
             var svc = CreateService(converter: converter.Object);
 
             await Assert.ThrowsAsync<IOException>(() =>
-                svc.ConvertToJxlAsync(Path.Combine(dir, "in.arw"), output, _ => { }, 90, OutputFormat.Png));
+                svc.ConvertToJxlAsync(Path.Combine(dir, "in.arw"), output, _ => { }, 90, OutputFormat.Avif));
 
             Assert.False(File.Exists(output), "partial output should have been deleted");
+        }
+        finally
+        {
+            Directory.Delete(dir, true);
+        }
+    }
+
+    [Fact]
+    public async Task ConvertToJpegOutputAsync_JxlInputDecoderFails_DeletesPartialOutput()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "RAWtoJXL_Cleanup_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        var output = Path.Combine(dir, "out.jpg");
+        try
+        {
+            var decoder = new Mock<IJxlDecoder>();
+            decoder.Setup(x => x.DecodeToPngAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<int>()))
+                .Callback<string, string, CancellationToken, int>((_, outPath, _, _) => File.WriteAllText(outPath, "partial"))
+                .ThrowsAsync(new IOException("simulated djxl failure"));
+            var svc = CreateService(jxlDecoder: decoder.Object);
+
+            await Assert.ThrowsAsync<IOException>(() =>
+                svc.ConvertToJxlAsync(Path.Combine(dir, "in.jxl"), output, _ => { }, 90, OutputFormat.Jpeg));
+
+            Assert.False(File.Exists(output), "partial output should have been deleted");
+        }
+        finally
+        {
+            Directory.Delete(dir, true);
+        }
+    }
+
+    [Fact]
+    public async Task ConvertToJpegOutputAsync_JxlInput_DecodesTempPngThenConverts()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "RAWtoJXL_Cleanup_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        var output = Path.Combine(dir, "out.jpg");
+        try
+        {
+            string? decodedTemp = null;
+            var decoder = new Mock<IJxlDecoder>();
+            decoder.Setup(x => x.DecodeToPngAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<int>()))
+                .Callback<string, string, CancellationToken, int>((_, outPath, _, _) =>
+                {
+                    decodedTemp = outPath;
+                    File.WriteAllText(outPath, "png");
+                })
+                .Returns(Task.CompletedTask);
+
+            string? converterInput = null;
+            var converter = new Mock<IImageConverterService>();
+            converter.Setup(x => x.ConvertToJpegAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Callback<string, string, int, CancellationToken>((inPath, outPath, _, _) =>
+                {
+                    converterInput = inPath;
+                    File.WriteAllText(outPath, "jpg");
+                })
+                .Returns(Task.CompletedTask);
+
+            var exiftool = new Mock<IExiftoolService>();
+
+            var svc = CreateService(converter: converter.Object, jxlDecoder: decoder.Object, exiftool: exiftool.Object);
+
+            await svc.ConvertToJxlAsync(Path.Combine(dir, "in.jxl"), output, _ => { }, 90, OutputFormat.Jpeg);
+
+            Assert.True(File.Exists(output));
+            Assert.NotNull(decodedTemp);
+            Assert.Equal(decodedTemp, converterInput);
+            Assert.True(File.Exists(decodedTemp) == false, "temp PNG should be cleaned up");
+            exiftool.Verify(x => x.EmbedMetadataAsync(Path.Combine(dir, "in.jxl"), output, It.IsAny<CancellationToken>()), Times.Once);
         }
         finally
         {

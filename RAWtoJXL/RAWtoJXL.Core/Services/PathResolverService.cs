@@ -6,26 +6,36 @@ namespace RAWtoJXL.Core.Services
     {
         public string ResolveCjxlPath()
         {
-            string appDir = AppDomain.CurrentDomain.BaseDirectory;
-            string cjxlInAppDir = Path.Combine(appDir, "cjxl.exe");
-            if (File.Exists(cjxlInAppDir))
-            {
-                return cjxlInAppDir;
-            }
+            return ResolveToolPath("cjxl.exe");
+        }
 
-            string exeDir = Path.GetDirectoryName(Environment.ProcessPath) ?? appDir;
-            string cjxlInExeDir = Path.Combine(exeDir, "cjxl.exe");
-            if (File.Exists(cjxlInExeDir))
-            {
-                return cjxlInExeDir;
-            }
-
-            return "cjxl";
+        public string ResolveDjxlPath()
+        {
+            return ResolveToolPath("djxl.exe");
         }
 
         public string GetTempPath()
         {
             return Path.GetTempPath();
+        }
+
+        private static string ResolveToolPath(string toolFileName)
+        {
+            string appDir = AppDomain.CurrentDomain.BaseDirectory;
+            string toolInAppDir = Path.Combine(appDir, toolFileName);
+            if (File.Exists(toolInAppDir))
+            {
+                return toolInAppDir;
+            }
+
+            string exeDir = Path.GetDirectoryName(Environment.ProcessPath) ?? appDir;
+            string toolInExeDir = Path.Combine(exeDir, toolFileName);
+            if (File.Exists(toolInExeDir))
+            {
+                return toolInExeDir;
+            }
+
+            return Path.GetFileNameWithoutExtension(toolFileName);
         }
     }
 }

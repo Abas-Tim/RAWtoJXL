@@ -53,6 +53,37 @@ public class MainWindowOpenFolderTests
     }
 
     [AvaloniaFact]
+    public async Task OpenFolder_AddsRasterInputFiles()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "RAWtoJXL_OpenFolder_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        try
+        {
+            File.WriteAllText(Path.Combine(dir, "a.jpg"), "");
+            File.WriteAllText(Path.Combine(dir, "b.avif"), "");
+            File.WriteAllText(Path.Combine(dir, "c.jxl"), "");
+            File.WriteAllText(Path.Combine(dir, "d.arw"), "");
+            File.WriteAllText(Path.Combine(dir, "e.png"), "not supported");
+            File.WriteAllText(Path.Combine(dir, "notes.txt"), "not an image");
+
+            var filePicker = new Mock<IFilePickerService>();
+            filePicker.Setup(x => x.PickFolderAsync(It.IsAny<string>()))
+                      .ReturnsAsync(dir);
+            var vm = GUITestHelpers.CreateViewModel(filePickerService: filePicker);
+
+            await vm.OpenFolderCommand.ExecuteAsync(null);
+
+            Assert.Equal(4, vm.Images.Count);
+            Assert.DoesNotContain(vm.Images, i => i.FileName == "notes.txt");
+            Assert.DoesNotContain(vm.Images, i => i.FileName == "e.png");
+        }
+        finally
+        {
+            Directory.Delete(dir, true);
+        }
+    }
+
+    [AvaloniaFact]
     public async Task OpenFolder_EmptyOrNoFiles_AddsNothing()
     {
         var dir = Path.Combine(Path.GetTempPath(), "RAWtoJXL_OpenFolder_" + Guid.NewGuid().ToString("N"));

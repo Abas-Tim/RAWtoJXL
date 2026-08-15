@@ -1,6 +1,6 @@
 # RAWtoJXL.Cli
 
-Headless command-line interface for the RAW→JXL/JPEG/PNG conversion pipeline. Shares all conversion logic with the desktop app via `RAWtoJXL.Core`; suited for scripts, scheduled automation, and LLM agents.
+Headless command-line interface for the RAW→JXL/JPEG/AVIF and JPEG/JXL/AVIF cross-conversion pipeline. Shares all conversion logic with the desktop app via `RAWtoJXL.Core`; suited for scripts, scheduled automation, and LLM agents.
 
 ## Project Structure
 
@@ -30,7 +30,7 @@ rawtojxl-cli list <paths...> [options]      # Dry-run plan
 rawtojxl-cli presets [--json]               # Named presets from GUI settings
 ```
 
-Options: `--format jxl|jpg|png`, `--quality 0-100`, `--conflict overwrite|skip|rename`,
+Options: `--format jxl|jpg|avif`, `--quality 0-100`, `--conflict overwrite|skip|rename`,
 `--recursive/-r`, `--output-dir/-o`, `--no-subfolder`, `--subfolder`, `--preset/-p`,
 `--ext a,b`, `--include glob`, `--exclude glob`, `--modified-after/-before ISO-date`,
 `--skip-metadata`, `--effort 1-9`, `--threads N`, `--jobs N`, `--dry-run`, `--json`,
@@ -75,3 +75,4 @@ Note: paths must be given **before** multi-value options (`--ext`, `--include`,
 - Microsoft.Extensions.DependencyInjection 8.0.1 (MIT)
 - RAWtoJXL.Core (project reference)
 - cjxl.exe + exiftool.exe + exiftool_files/ copied to output (same as GUI)
+

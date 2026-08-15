@@ -13,7 +13,7 @@ namespace RAWtoJXL.Core.Services
             {
                 OutputFormat.Jxl => ".jxl",
                 OutputFormat.Jpeg => ".jpg",
-                OutputFormat.Png => ".png",
+                OutputFormat.Avif => ".avif",
                 _ => ".jxl"
             };
         }

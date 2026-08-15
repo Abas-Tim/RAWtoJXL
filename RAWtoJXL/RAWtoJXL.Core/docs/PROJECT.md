@@ -58,12 +58,13 @@ RAWtoJXL.Core/
 
 ### IImageService (Primary Interface)
 Defines two async operations:
-- `GetThumbnailAsync(filePath, cancellationToken)` → `byte[]`: Three-stage thumbnail: (1) exiftool `-b -PreviewImage` direct read (~10ms), (2) Magick.NET `dng:thumbnail` profile via LibRaw, (3) fast decode fallback with camera LUT disabled + nearest-neighbor resampling. Stage 1-2 outputs larger than 300x300 are downscaled via Magick `Thumbnail()` (shrink-only) before being handed to the UI grid
-- `ConvertToJxlAsync(inputPath, outputPath, progress, quality, outputFormat, cancellationToken, skipMetadata, effort)`: Orchestrates conversion pipeline
+- `GetThumbnailAsync(filePath, cancellationToken)` → `byte[]`: Multi-stage thumbnail: (1) exiftool `-b -PreviewImage` direct read (~10ms), (2) Magick.NET `dng:thumbnail` profile via LibRaw, (3) for JXL inputs a djxl decode to a temp PNG, (4) fast decode fallback with camera LUT disabled + nearest-neighbor resampling. Stage 1-2 outputs larger than 300x300 are downscaled via Magick `Thumbnail()` (shrink-only) before being handed to the UI grid
+- `ConvertToJxlAsync(inputPath, outputPath, progress, quality, outputFormat, cancellationToken, skipMetadata, effort, threads)`: Orchestrates conversion pipeline
    - `progress` is a required `Action<double>` callback (non-nullable, no default). Fault-tolerant: exceptions from the callback are caught and logged, preventing pipeline breakage and orphaned temp files.
-   - `outputFormat = OutputFormat.Jxl`: Direct PPM streaming to cjxl stdin via `StreamPpmToAsync` + writer delegate — zero intermediate disk I/O, single file open, native ImageMagick C-code encoding, followed by exiftool metadata embedding
-   - `outputFormat = OutputFormat.Jpeg`: ARW→JPEG via IImageConverterService with quality setting + exiftool metadata embedding
-   - `outputFormat = OutputFormat.Png`: Direct ARW→PNG via Magick.NET (16-bit lossless) + exiftool metadata embedding
+   - Same-format conversions (e.g. JPEG → JPEG) are rejected with `InvalidOperationException` before any work starts.
+   - `outputFormat = OutputFormat.Jxl`: Direct PPM streaming to cjxl stdin via `StreamPpmToAsync` + writer delegate — zero intermediate disk I/O, single file open, native ImageMagick C-code encoding, followed by exiftool metadata embedding. Inputs may be RAW, JPEG or AVIF.
+   - `outputFormat = OutputFormat.Jpeg`: Magick.NET conversion with quality setting + exiftool metadata embedding. JXL inputs are decoded to a temp 16-bit PNG via `IJxlDecoder` first.
+   - `outputFormat = OutputFormat.Avif`: Magick.NET conversion (`MagickFormat.Avif`, 16-bit sRGB) + exiftool metadata embedding. JXL inputs are decoded to a temp 16-bit PNG via `IJxlDecoder` first.
    - `skipMetadata`: When true, skips metadata embedding for faster conversion
     - `effort`: Optional cjxl encoding effort override (1-9)
     - `threads`: Optional cjxl thread count override. Null uses `Environment.ProcessorCount`
@@ -71,13 +72,13 @@ Defines two async operations:
 
 Also defines two enums in the same file:
 - **ImageStatus**: `Pending`, `Ready`, `Converting`, `Converted`, `Failed`
-- **OutputFormat**: `Jxl`, `Jpeg`, `Png`
+- **OutputFormat**: `Jxl = 0`, `Jpeg = 1`, `Avif = 3` (value 2 reserved so legacy `Png` values in settings files map to Jxl via `SettingsService.NormalizeLegacyOutputFormats`)
 
 ### ImageProcessingService (Orchestrator)
-Coordinates the conversion pipeline by delegating to specialized services. Supports three output formats:
+Coordinates the conversion pipeline by delegating to specialized services. RAW is input-only; JXL/JPEG/AVIF may be inputs or outputs (same-format conversions rejected):
 1. **JXL (default)**: Two-stage via `ImageConverterService.StreamPpmToAsync` (direct PPM stream to cjxl stdin) + `CjxlEncoderService.EncodeFromStreamAsync` with writer delegate — zero intermediate buffering, single file open
-2. **JPEG**: Delegates to `IImageConverterService.ConvertToJpegAsync()` for RAW→JPEG + exiftool metadata embedding
-3. **PNG**: Direct RAW→PNG via ImageConverterService (16-bit lossless) + exiftool metadata embedding
+2. **JPEG**: Magick.NET conversion; JXL sources decoded via `IJxlDecoder` to a temp 16-bit PNG first
+3. **AVIF**: Magick.NET conversion (16-bit sRGB); JXL sources decoded via `IJxlDecoder` to a temp 16-bit PNG first
 
 **Constructor Injection:**
 ```csharp
@@ -85,19 +86,23 @@ public ImageProcessingService(
     IImageConverterService imageConverterService,
     ICjxlEncoder cjxlEncoder,
     IFileService fileService,
-    IPathResolver pathResolver,
     ILogger logger,
-    IExiftoolService exiftoolService)
+    IExiftoolService exiftoolService,
+    IJxlDecoder jxlDecoder)
 ```
 
 ### IImageConverterService / ImageConverterService
-- `ExtractThumbnailAsync()`: Three-stage thumbnail extraction: (1) **exiftool** `-b -PreviewImage` — fastest path, reads embedded JPEG preview directly from file at TIFF IFD1 offset (~10ms per file, works for all RAW formats including Sony ARW); (2) **Magick.NET dng:thumbnail profile** — uses `DngReadDefines.ReadThumbnail=true` + `Ping()` + `GetProfile("dng:thumbnail").ToByteArray()` — LibRaw-based extraction via ImageMagick, zero full decode; (3) **full decode fallback** — `raw:use-camera-lookup-table=false` define (skips expensive camera LUT), `Thumbnail(300,300)` (fast nearest-neighbor resampling), outputs JPEG at quality 80. Each stage catches all exceptions and returns null on failure, ensuring the next fallback path always works.
-- `ConvertToPngAsync()`: Converts ARW to 16-bit PNG in temp directory
-- `ConvertToJpegAsync()`: Converts ARW to JPEG with quality setting, creates output directory if needed
-- `ExtractToRawRgb16Async()`: Extracts raw 16-bit RGB pixel data from ARW file as byte array (big-endian, 2 bytes per channel) — legacy, superseded by `StreamPpmToAsync`
-- `StreamPpmToAsync()`: Opens ARW, sets Depth=16/ColorSpace=sRGB/Format=Ppm, writes PPM directly to output stream via Magick.NET native `Write()` — single file open, zero intermediate buffering, streams directly to cjxl stdin
+- `ExtractThumbnailAsync()`: Multi-stage thumbnail extraction: (1) **exiftool** `-b -PreviewImage` — fastest path, reads embedded JPEG preview directly from file at TIFF IFD1 offset (~10ms per file, works for all RAW formats including Sony ARW); (2) **Magick.NET dng:thumbnail profile** — uses `DngReadDefines.ReadThumbnail=true` + `Ping()` + `GetProfile("dng:thumbnail").ToByteArray()` — LibRaw-based extraction via ImageMagick, zero full decode; (3) **djxl decode** for JXL inputs to a temp PNG, then Magick downscale; (4) **full decode fallback** — `raw:use-camera-lookup-table=false` define (skips expensive camera LUT), `Thumbnail(300,300)` (fast nearest-neighbor resampling), outputs JPEG at quality 80. Each stage catches all exceptions and returns null on failure, ensuring the next fallback path always works.
+- `ConvertToJpegAsync()`: Converts input to JPEG with quality setting, creates output directory if needed
+- `ConvertToAvifAsync()`: Converts input to AVIF (`MagickFormat.Avif`, `Depth=16`, sRGB) with quality setting, creates output directory if needed
+- `StreamPpmToAsync()`: Opens input, sets Depth=16/ColorSpace=sRGB/Format=Ppm, writes PPM directly to output stream via Magick.NET native `Write()` — single file open, zero intermediate buffering, streams directly to cjxl stdin
 - `ExtractMetadataProfilesAsync()`: Delegates to `IExiftoolService.ExtractMetadataProfilesAsync()` for all formats — exiftool extracts EXIF, XMP, ICC, IPTC profiles to temp files. Single tool for all metadata operations, no Magick.NET profile extraction.
-- **Constructor:** `ImageConverterService(IExiftoolService exiftoolService, IFileService fileService, ILogger logger)` — all required (non-nullable)
+- **Constructor:** `ImageConverterService(IExiftoolService exiftoolService, IFileService fileService, ILogger logger, IJxlDecoder jxlDecoder)` — all required (non-nullable)
+
+### IJxlDecoder / DjxlDecoderService
+- `DecodeToPngAsync(inputPath, outputPath, cancellationToken, timeoutSeconds)`: Runs `djxl.exe <input.jxl> <output.png>` via `IProcessRunner.RunProcessWithTimeoutAsync`. PNG output (16-bit when source is 16-bit) is read by Magick.NET for the downstream JPEG/AVIF/thumbnail paths.
+- Resolves djxl.exe via `IPathResolver.ResolveDjxlPath()`; throws `FileNotFoundException` when missing, `JxlDecodingException` on non-zero exit, `TimeoutException` on timeout, `IOException` when no output is produced.
+- **Constructor:** `DjxlDecoderService(IPathResolver pathResolver, ILogger logger, IProcessRunner processRunner)`
 
 ### IExiftoolService / ExiftoolService
 - `ExtractMetadataProfilesAsync(filePath)`: Extracts EXIF, XMP, ICC, IPTC profiles using exiftool for all formats (RAW and non-RAW). Returns `MetadataProfiles` with temp file paths. Used for reading metadata from output files (e.g., tests).
@@ -142,7 +147,7 @@ Custom exception thrown by `CjxlEncoderService` when cjxl encoding fails. Proper
 - **Constructor:** `FileService(ILogger logger)` — depends on ILogger for exception logging
 
 ### IPathResolver / PathResolverService
-- `ResolveCjxlPath()`: Searches app directory, then executable directory, falls back to PATH
+- `ResolveCjxlPath()` / `ResolveDjxlPath()`: Searches app directory, then executable directory, falls back to PATH (bare `cjxl` / `djxl` name)
 - `GetTempPath()`: Returns system temp directory
 
 ### IProcessRunner / SystemProcessRunner
@@ -186,12 +191,12 @@ Centralized quality calculations to avoid duplication:
 
 **JPEG Pipeline (Two-stage process):**
 1. **Stage 0:** No pre-encoding metadata extraction
-2. **Stage 1 (Magick.NET via IImageConverterService):** RAW → JPEG with quality setting
+2. **Stage 1 (Magick.NET via IImageConverterService):** RAW/JPEG/AVIF → JPEG with quality setting; JXL sources decoded to a temp 16-bit PNG via `djxl` first
 3. **Post-processing:** exiftool `-tagsFromFile` metadata embedding (single exiftool invocation)
 
-**PNG Pipeline (Two-stage process):**
+**AVIF Pipeline (Two-stage process):**
 1. **Stage 0:** No pre-encoding metadata extraction
-2. **Stage 1 (Magick.NET):** RAW → PNG (16-bit lossless)
+2. **Stage 1 (Magick.NET):** RAW/JPEG/AVIF → AVIF (`MagickFormat.Avif`, 16-bit sRGB, quality setting); JXL sources decoded to a temp 16-bit PNG via `djxl` first
 3. **Post-processing:** exiftool `-tagsFromFile` metadata embedding (single exiftool invocation)
 
 **cjxl arguments:**

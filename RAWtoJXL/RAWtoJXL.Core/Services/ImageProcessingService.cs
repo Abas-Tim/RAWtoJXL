@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using RAWtoJXL.Core.Interfaces;
+using RAWtoJXL.Core.Models;
 
 namespace RAWtoJXL.Core.Services;
 
@@ -13,19 +14,22 @@ public class ImageProcessingService : IImageService
     private readonly IFileService _fileService;
     private readonly ILogger _logger;
     private readonly IExiftoolService _exiftoolService;
+    private readonly IJxlDecoder _jxlDecoder;
 
     public ImageProcessingService(
         IImageConverterService imageConverterService,
         ICjxlEncoder cjxlEncoder,
         IFileService fileService,
         ILogger logger,
-        IExiftoolService exiftoolService)
+        IExiftoolService exiftoolService,
+        IJxlDecoder jxlDecoder)
     {
         _imageConverterService = imageConverterService ?? throw new ArgumentNullException(nameof(imageConverterService));
         _cjxlEncoder = cjxlEncoder ?? throw new ArgumentNullException(nameof(cjxlEncoder));
         _fileService = fileService ?? throw new ArgumentNullException(nameof(fileService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _exiftoolService = exiftoolService ?? throw new ArgumentNullException(nameof(exiftoolService));
+        _jxlDecoder = jxlDecoder ?? throw new ArgumentNullException(nameof(jxlDecoder));
     }
 
     public async Task<byte[]> GetThumbnailAsync(string filePath, CancellationToken cancellationToken = default)
@@ -44,17 +48,44 @@ public class ImageProcessingService : IImageService
         int? effort = null,
         int? threads = null)
     {
+        EnsureNotSameFormat(inputPath, outputFormat);
+
         if (outputFormat == OutputFormat.Jxl)
         {
             await ConvertToJxlInternalAsync(inputPath, outputPath, progress, quality, cancellationToken, skipMetadata, effort, threads);
         }
         else if (outputFormat == OutputFormat.Jpeg)
         {
-            await ConvertToJpegAsync(inputPath, outputPath, progress, quality, cancellationToken, skipMetadata);
+            await ConvertToRasterInternalAsync(inputPath, outputPath, progress, quality, cancellationToken, skipMetadata,
+                (path, outPath, q, ct) => _imageConverterService.ConvertToJpegAsync(path, outPath, q, ct));
         }
-        else if (outputFormat == OutputFormat.Png)
+        else if (outputFormat == OutputFormat.Avif)
         {
-            await ConvertToPngOutputAsync(inputPath, outputPath, progress, cancellationToken, skipMetadata);
+            await ConvertToRasterInternalAsync(inputPath, outputPath, progress, quality, cancellationToken, skipMetadata,
+                (path, outPath, q, ct) => _imageConverterService.ConvertToAvifAsync(path, outPath, q, ct));
+        }
+        else
+        {
+            throw new ArgumentOutOfRangeException(nameof(outputFormat), $"Unsupported output format: {outputFormat}");
+        }
+    }
+
+    private static void EnsureNotSameFormat(string inputPath, OutputFormat outputFormat)
+    {
+        string extension = Path.GetExtension(inputPath);
+        bool isSameFormat = outputFormat switch
+        {
+            OutputFormat.Jxl => SupportedFormats.IsJxlFile(extension),
+            OutputFormat.Jpeg => extension.Equals(".jpg", StringComparison.OrdinalIgnoreCase) ||
+                                 extension.Equals(".jpeg", StringComparison.OrdinalIgnoreCase),
+            OutputFormat.Avif => extension.Equals(".avif", StringComparison.OrdinalIgnoreCase),
+            _ => false
+        };
+
+        if (isSameFormat)
+        {
+            throw new InvalidOperationException(
+                $"Converting {Path.GetFileName(inputPath)} ({extension}) to {outputFormat} is a same-format conversion and is not supported.");
         }
     }
 
@@ -109,15 +140,18 @@ public class ImageProcessingService : IImageService
         }
     }
 
-    private async Task ConvertToJpegAsync(
+    private async Task ConvertToRasterInternalAsync(
         string inputPath,
         string outputPath,
         Action<double> progress,
         int quality,
         CancellationToken cancellationToken,
-        bool skipMetadata = false)
+        bool skipMetadata,
+        Func<string, string, int, CancellationToken, Task> converter)
     {
         bool outputExisted = _fileService.FileExists(outputPath);
+        bool isJxlInput = SupportedFormats.IsJxlFile(Path.GetExtension(inputPath));
+        string? tempPng = null;
 
         try
         {
@@ -128,7 +162,18 @@ public class ImageProcessingService : IImageService
                 _logger.Write($"[ImageProcessing] Metadata embedding skipped for {Path.GetFileName(inputPath)}");
             }
 
-            await _imageConverterService.ConvertToJpegAsync(inputPath, outputPath, quality, cancellationToken);
+            if (isJxlInput)
+            {
+                tempPng = Path.Combine(Path.GetTempPath(), $"jxl_decode_{Guid.NewGuid():N}.png");
+                await _jxlDecoder.DecodeToPngAsync(inputPath, tempPng, cancellationToken);
+                ReportProgress(progress, 0.4);
+                await converter(tempPng, outputPath, quality, cancellationToken);
+            }
+            else
+            {
+                await converter(inputPath, outputPath, quality, cancellationToken);
+            }
+
             ReportProgress(progress, 0.9);
 
             if (!skipMetadata)
@@ -146,43 +191,12 @@ public class ImageProcessingService : IImageService
             }
             throw;
         }
-    }
-
-    private async Task ConvertToPngOutputAsync(
-        string inputPath,
-        string outputPath,
-        Action<double> progress,
-        CancellationToken cancellationToken,
-        bool skipMetadata = false)
-    {
-        bool outputExisted = _fileService.FileExists(outputPath);
-
-        try
+        finally
         {
-            ReportProgress(progress, 0.1);
-
-            if (skipMetadata)
+            if (tempPng != null)
             {
-                _logger.Write($"[ImageProcessing] Metadata embedding skipped for {Path.GetFileName(inputPath)}");
+                _fileService.DeleteFile(tempPng);
             }
-
-            await _imageConverterService.ConvertToPngAsync(inputPath, outputPath, cancellationToken);
-            ReportProgress(progress, 0.7);
-
-            if (!skipMetadata)
-            {
-                await _exiftoolService.EmbedMetadataAsync(inputPath, outputPath, cancellationToken);
-            }
-
-            ReportProgress(progress, 1.0);
-        }
-        catch
-        {
-            if (!outputExisted)
-            {
-                _fileService.DeleteFile(outputPath);
-            }
-            throw;
         }
     }
 

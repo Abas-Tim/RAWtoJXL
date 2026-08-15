@@ -20,11 +20,30 @@ namespace RAWtoJXL.Core.Models
             ".dng"
         ];
 
-        public static readonly string[] OutputExtensions = [".jxl", ".jpg", ".png"];
+        public static readonly string[] RasterInputExtensions = [".jpg", ".jpeg", ".jxl", ".avif"];
+
+        public static readonly string[] AllInputExtensions = RawExtensions.Concat(RasterInputExtensions).ToArray();
+
+        public static readonly string[] OutputExtensions = [".jxl", ".jpg", ".avif"];
 
         public static bool IsRawFile(string extension)
         {
             return Array.Exists(RawExtensions, e => e.Equals(extension, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public static bool IsRasterInput(string extension)
+        {
+            return Array.Exists(RasterInputExtensions, e => e.Equals(extension, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public static bool IsSupportedInput(string extension)
+        {
+            return IsRawFile(extension) || IsRasterInput(extension);
+        }
+
+        public static bool IsJxlFile(string extension)
+        {
+            return extension.Equals(".jxl", StringComparison.OrdinalIgnoreCase);
         }
 
         public static string ToFileFilter(string title, string[] extensions)

@@ -7,7 +7,7 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <Authors>Timur Abasov</Authors>
-    <Description>Windows desktop app converting RAW camera files to JPEG-XL, JPEG, or PNG.</Description>
+    <Description>Windows desktop app converting RAW camera files to JPEG-XL, JPEG, or AVIF.</Description>
     <RepositoryUrl>https://github.com/Abas-Tim/RAWtoJXL</RepositoryUrl>
     <PackageTags>raw;jxl;jpeg-xl;image-conversion;photography</PackageTags>
   </PropertyGroup>
@@ -33,6 +33,7 @@
     <ProjectReference Include="..\RAWtoJXL.Avalonia\RAWtoJXL.Avalonia.csproj" />
     <ProjectReference Include="..\RAWtoJXL.Cli\RAWtoJXL.Cli.csproj" />
     <None Include="..\cjxl.exe" Condition="Exists('..\cjxl.exe')" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\djxl.exe" Condition="Exists('..\djxl.exe')" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\exiftool.exe" Condition="Exists('..\exiftool.exe')" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\exiftool_files\**\*.*" Condition="Exists('..\exiftool_files')">
       <Link>exiftool_files\%(RecursiveDir)%(Filename)%(Extension)</Link>
@@ -43,3 +44,4 @@
   </ItemGroup>
 
 </Project>
+

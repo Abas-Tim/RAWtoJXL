@@ -109,9 +109,9 @@ public class SettingsWindowTests
         var formatCombo = GUITestHelpers.GetAllControls<ComboBox>(tab)
             .First(c => c.Items.OfType<OutputFormat>().Any());
 
-        formatCombo.SelectedItem = OutputFormat.Png;
+        formatCombo.SelectedItem = OutputFormat.Avif;
 
-        Assert.Equal(OutputFormat.Png, sw.Settings.OutputFormat);
+        Assert.Equal(OutputFormat.Avif, sw.Settings.OutputFormat);
     }
 
     [AvaloniaFact]
@@ -128,7 +128,8 @@ public class SettingsWindowTests
         var formats = formatCombo.ItemsSource.Cast<OutputFormat>().ToList();
         Assert.Contains(OutputFormat.Jxl, formats);
         Assert.Contains(OutputFormat.Jpeg, formats);
-        Assert.Contains(OutputFormat.Png, formats);
+        Assert.Contains(OutputFormat.Avif, formats);
+        Assert.Equal(3, formats.Count);
     }
 
     [AvaloniaFact]
