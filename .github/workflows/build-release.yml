@@ -78,8 +78,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      # ── Download cjxl ─────────────────────────────────────────────────
-      - name: Download cjxl
+      # ── Download libjxl tools (cjxl + djxl) ──────────────────────────
+      - name: Download libjxl tools
         shell: pwsh
         run: |
           $url = "https://github.com/libjxl/libjxl/releases/download/v${{ env.CJXL_VERSION }}/jxl-x64-windows-static.zip"
@@ -94,6 +94,14 @@ jobs:
             Write-Output "cjxl.exe downloaded successfully."
           } else {
             Write-Error "cjxl.exe not found in archive!"
+            exit 1
+          }
+          $djxl = Get-ChildItem $dest -Filter "djxl.exe" -Recurse | Select-Object -First 1
+          if ($djxl) {
+            Copy-Item $djxl.FullName "${{ github.workspace }}/RAWtoJXL/djxl.exe" -Force
+            Write-Output "djxl.exe downloaded successfully."
+          } else {
+            Write-Error "djxl.exe not found in archive!"
             exit 1
           }
           Remove-Item $zip, $dest -Recurse -Force -ErrorAction SilentlyContinue
@@ -188,6 +196,7 @@ jobs:
         run: |
           foreach ($dir in @("publish", "publish-cli")) {
             Copy-Item "${{ github.workspace }}/RAWtoJXL/cjxl.exe" "${{ github.workspace }}/$dir/" -Force
+            Copy-Item "${{ github.workspace }}/RAWtoJXL/djxl.exe" "${{ github.workspace }}/$dir/" -Force
             Copy-Item "${{ github.workspace }}/RAWtoJXL/exiftool.exe" "${{ github.workspace }}/$dir/" -Force
             if (Test-Path "${{ github.workspace }}/RAWtoJXL/exiftool_files") {
               Copy-Item "${{ github.workspace }}/RAWtoJXL/exiftool_files" "${{ github.workspace }}/$dir/" -Recurse -Force
