@@ -16,7 +16,9 @@ JPEG-XL is a next-generation image format that outperforms JPEG, WebP, AVIF, and
 | Fujifilm RAF (26MP) | ~20 MB | ~3–5 MB | **up to 80%** |
 | Adobe DNG (raw) | ~30 MB | ~4–7 MB | **up to 85%** |
 
-At quality 90 (visually lossless), JXL files are typically **4–10× smaller** than the original RAW while preserving perceptual quality. Switch to lossless mode (quality 100) and JXL still beats DNG by a wide margin.
+At quality 90 (visually lossless), JXL files are typically **4–10× smaller** than the original RAW while preserving perceptual quality.
+
+**Lossless mode (quality 100) will not shrink a RAW.** It encodes the fully rendered 16-bit image bit-for-bit, and a RAW stores far less data than that: one 12–14-bit Bayer sample per pixel, losslessly compressed. The rendered image carries three 16-bit channels, so a lossless JXL is typically **larger than the source RAW** (commonly ~1.5–2×) and is comparable to — not smaller than — a losslessly-compressed DNG; it only wins against *uncompressed* DNG/RAW. For archival, quality 90–97 is usually the better size/quality trade-off.
 
 JXL also supports:
 - **Up to 32-bit per channel** — no precision loss from 12/14-bit RAW

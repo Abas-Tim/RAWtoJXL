@@ -32,7 +32,7 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="Quality:" VerticalAlignment="Center" FontSize="12"
-                                   ToolTip.Tip="Quality target (0-100). Higher values retain more detail and produce larger files. 90 is visually lossless. 100 is fully lossless."/>
+                                   ToolTip.Tip="Quality target (0-100). Higher values retain more detail and produce larger files. 90 is visually lossless. 100 is bit-exact lossless of the rendered image — often larger than the source RAW."/>
                         <StackPanel Grid.Column="1" Orientation="Vertical">
                             <TextBlock Text="{Binding QualityPreset}" HorizontalAlignment="Right" FontSize="11" Foreground="Gray"/>
                             <Slider Minimum="0" Maximum="100" Value="{Binding QualityPreset}" TickFrequency="1" IsSnapToTickEnabled="True" Margin="0,2"/>
