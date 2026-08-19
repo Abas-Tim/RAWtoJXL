@@ -10,7 +10,7 @@ namespace RAWtoJXL.Cli
     {
         public static RootCommand Create(IServiceProvider services, TextWriter stdout, TextWriter stderr)
         {
-            var root = new RootCommand("Convert RAW camera files to JPEG-XL, JPEG or PNG without the GUI.")
+            var root = new RootCommand("Convert RAW camera files to JPEG-XL, JPEG or AVIF without the GUI.")
             {
                 TreatUnmatchedTokensAsErrors = true
             };

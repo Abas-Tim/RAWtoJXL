@@ -67,7 +67,7 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="Output format:" VerticalAlignment="Center" FontSize="12"
-                                   ToolTip.Tip="JXL (default, best compression), JPEG (widely compatible), PNG (lossless, large files)"/>
+                                   ToolTip.Tip="JXL (default, best compression), JPEG (widely compatible), AVIF (modern, small files)"/>
                         <ComboBox Grid.Column="1" Width="140" HorizontalAlignment="Left"
                                   ItemsSource="{Binding OutputFormatOptions}"
                                   SelectedItem="{Binding OutputFormat}">
@@ -290,3 +290,4 @@
         </StackPanel>
     </Grid>
 </Window>
+

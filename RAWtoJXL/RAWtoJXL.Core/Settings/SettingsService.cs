@@ -181,6 +181,7 @@ namespace RAWtoJXL.Core.Settings
 
                     var json = File.ReadAllText(SettingsPath);
                     _current = JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
+                    NormalizeLegacyOutputFormats(_current);
                 }
                 catch (Exception ex)
                 {
@@ -251,6 +252,22 @@ namespace RAWtoJXL.Core.Settings
             catch (Exception ex)
             {
                 OnError(ex);
+            }
+        }
+
+        private static void NormalizeLegacyOutputFormats(AppSettings settings)
+        {
+            if (!Enum.IsDefined(typeof(OutputFormat), settings.OutputFormat))
+            {
+                settings.OutputFormat = OutputFormat.Jxl;
+            }
+
+            foreach (var preset in settings.Presets)
+            {
+                if (!Enum.IsDefined(typeof(OutputFormat), preset.OutputFormat))
+                {
+                    preset.OutputFormat = OutputFormat.Jxl;
+                }
             }
         }
 

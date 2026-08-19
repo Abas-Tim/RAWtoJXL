@@ -23,8 +23,9 @@ assignees: []
 - **App version:**
 - **OS:** (e.g. Windows 11 24H2)
 - **RAW file format:** (e.g. Sony ARW, Canon CR3, Nikon NEF)
-- **Output format:** JXL / JPEG / PNG
+- **Output format:** JXL / JPEG / AVIF
 
 ## Log Excerpt
 
 Attach or paste relevant lines from `%TEMP%\RAWtoJXL.log`.
+

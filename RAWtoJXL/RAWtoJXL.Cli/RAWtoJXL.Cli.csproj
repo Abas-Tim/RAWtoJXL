@@ -9,7 +9,7 @@
     <RootNamespace>RAWtoJXL.Cli</RootNamespace>
     <Version>1.0.1</Version>
     <Authors>Timur Abasov</Authors>
-    <Description>Command-line interface converting RAW camera files to JPEG-XL, JPEG, or PNG.</Description>
+    <Description>Command-line interface converting RAW camera files to JPEG-XL, JPEG, or AVIF.</Description>
     <RepositoryUrl>https://github.com/Abas-Tim/RAWtoJXL</RepositoryUrl>
     <PackageTags>raw;jxl;jpeg-xl;image-conversion;photography</PackageTags>
   </PropertyGroup>
@@ -37,3 +37,4 @@
   </ItemGroup>
 
 </Project>
+

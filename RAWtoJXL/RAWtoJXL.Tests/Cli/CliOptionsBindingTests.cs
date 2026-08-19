@@ -87,12 +87,20 @@ public class CliOptionsBindingTests : IDisposable
     [InlineData("JXL", "Jxl")]
     [InlineData("jpg", "Jpeg")]
     [InlineData("jpeg", "Jpeg")]
-    [InlineData("png", "Png")]
+    [InlineData("avif", "Avif")]
+    [InlineData("AVIF", "Avif")]
     public void Bind_Format_Normalized(string input, string expected)
     {
         var cli = Bind(_tempDir, "--format", input);
 
         Assert.Equal(expected, cli.Format);
+    }
+
+    [Fact]
+    public void Bind_Format_Png_ThrowsUsage()
+    {
+        var ex = Assert.Throws<UsageException>(() => Bind(_tempDir, "--format", "png"));
+        Assert.Contains("--format", ex.Message);
     }
 
     [Fact]

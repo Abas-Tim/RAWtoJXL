@@ -45,7 +45,7 @@ public class SettingsMergerTests
     {
         var cli = DefaultCli();
         cli.Quality = 100;
-        cli.Format = "Png";
+        cli.Format = "Avif";
         cli.Conflict = "Skip";
         cli.NoSubfolder = true;
         cli.SkipMetadata = true;
@@ -56,7 +56,7 @@ public class SettingsMergerTests
         var resolved = SettingsMerger.Merge(cli, DefaultSettings(), null);
 
         Assert.Equal(100, resolved.Quality);
-        Assert.Equal(OutputFormat.Png, resolved.Format);
+        Assert.Equal(OutputFormat.Avif, resolved.Format);
         Assert.Equal(ConflictResolution.Skip, resolved.Conflict);
         Assert.False(resolved.UseSubfolder);
         Assert.True(resolved.SkipMetadata);
@@ -235,18 +235,20 @@ public class SettingsMergerTests
     }
 
     [Fact]
-    public void Merge_NoExtensions_UsesAllRawExtensions()
+    public void Merge_NoExtensions_UsesAllInputExtensions()
     {
         var resolved = SettingsMerger.Merge(DefaultCli(), DefaultSettings(), null);
 
-        Assert.Equal(RAWtoJXL.Core.Models.SupportedFormats.RawExtensions.Length, resolved.Extensions.Count);
+        Assert.Equal(RAWtoJXL.Core.Models.SupportedFormats.AllInputExtensions.Length, resolved.Extensions.Count);
     }
 
     [Theory]
     [InlineData("Jxl", OutputFormat.Jxl)]
     [InlineData("Jpeg", OutputFormat.Jpeg)]
-    [InlineData("Png", OutputFormat.Png)]
+    [InlineData("Avif", OutputFormat.Avif)]
     [InlineData("jxl", OutputFormat.Jxl)]
+    [InlineData("avif", OutputFormat.Avif)]
+    [InlineData("png", null)]
     [InlineData("garbage", null)]
     [InlineData(null, null)]
     public void ParseFormat_MapsValues(string? value, OutputFormat? expected)
