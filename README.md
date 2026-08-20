@@ -2,7 +2,7 @@
 
 Convert RAW camera files to JPEG-XL, JPEG, or AVIF — with a fast, modern desktop UI. Also converts between the raster formats: JPEG, JPEG-XL and AVIF.
 
-Built on .NET 8 and Avalonia. Uses Magick.NET for RAW/JPEG/AVIF decoding and encoding, `cjxl` for JPEG-XL encoding, `djxl` for JPEG-XL decoding, and `exiftool` for metadata preservation.
+Built on .NET 8 and Avalonia. Uses RawTherapee for high-fidelity RAW rendering, Magick.NET for image conversion, `cjxl` for JPEG-XL encoding, `djxl` for JPEG-XL decoding, and `exiftool` for metadata preservation.
 
 ## Why JPEG-XL?
 
@@ -59,6 +59,7 @@ RAW files are inputs only and can never be produced as output. Converting a file
 - **Advanced cjxl options** — effort (1–9), thread count, near-lossless mode
 - **Cancel anytime** — graceful cancellation mid-batch
 - **Recent files** — quick-access list of last 50 files
+- **Compare tool** — pick one file and open a 3-pane comparison window (original | JXL | AVIF/JPEG, formats switchable) with synchronized zoom and pan, live file sizes, and on-the-fly quality and JXL effort controls
 
 ## Screenshot
 
@@ -76,6 +77,10 @@ cd RAWtoJXL
 ```
 
 The build script downloads `cjxl.exe`, `djxl.exe` and `exiftool` if missing, restores NuGet packages, and publishes a self-contained Windows executable.
+
+The Compare tool requires `cjxl.exe` for lossy JXL quality and effort control. If it is unavailable, the Magick.NET fallback uses lossless JXL rather than silently producing low-quality output.
+
+For high-fidelity, multithreaded RAW rendering in Compare, install [RawTherapee](https://rawtherapee.com/downloads/) or set `RAWTOJXL_RAWTHERAPEE_CLI` to `rawtherapee-cli.exe`. The app also checks beside its executable, the `RawTherapee` subdirectory, `PATH`, and the standard Windows installation directory. If RawTherapee is unavailable, Compare falls back to Magick.NET RAW decoding.
 
 ### Run
 
@@ -162,6 +167,7 @@ Each project documents its internals in `docs/PROJECT.md`. See `docs/PROJECT_OVE
 | .NET 8 | Runtime | MIT |
 | Avalonia 12 | UI framework | MIT |
 | Magick.NET-Q16-AnyCPU | RAW decoding, image conversion | Apache-2.0 |
+| RawTherapee 5.13 | High-fidelity, multithreaded RAW rendering in Compare | GPL-3.0 |
 | cjxl (libjxl 0.11.2) | JPEG-XL encoding | BSD-3-Clause |
 | exiftool 13.57 | Metadata extraction & embedding | Artistic-2.0 |
 | CommunityToolkit.Mvvm | MVVM helpers | MIT |

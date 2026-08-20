@@ -36,5 +36,17 @@ namespace RAWtoJXL.Avalonia
         public const string CacheCleared = "PNG cache cleared.";
         public const string CacheClearFailed = "Failed to clear PNG cache.";
         public const string CacheInfo = "PNG Cache: ";
+        public const string CompareButton = "Compare";
+        public const string CompareWindowTitle = "Compare Formats";
+        public const string CompareOriginal = "Original";
+        public const string ComparePreparing = "Preparing...";
+        public const string CompareReadyProgress = "Ready: {0} of {1}";
+        public const string CompareReadyWithErrors = "Ready: {0} of {1}, {2} failed.";
+        public const string CompareErrorPrefix = "Compare failed: ";
+        public const string CompareToolMissing = "JXL tools are unavailable. Run build-release.ps1 or place cjxl.exe and djxl.exe next to the application.";
+        public const string CompareConverting = "Converting...";
+        public const string CompareQualityLabel = "Q:";
+        public const string CompareEffortLabel = "Effort:";
+        public const string CompareMirrorLabel = "Mirror";
     }
 }

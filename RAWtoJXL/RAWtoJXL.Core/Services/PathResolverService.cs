@@ -22,20 +22,40 @@ namespace RAWtoJXL.Core.Services
         private static string ResolveToolPath(string toolFileName)
         {
             string appDir = AppDomain.CurrentDomain.BaseDirectory;
-            string toolInAppDir = Path.Combine(appDir, toolFileName);
-            if (File.Exists(toolInAppDir))
-            {
-                return toolInAppDir;
-            }
-
             string exeDir = Path.GetDirectoryName(Environment.ProcessPath) ?? appDir;
-            string toolInExeDir = Path.Combine(exeDir, toolFileName);
-            if (File.Exists(toolInExeDir))
+            var directories = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
-                return toolInExeDir;
+                appDir,
+                exeDir,
+                Directory.GetCurrentDirectory()
+            };
+
+            for (var directory = new DirectoryInfo(appDir); directory.Parent != null; directory = directory.Parent)
+            {
+                directories.Add(directory.FullName);
+                directories.Add(directory.Parent.FullName);
             }
 
-            return Path.GetFileNameWithoutExtension(toolFileName);
+            foreach (var directory in directories)
+            {
+                string candidate = Path.Combine(directory, toolFileName);
+                if (File.Exists(candidate))
+                {
+                    return candidate;
+                }
+            }
+
+            string pathVariable = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
+            foreach (var directory in pathVariable.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries))
+            {
+                string candidate = Path.Combine(directory.Trim(), toolFileName);
+                if (File.Exists(candidate))
+                {
+                    return candidate;
+                }
+            }
+
+            return toolFileName;
         }
     }
 }

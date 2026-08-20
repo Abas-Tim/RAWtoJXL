@@ -108,6 +108,9 @@
                             Command="{Binding ConvertSelectedCommand}"
                             Margin="0,0,8,0"
                             Classes="accent"/>
+                    <Button Content="Compare"
+                            Command="{Binding CompareSelectedCommand}"
+                            Margin="0,0,8,0"/>
                     <Button Content="Cancel"
                             Command="{Binding CancelCommand}"
                             Margin="0,0,8,0"

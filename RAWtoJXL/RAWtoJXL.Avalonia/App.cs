@@ -75,6 +75,14 @@ public partial class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             desktop.Exit -= OnDesktopExit;
 
+        try
+        {
+            Services?.GetService<ICompareConversionService>()?.PurgeStaleEntries();
+        }
+        catch
+        {
+        }
+
         SettingsService.Flush();
     }
 }

@@ -215,6 +215,7 @@ public class SystemProcessRunner : IProcessRunner
         catch (IOException) { }
         catch (Exception ex) { _logger.Write($"[SystemProcessRunner] Failed to read stderr: {ex.Message}"); }
 
+        cancellationToken.ThrowIfCancellationRequested();
         return (process.ExitCode, stdout, stderr, timedOut);
     }
 

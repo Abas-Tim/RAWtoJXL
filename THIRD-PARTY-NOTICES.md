@@ -131,6 +131,14 @@ Licensed under the GNU General Public License version 3.
 
 This binary is bundled in the repository. See the full GPL-3.0 license text in the exiftool source repository at https://github.com/exiftool/exiftool/blob/master/LICENSE.
 
+## GPL-3.0 (External)
+
+### RawTherapee
+
+Copyright the RawTherapee development team, https://rawtherapee.com/
+
+RawTherapee is an optional external application used for high-fidelity RAW rendering in the Compare tool. It is licensed under the GNU General Public License version 3. See https://github.com/RawTherapee/RawTherapee/blob/dev/LICENSE for the full license text and https://github.com/RawTherapee/RawTherapee for source code.
+
 ---
 
 ## ImageMagick

@@ -75,6 +75,27 @@ namespace RAWtoJXL.Core.Services;
         }
     }
 
+    public async Task<byte[]?> ExtractEmbeddedPreviewAsync(string filePath, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            throw new ArgumentException("File path cannot be null or empty.", nameof(filePath));
+        }
+
+        if (!File.Exists(filePath))
+        {
+            throw new FileNotFoundException($"File not found: {filePath}");
+        }
+
+        var preview = await _exiftoolService.ExtractPreviewImageAsync(filePath, cancellationToken);
+        if (preview != null && preview.Length > 0)
+        {
+            return preview;
+        }
+
+        return await Task.Run(() => TryGetDngThumbnail(filePath), cancellationToken);
+    }
+
     private byte[]? TryGetDngThumbnail(string filePath)
     {
         try
@@ -252,7 +273,16 @@ namespace RAWtoJXL.Core.Services;
                     Directory.CreateDirectory(outputDir);
                 }
 
-                image.Write(outputPath);
+                try
+                {
+                    image.Write(outputPath);
+                }
+                catch (Exception ex) when (quality >= 100 && IsLosslessAvifDelegateError(ex))
+                {
+                    _logger.Write("[ImageConverterService] AVIF lossless encoding is unavailable in the bundled delegate; retrying at quality 99.");
+                    image.Quality = 99;
+                    image.Write(outputPath);
+                }
             }
             catch (IOException ex) when (FileLockedException.IsFileLocked(ex))
             {
@@ -261,6 +291,123 @@ namespace RAWtoJXL.Core.Services;
             catch (Exception ex)
             {
                 throw new Exception($"Failed to convert {Path.GetFileName(inputPath)} to AVIF: {ex.Message}", ex);
+            }
+        }, cancellationToken);
+    }
+
+    private static bool IsLosslessAvifDelegateError(Exception exception)
+    {
+        for (Exception? current = exception; current != null; current = current.InnerException)
+        {
+            if (current.Message.Contains("enable_chroma_deltaq", StringComparison.OrdinalIgnoreCase) &&
+                current.Message.Contains("lossless", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public async Task ConvertToJxlAsync(
+        string inputPath,
+        string outputPath,
+        int quality,
+        int? effort = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(inputPath))
+        {
+            throw new ArgumentException("Input path cannot be null or empty.", nameof(inputPath));
+        }
+
+        if (string.IsNullOrWhiteSpace(outputPath))
+        {
+            throw new ArgumentException("Output path cannot be null or empty.", nameof(outputPath));
+        }
+
+        if (!File.Exists(inputPath))
+        {
+            throw new FileNotFoundException($"Input file not found: {inputPath}");
+        }
+
+        await Task.Run(() =>
+        {
+            try
+            {
+                using var image = new MagickImage(inputPath);
+                image.ColorSpace = ColorSpace.sRGB;
+                image.Settings.SetDefines(new JxlWriteDefines
+                {
+                    Effort = Math.Clamp(effort ?? CompareDefaults.JxlEffort, 3, 9)
+                });
+                image.Settings.SetDefine(
+                    MagickFormat.Jxl,
+                    "distance",
+                    "0");
+                image.Format = MagickFormat.Jxl;
+
+                var outputDir = Path.GetDirectoryName(outputPath);
+                if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+                {
+                    Directory.CreateDirectory(outputDir);
+                }
+
+                _logger.Write("[ImageConverterService] Using lossless JPEG XL fallback because cjxl.exe is unavailable.");
+                image.Write(outputPath);
+            }
+            catch (IOException ex) when (FileLockedException.IsFileLocked(ex))
+            {
+                throw new FileLockedException(inputPath, ex);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Failed to convert {Path.GetFileName(inputPath)} to JPEG XL: {ex.Message}", ex);
+            }
+        }, cancellationToken);
+    }
+
+    public async Task ConvertToPngAsync(string inputPath, string outputPath, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(inputPath))
+        {
+            throw new ArgumentException("Input path cannot be null or empty.", nameof(inputPath));
+        }
+
+        if (string.IsNullOrWhiteSpace(outputPath))
+        {
+            throw new ArgumentException("Output path cannot be null or empty.", nameof(outputPath));
+        }
+
+        if (!File.Exists(inputPath))
+        {
+            throw new FileNotFoundException($"Input file not found: {inputPath}");
+        }
+
+        await Task.Run(() =>
+        {
+            try
+            {
+                using var image = new MagickImage(inputPath);
+                image.ColorSpace = ColorSpace.sRGB;
+                image.Strip();
+                image.Format = MagickFormat.Png;
+
+                var outputDir = Path.GetDirectoryName(outputPath);
+                if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+                {
+                    Directory.CreateDirectory(outputDir);
+                }
+
+                image.Write(outputPath);
+            }
+            catch (IOException ex) when (FileLockedException.IsFileLocked(ex))
+            {
+                throw new FileLockedException(inputPath, ex);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Failed to decode {Path.GetFileName(inputPath)} to PNG: {ex.Message}", ex);
             }
         }, cancellationToken);
     }

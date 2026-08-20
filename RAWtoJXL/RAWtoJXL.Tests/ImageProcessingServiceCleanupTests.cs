@@ -14,6 +14,12 @@ public class ImageProcessingServiceCleanupTests
             File.WriteAllText(outputPath, "partial");
             return Task.FromException(new IOException("simulated encoding failure"));
         }
+
+        public Task EncodeFromFileAsync(string inputPath, string outputPath, int quality, CancellationToken cancellationToken, int timeoutSeconds = 300, Action<double>? progress = null, int? effort = null, int? threads = null)
+        {
+            File.WriteAllText(outputPath, "partial");
+            return Task.FromException(new IOException("simulated encoding failure"));
+        }
     }
 
     private static ImageProcessingService CreateService(

@@ -1,0 +1,274 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:RAWtoJXL.Avalonia.ViewModels"
+        xmlns:controls="using:RAWtoJXL.Avalonia.Controls"
+        xmlns:conv="using:RAWtoJXL.Avalonia.Converters"
+        x:Class="RAWtoJXL.Avalonia.CompareWindow"
+        x:DataType="vm:CompareViewModel"
+        Title="Compare Formats"
+        Width="1400"
+        Height="820"
+        MinWidth="1000"
+        MinHeight="620"
+        Background="#101214"
+        WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <conv:OutputFormatToTextConverter x:Key="OutputFormatToTextConverter"/>
+    </Window.Resources>
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto" Background="#101214">
+        <Border Grid.Row="0"
+                Background="#F5F7F9"
+                BorderBrush="#D6DCE2"
+                BorderThickness="0,0,0,1"
+                Padding="10,8">
+            <Grid ColumnDefinitions="*,*,*">
+                <Border Grid.Column="0"
+                        BorderBrush="#D6DCE2"
+                        BorderThickness="0,0,1,0"
+                        Padding="0,0,12,0">
+                    <Grid RowDefinitions="Auto,Auto">
+                        <TextBlock Text="{Binding Panes[0].Label}"
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   Foreground="#20252A"/>
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,4,0,0">
+                            <TextBlock Text="{Binding Panes[0].DimensionsText}"
+                                       FontSize="11"
+                                       Foreground="#626A72"/>
+                            <TextBlock Text="{Binding Panes[0].FileSizeText}"
+                                       FontSize="11"
+                                       Foreground="#626A72"
+                                       Margin="8,0,0,0"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <Border Grid.Column="1"
+                        BorderBrush="#D6DCE2"
+                        BorderThickness="0,0,1,0"
+                        Padding="12,0">
+                    <Grid RowDefinitions="Auto,Auto">
+                        <TextBlock Text="{Binding Panes[1].Label}"
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   Foreground="#20252A"/>
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,4,0,0">
+                            <ComboBox ItemsSource="{Binding Panes[1].AvailableFormats}"
+                                      SelectedItem="{Binding Panes[1].Format, Mode=TwoWay}"
+                                      Width="96"
+                                      Height="30"
+                                      VerticalAlignment="Center">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Converter={StaticResource OutputFormatToTextConverter}}"/>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                            <TextBlock Text="{Binding Panes[1].FileSizeText}"
+                                       FontSize="11"
+                                       Foreground="#626A72"
+                                       VerticalAlignment="Center"
+                                       Margin="8,0,0,0"/>
+                            <TextBlock Text="{Binding Panes[1].SavingsText}"
+                                       FontSize="11"
+                                       Foreground="#2E7D4F"
+                                       VerticalAlignment="Center"
+                                       Margin="4,0,0,0"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <Border Grid.Column="2" Padding="12,0,0,0">
+                    <Grid RowDefinitions="Auto,Auto">
+                        <TextBlock Text="{Binding Panes[2].Label}"
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   Foreground="#20252A"/>
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,4,0,0">
+                            <ComboBox ItemsSource="{Binding Panes[2].AvailableFormats}"
+                                      SelectedItem="{Binding Panes[2].Format, Mode=TwoWay}"
+                                      Width="96"
+                                      Height="30"
+                                      VerticalAlignment="Center">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Converter={StaticResource OutputFormatToTextConverter}}"/>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                            <TextBlock Text="{Binding Panes[2].FileSizeText}"
+                                       FontSize="11"
+                                       Foreground="#626A72"
+                                       VerticalAlignment="Center"
+                                       Margin="8,0,0,0"/>
+                            <TextBlock Text="{Binding Panes[2].SavingsText}"
+                                       FontSize="11"
+                                       Foreground="#2E7D4F"
+                                       VerticalAlignment="Center"
+                                       Margin="4,0,0,0"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="1"
+                Background="#E9EDF1"
+                BorderBrush="#D6DCE2"
+                BorderThickness="0,0,0,1"
+                Padding="10,6">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Text="{Binding SourceFileName}"
+                           FontSize="11"
+                           Foreground="#626A72"
+                           VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Quality" FontSize="11" Foreground="#40474E" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                    <Slider Minimum="0"
+                            Maximum="100"
+                            Value="{Binding Quality, Mode=TwoWay}"
+                            Width="130"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="Quality (0-100)"/>
+                    <TextBlock Text="{Binding Quality}" FontSize="11" Foreground="#40474E" Width="24" VerticalAlignment="Center" Margin="5,0,12,0"/>
+                    <TextBlock Text="JXL effort" FontSize="11" Foreground="#40474E" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                    <ComboBox ItemsSource="{Binding EffortOptions}"
+                              SelectedItem="{Binding JxlEffort, Mode=TwoWay}"
+                              Width="54"
+                              Height="30"
+                              VerticalAlignment="Center"
+                              ToolTip.Tip="JXL encoding effort (1-9)"/>
+                    <CheckBox Content="Mirror"
+                              IsChecked="{Binding IsMirroring, Mode=TwoWay}"
+                              VerticalAlignment="Center"
+                              Margin="14,0,0,0"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="2" Margin="8,6,8,8" ColumnDefinitions="*,*,*">
+            <Border Grid.Column="0"
+                    Background="#0B0D0F"
+                    BorderBrush="#394149"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Margin="2,0">
+                <Grid>
+                    <controls:ZoomPanImageViewer x:Name="Viewer0"
+                                                 ImageSource="{Binding Panes[0].Preview}"
+                                                 FullResPath="{Binding Panes[0].FullResPath}"/>
+                    <StackPanel HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                IsVisible="{Binding Panes[0].IsProcessing}">
+                        <ProgressBar Width="150" Height="4" IsIndeterminate="True"/>
+                        <TextBlock Text="{Binding Panes[0].ProcessingText}"
+                                   FontSize="11"
+                                   Foreground="White"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,6,0,0"/>
+                    </StackPanel>
+                    <Border HorizontalAlignment="Center"
+                            VerticalAlignment="Bottom"
+                            Background="#D9000000"
+                            Padding="8,5"
+                            Margin="8"
+                            IsVisible="{Binding Panes[0].IsError}">
+                        <TextBlock Text="{Binding Panes[0].ErrorMessage}"
+                                   FontSize="11"
+                                   Foreground="#FF8A8A"
+                                   TextWrapping="Wrap"
+                                   MaxWidth="360"/>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <Border Grid.Column="1"
+                    Background="#0B0D0F"
+                    BorderBrush="#394149"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Margin="2,0">
+                <Grid>
+                    <controls:ZoomPanImageViewer x:Name="Viewer1"
+                                                 ImageSource="{Binding Panes[1].Preview}"
+                                                 FullResPath="{Binding Panes[1].FullResPath}"/>
+                    <StackPanel HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                IsVisible="{Binding Panes[1].IsProcessing}">
+                        <ProgressBar Width="150" Height="4" IsIndeterminate="True"/>
+                        <TextBlock Text="{Binding Panes[1].ProcessingText}"
+                                   FontSize="11"
+                                   Foreground="White"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,6,0,0"/>
+                    </StackPanel>
+                    <Border HorizontalAlignment="Center"
+                            VerticalAlignment="Bottom"
+                            Background="#D9000000"
+                            Padding="8,5"
+                            Margin="8"
+                            IsVisible="{Binding Panes[1].IsError}">
+                        <TextBlock Text="{Binding Panes[1].ErrorMessage}"
+                                   FontSize="11"
+                                   Foreground="#FF8A8A"
+                                   TextWrapping="Wrap"
+                                   MaxWidth="360"/>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <Border Grid.Column="2"
+                    Background="#0B0D0F"
+                    BorderBrush="#394149"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Margin="2,0">
+                <Grid>
+                    <controls:ZoomPanImageViewer x:Name="Viewer2"
+                                                 ImageSource="{Binding Panes[2].Preview}"
+                                                 FullResPath="{Binding Panes[2].FullResPath}"/>
+                    <StackPanel HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                IsVisible="{Binding Panes[2].IsProcessing}">
+                        <ProgressBar Width="150" Height="4" IsIndeterminate="True"/>
+                        <TextBlock Text="{Binding Panes[2].ProcessingText}"
+                                   FontSize="11"
+                                   Foreground="White"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,6,0,0"/>
+                    </StackPanel>
+                    <Border HorizontalAlignment="Center"
+                            VerticalAlignment="Bottom"
+                            Background="#D9000000"
+                            Padding="8,5"
+                            Margin="8"
+                            IsVisible="{Binding Panes[2].IsError}">
+                        <TextBlock Text="{Binding Panes[2].ErrorMessage}"
+                                   FontSize="11"
+                                   Foreground="#FF8A8A"
+                                   TextWrapping="Wrap"
+                                   MaxWidth="360"/>
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Border Grid.Row="3"
+                Background="#E9EDF1"
+                BorderBrush="#D6DCE2"
+                BorderThickness="0,1,0,0"
+                Padding="10,6">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Text="{Binding StatusMessage}"
+                           FontSize="11"
+                           Foreground="#40474E"/>
+                <TextBlock Grid.Column="1"
+                           Text="Scroll to zoom  |  Drag to pan  |  Double-click to fit"
+                           FontSize="10"
+                           Foreground="#6B737B"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

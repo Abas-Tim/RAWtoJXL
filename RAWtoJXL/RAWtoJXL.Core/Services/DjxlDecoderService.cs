@@ -100,11 +100,6 @@ public class DjxlDecoderService : IJxlDecoder
                 "djxl.exe");
         }
 
-        if (Path.GetFileName(djxlPath) == djxlPath)
-        {
-            return djxlPath;
-        }
-
         if (!File.Exists(djxlPath))
         {
             throw new FileNotFoundException(

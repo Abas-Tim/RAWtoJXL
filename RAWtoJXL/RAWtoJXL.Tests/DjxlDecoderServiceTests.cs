@@ -122,6 +122,25 @@ public class DjxlDecoderServiceTests
     }
 
     [Fact]
+    public async Task DecodeToPngAsync_BareMissingToolName_ThrowsFileNotFoundException()
+    {
+        var (service, pathResolver, _, dir) = CreateService();
+        var input = Path.Combine(dir, "in.jxl");
+        var output = Path.Combine(dir, "out.png");
+        File.WriteAllText(input, "fake jxl");
+        pathResolver.Setup(x => x.ResolveDjxlPath()).Returns("djxl.exe");
+
+        try
+        {
+            await Assert.ThrowsAsync<FileNotFoundException>(() => service.DecodeToPngAsync(input, output));
+        }
+        finally
+        {
+            Directory.Delete(dir, true);
+        }
+    }
+
+    [Fact]
     public async Task DecodeToPngAsync_SuccessButNoOutput_ThrowsIOException()
     {
         var (service, _, runner, dir) = CreateService();
