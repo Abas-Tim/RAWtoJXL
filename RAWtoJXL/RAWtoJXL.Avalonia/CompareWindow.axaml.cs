@@ -43,10 +43,17 @@ namespace RAWtoJXL.Avalonia
             {
                 var viewer = viewers[i];
                 var pane = vm.Panes[i];
-                viewer.ViewportChanged += (_, args) => vm.OnPaneViewportChanged(pane, args.Viewport);
+                viewer.ViewportChanged += (_, args) => vm.OnPaneViewportChanged(
+                    pane,
+                    args.Viewport,
+                    args.VisibleRegion,
+                    args.PixelWidth,
+                    args.PixelHeight);
+                viewer.DisplayStateChanged += (_, args) => vm.OnPaneDisplayStateChanged(pane, args.State);
                 viewer.FullResRequested += async () => (string?)await vm.EnsureFullResolutionAsync(pane).ConfigureAwait(false);
-                pane.RequestSetViewport += viewport => viewer.SetViewport(viewport, raiseEvent: false);
+                pane.RequestSetViewport += viewport => viewer.SetViewport(viewport, raiseEvent: true);
                 pane.RequestFit += viewer.FitToView;
+                pane.RequestSetDifferenceOverlay += viewer.SetDifferenceOverlay;
             }
 
             Closed += (_, _) =>

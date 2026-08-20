@@ -99,4 +99,43 @@ public class CompareViewportTests
 
         Assert.True(a.Equals(b));
     }
+
+    [Fact]
+    public void GetVisibleImageRegion_FittedLetterboxedImage_ReturnsWholeImage()
+    {
+        var viewport = CompareViewport.Fit(1000, 500, 500, 500);
+
+        var region = viewport.GetVisibleImageRegion(500, 500, 1000, 500);
+
+        Assert.Equal(0, region.Left, 9);
+        Assert.Equal(0, region.Top, 9);
+        Assert.Equal(1, region.Right, 9);
+        Assert.Equal(1, region.Bottom, 9);
+    }
+
+    [Fact]
+    public void GetVisibleImageRegion_ZoomedCenter_ReturnsVisibleCrop()
+    {
+        var viewport = new CompareViewport(1.0, 0.5, 0.5);
+
+        var region = viewport.GetVisibleImageRegion(500, 500, 1000, 1000);
+
+        Assert.Equal(0.25, region.Left, 9);
+        Assert.Equal(0.25, region.Top, 9);
+        Assert.Equal(0.75, region.Right, 9);
+        Assert.Equal(0.75, region.Bottom, 9);
+    }
+
+    [Fact]
+    public void GetVisibleImageRegion_PannedToEdge_ClampsToImage()
+    {
+        var viewport = new CompareViewport(1.0, 0.25, 0.5);
+
+        var region = viewport.GetVisibleImageRegion(500, 500, 1000, 1000);
+
+        Assert.Equal(0, region.Left, 9);
+        Assert.Equal(0.25, region.Top, 9);
+        Assert.Equal(0.5, region.Right, 9);
+        Assert.Equal(0.75, region.Bottom, 9);
+    }
 }

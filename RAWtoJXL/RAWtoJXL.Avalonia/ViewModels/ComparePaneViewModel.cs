@@ -48,6 +48,15 @@ namespace RAWtoJXL.Avalonia.ViewModels
         [ObservableProperty]
         private string? _fullResPath;
 
+        [ObservableProperty]
+        private CompareDisplayState _displayState = CompareDisplayState.Preview;
+
+        [ObservableProperty]
+        private double? _viewportSsim;
+
+        [ObservableProperty]
+        private bool _isAnalyzing;
+
         partial void OnStatusChanged(PaneStatus value)
         {
             OnPropertyChanged(nameof(IsProcessing));
@@ -65,6 +74,21 @@ namespace RAWtoJXL.Avalonia.ViewModels
             FormatChanged?.Invoke(this, value);
         }
 
+        partial void OnDisplayStateChanged(CompareDisplayState value)
+        {
+            OnPropertyChanged(nameof(DisplayStateText));
+        }
+
+        partial void OnViewportSsimChanged(double? value)
+        {
+            OnPropertyChanged(nameof(SsimText));
+        }
+
+        partial void OnIsAnalyzingChanged(bool value)
+        {
+            OnPropertyChanged(nameof(SsimText));
+        }
+
         public bool IsOriginal { get; }
 
         public bool IsConverting => Status == PaneStatus.Converting;
@@ -75,11 +99,23 @@ namespace RAWtoJXL.Avalonia.ViewModels
 
         public bool IsError => Status == PaneStatus.Error;
 
+        public string DisplayStateText => DisplayState == CompareDisplayState.Full ? "Full" : "Preview";
+
+        public string SsimText => IsOriginal
+            ? string.Empty
+            : IsAnalyzing
+                ? "SSIM..."
+                : ViewportSsim is double value
+                    ? $"SSIM {value:F4}"
+                    : "SSIM --";
+
         public event EventHandler<OutputFormat?>? FormatChanged;
 
         public event Action<CompareViewport>? RequestSetViewport;
 
         public event Action? RequestFit;
+
+        public event Action<Bitmap?, CompareImageRegion>? RequestSetDifferenceOverlay;
 
         public ComparePaneViewModel(bool isOriginal)
         {
@@ -94,6 +130,18 @@ namespace RAWtoJXL.Avalonia.ViewModels
         public void RaiseFit()
         {
             RequestFit?.Invoke();
+        }
+
+        public void RaiseSetDifferenceOverlay(Bitmap? bitmap, CompareImageRegion region)
+        {
+            var request = RequestSetDifferenceOverlay;
+            if (request == null)
+            {
+                bitmap?.Dispose();
+                return;
+            }
+
+            request(bitmap, region);
         }
 
         public void SetFileSizes(long bytes, long? originalBytes)

@@ -1,5 +1,6 @@
 using System.IO;
 using ImageMagick;
+using ImageMagick.Drawing;
 using Moq;
 using RAWtoJXL.Core.Interfaces;
 using RAWtoJXL.Core.Models;
@@ -565,6 +566,170 @@ public class CompareConversionServiceTests
             Assert.NotEqual(q90, q50);
             Assert.True(File.Exists(q90));
             Assert.True(File.Exists(q50));
+        }
+        finally
+        {
+            Directory.Delete(dir, true);
+        }
+    }
+
+    [Fact]
+    public async Task EnsureDisplayFullPngAsync_CancelledWaiter_DoesNotCancelSharedProducer()
+    {
+        var dir = CreateTempDir();
+        var input = CreateTestJpeg(dir);
+        var service = CreateService();
+
+        try
+        {
+            using var cts = new CancellationTokenSource();
+            cts.Cancel();
+
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+                service.EnsureDisplayFullPngAsync(input, null, 90, null, cts.Token));
+            string fullPath = await service.EnsureDisplayFullPngAsync(
+                input,
+                null,
+                90,
+                null,
+                TestContext.Current.CancellationToken);
+
+            Assert.True(File.Exists(fullPath));
+        }
+        finally
+        {
+            Directory.Delete(dir, true);
+        }
+    }
+
+    [Fact]
+    public void AnalyzeImages_IdenticalImages_ReturnsPerfectLocalSsimAndDifferencePng()
+    {
+        var dir = CreateTempDir();
+        var original = Path.Combine(dir, "original.png");
+        var target = Path.Combine(dir, "target.png");
+        using (var image = new MagickImage(MagickColors.Gray, 100, 80))
+        {
+            image.Write(original);
+            image.Write(target);
+        }
+
+        try
+        {
+            var result = CompareConversionService.AnalyzeImages(
+                original,
+                target,
+                new CompareImageRegion(0.25, 0.25, 0.75, 0.75),
+                40,
+                30,
+                true,
+                TestContext.Current.CancellationToken);
+
+            Assert.Equal(1, result.Ssim, 9);
+            Assert.NotNull(result.DifferencePng);
+            using var difference = new MagickImage(result.DifferencePng!);
+            Assert.Equal(40u, difference.Width);
+            Assert.Equal(30u, difference.Height);
+            using var background = new MagickImage(MagickColors.Gray, 40, 30);
+            using var unchanged = background.Clone();
+            background.Composite(difference, CompositeOperator.Over);
+            Assert.Equal(0, background.Compare(unchanged, ErrorMetric.RootMeanSquared), 9);
+        }
+        finally
+        {
+            Directory.Delete(dir, true);
+        }
+    }
+
+    [Fact]
+    public void AnalyzeImages_ChangeOutsideViewport_DoesNotLowerLocalSsim()
+    {
+        var dir = CreateTempDir();
+        var original = Path.Combine(dir, "original.png");
+        var target = Path.Combine(dir, "target.png");
+        using (var image = new MagickImage(MagickColors.Gray, 100, 100))
+        {
+            image.Write(original);
+            new Drawables()
+                .FillColor(MagickColors.White)
+                .Rectangle(75, 25, 95, 45)
+                .Draw(image);
+            image.Write(target);
+        }
+
+        try
+        {
+            var unchanged = CompareConversionService.AnalyzeImages(
+                original,
+                target,
+                new CompareImageRegion(0, 0, 0.5, 1),
+                50,
+                100,
+                false,
+                TestContext.Current.CancellationToken);
+            var changed = CompareConversionService.AnalyzeImages(
+                original,
+                target,
+                new CompareImageRegion(0.5, 0, 1, 1),
+                50,
+                100,
+                true,
+                TestContext.Current.CancellationToken);
+
+            Assert.Equal(1, unchanged.Ssim, 9);
+            Assert.True(changed.Ssim < 0.99);
+            Assert.Null(unchanged.DifferencePng);
+            Assert.NotNull(changed.DifferencePng);
+            using var difference = new MagickImage(changed.DifferencePng!);
+            using var white = new MagickImage(MagickColors.White, difference.Width, difference.Height);
+            using var unchangedWhite = white.Clone();
+            white.Composite(difference, CompositeOperator.Over);
+            Assert.True(white.Compare(unchangedWhite, ErrorMetric.RootMeanSquared) > 0);
+
+            using var originalCrop = new MagickImage(original);
+            using var targetCrop = new MagickImage(target);
+            var crop = new MagickGeometry(50, 0, 50, 100);
+            originalCrop.Crop(crop);
+            targetCrop.Crop(crop);
+            originalCrop.ResetPage();
+            targetCrop.ResetPage();
+            double distortion = originalCrop.Compare(targetCrop, ErrorMetric.StructuralSimilarity);
+            Assert.Equal(1 - 2 * distortion, changed.Ssim, 9);
+        }
+        finally
+        {
+            Directory.Delete(dir, true);
+        }
+    }
+
+    [Fact]
+    public void AnalyzeImages_MismatchedDimensions_ThrowsClearError()
+    {
+        var dir = CreateTempDir();
+        var original = Path.Combine(dir, "original.png");
+        var target = Path.Combine(dir, "target.png");
+        using (var image = new MagickImage(MagickColors.Gray, 100, 100))
+        {
+            image.Write(original);
+        }
+        using (var image = new MagickImage(MagickColors.Gray, 90, 100))
+        {
+            image.Write(target);
+        }
+
+        try
+        {
+            var exception = Assert.Throws<InvalidOperationException>(() =>
+                CompareConversionService.AnalyzeImages(
+                    original,
+                    target,
+                    new CompareImageRegion(0, 0, 1, 1),
+                    100,
+                    100,
+                    false,
+                    TestContext.Current.CancellationToken));
+
+            Assert.Contains("dimensions do not match", exception.Message);
         }
         finally
         {

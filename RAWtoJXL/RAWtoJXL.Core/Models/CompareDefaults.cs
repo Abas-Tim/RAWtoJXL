@@ -15,6 +15,10 @@ namespace RAWtoJXL.Core.Models
 
         public const uint QuickPreviewMaxDimension = 1600;
 
+        public const double DifferenceAmplification = 8.0;
+
+        public const int DifferenceMaxDimension = 2048;
+
         public const long CacheMaxBytes = 2L * 1024 * 1024 * 1024;
 
         public static string CacheRoot => Path.Combine(Path.GetTempPath(), "RAWtoJXL", "CompareCache");

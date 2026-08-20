@@ -7,16 +7,43 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
+using RAWtoJXL.Core.Interfaces;
 
 namespace RAWtoJXL.Avalonia.Controls
 {
     public sealed class ViewportChangedEventArgs : EventArgs
     {
         public CompareViewport Viewport { get; }
+        public CompareImageRegion VisibleRegion { get; }
+        public int PixelWidth { get; }
+        public int PixelHeight { get; }
 
-        public ViewportChangedEventArgs(CompareViewport viewport)
+        public ViewportChangedEventArgs(
+            CompareViewport viewport,
+            CompareImageRegion visibleRegion,
+            int pixelWidth,
+            int pixelHeight)
         {
             Viewport = viewport;
+            VisibleRegion = visibleRegion;
+            PixelWidth = pixelWidth;
+            PixelHeight = pixelHeight;
+        }
+    }
+
+    public enum CompareDisplayState
+    {
+        Preview,
+        Full
+    }
+
+    public sealed class DisplayStateChangedEventArgs : EventArgs
+    {
+        public CompareDisplayState State { get; }
+
+        public DisplayStateChangedEventArgs(CompareDisplayState state)
+        {
+            State = state;
         }
     }
 
@@ -32,12 +59,15 @@ namespace RAWtoJXL.Avalonia.Controls
         public static readonly StyledProperty<string?> FullResPathProperty =
             AvaloniaProperty.Register<ZoomPanImageViewer, string?>(nameof(FullResPath));
 
+        private readonly Canvas _imageLayer;
         private readonly Image _image;
+        private readonly Image _differenceImage;
         private readonly ScaleTransform _scale;
         private readonly TranslateTransform _translate;
 
         private Bitmap? _preview;
         private Bitmap? _fullRes;
+        private Bitmap? _differenceOverlay;
         private string? _fullResPath;
         private bool _fullResLoaded;
         private bool _fullResRequestAttempted;
@@ -49,9 +79,12 @@ namespace RAWtoJXL.Avalonia.Controls
         private int _imageHeight;
         private int _imageGeneration;
         private CompareViewport _viewport = new(1.0, 0.5, 0.5);
+        private CompareDisplayState _displayState = CompareDisplayState.Preview;
         private DispatcherTimer? _fullResDebounce;
 
         public event EventHandler<ViewportChangedEventArgs>? ViewportChanged;
+
+        public event EventHandler<DisplayStateChangedEventArgs>? DisplayStateChanged;
 
         public event Func<Task<string?>>? FullResRequested;
 
@@ -69,6 +102,8 @@ namespace RAWtoJXL.Avalonia.Controls
 
         public CompareViewport Viewport => _viewport;
 
+        public CompareDisplayState DisplayState => _displayState;
+
         public ZoomPanImageViewer()
         {
             Background = Brushes.Black;
@@ -78,19 +113,36 @@ namespace RAWtoJXL.Avalonia.Controls
             _scale = new ScaleTransform();
             _translate = new TranslateTransform();
 
-            _image = new Image
+            _imageLayer = new Canvas
             {
                 RenderTransformOrigin = new RelativePoint(0, 0, RelativeUnit.Relative),
                 RenderTransform = new TransformGroup
                 {
                     Children = { _scale, _translate }
                 },
+                HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment = VerticalAlignment.Top
+            };
+
+            _image = new Image
+            {
                 Stretch = Stretch.Fill,
                 HorizontalAlignment = HorizontalAlignment.Left,
                 VerticalAlignment = VerticalAlignment.Top
             };
 
-            Children.Add(_image);
+            _differenceImage = new Image
+            {
+                Stretch = Stretch.Fill,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment = VerticalAlignment.Top,
+                IsVisible = false
+            };
+            RenderOptions.SetBitmapBlendingMode(_differenceImage, BitmapBlendingMode.SourceOver);
+
+            _imageLayer.Children.Add(_image);
+            _imageLayer.Children.Add(_differenceImage);
+            Children.Add(_imageLayer);
 
             PointerWheelChanged += OnPointerWheelChanged;
             PointerPressed += OnPointerPressed;
@@ -126,6 +178,7 @@ namespace RAWtoJXL.Avalonia.Controls
         public void DisposeImages()
         {
             _image.Source = null;
+            ClearDifferenceOverlay();
             _preview?.Dispose();
             _preview = null;
             _fullRes?.Dispose();
@@ -136,6 +189,33 @@ namespace RAWtoJXL.Avalonia.Controls
             _imageGeneration++;
             _fullResDebounce?.Stop();
             _fullResDebounce = null;
+            SetDisplayState(CompareDisplayState.Preview);
+        }
+
+        public void SetDifferenceOverlay(Bitmap? bitmap, CompareImageRegion region)
+        {
+            ClearDifferenceOverlay();
+            if (bitmap == null || region.Width <= 0 || region.Height <= 0 || _imageWidth <= 0 || _imageHeight <= 0)
+            {
+                bitmap?.Dispose();
+                return;
+            }
+
+            _differenceOverlay = bitmap;
+            _differenceImage.Source = bitmap;
+            _differenceImage.Width = region.Width * _imageWidth;
+            _differenceImage.Height = region.Height * _imageHeight;
+            Canvas.SetLeft(_differenceImage, region.Left * _imageWidth);
+            Canvas.SetTop(_differenceImage, region.Top * _imageHeight);
+            _differenceImage.IsVisible = true;
+        }
+
+        public void ClearDifferenceOverlay()
+        {
+            _differenceImage.Source = null;
+            _differenceImage.IsVisible = false;
+            _differenceOverlay?.Dispose();
+            _differenceOverlay = null;
         }
 
         private void OnImageSourceChanged(Bitmap? bitmap)
@@ -149,6 +229,8 @@ namespace RAWtoJXL.Avalonia.Controls
             _fullResPath = null;
             _fullResRequestAttempted = false;
             _imageGeneration++;
+            ClearDifferenceOverlay();
+            SetDisplayState(CompareDisplayState.Preview);
 
             _preview = bitmap;
             if (bitmap != null)
@@ -156,6 +238,8 @@ namespace RAWtoJXL.Avalonia.Controls
                 _imageWidth = bitmap.PixelSize.Width;
                 _imageHeight = bitmap.PixelSize.Height;
                 _image.Source = bitmap;
+                _imageLayer.Width = _imageWidth;
+                _imageLayer.Height = _imageHeight;
                 if (Bounds.Width > 0 && Bounds.Height > 0)
                 {
                     _pendingInitialFit = false;
@@ -172,6 +256,8 @@ namespace RAWtoJXL.Avalonia.Controls
                 _imageHeight = 0;
                 _image.Width = double.NaN;
                 _image.Height = double.NaN;
+                _imageLayer.Width = double.NaN;
+                _imageLayer.Height = double.NaN;
                 _pendingInitialFit = true;
             }
 
@@ -182,6 +268,7 @@ namespace RAWtoJXL.Avalonia.Controls
             }
 
             ApplyViewport();
+            RaiseViewportChanged();
         }
 
         private void OnFullResPathChanged(string? path)
@@ -220,7 +307,21 @@ namespace RAWtoJXL.Avalonia.Controls
 
         private void RaiseViewportChanged()
         {
-            ViewportChanged?.Invoke(this, new ViewportChangedEventArgs(_viewport));
+            var region = _viewport.GetVisibleImageRegion(
+                Bounds.Width,
+                Bounds.Height,
+                _imageWidth,
+                _imageHeight);
+            var (tx, ty) = _viewport.GetTranslate(Bounds.Width, Bounds.Height, _imageWidth, _imageHeight);
+            double visibleWidth = Math.Max(1, Math.Min(Bounds.Width, tx + _imageWidth * _viewport.Zoom) - Math.Max(0, tx));
+            double visibleHeight = Math.Max(1, Math.Min(Bounds.Height, ty + _imageHeight * _viewport.Zoom) - Math.Max(0, ty));
+            ViewportChanged?.Invoke(
+                this,
+                new ViewportChangedEventArgs(
+                    _viewport,
+                    region,
+                    Math.Max(1, (int)Math.Ceiling(visibleWidth)),
+                    Math.Max(1, (int)Math.Ceiling(visibleHeight))));
         }
 
         private void OnPointerWheelChanged(object? sender, PointerWheelEventArgs e)
@@ -292,10 +393,12 @@ namespace RAWtoJXL.Avalonia.Controls
                 _pendingInitialFit = false;
                 _viewport = ComputeFitViewport();
                 ApplyViewport();
+                RaiseViewportChanged();
                 return;
             }
 
             ApplyViewport();
+            RaiseViewportChanged();
         }
 
         private void ScheduleFullResLoad()
@@ -345,12 +448,14 @@ namespace RAWtoJXL.Avalonia.Controls
             }
 
             _fullResRequestInFlight = true;
+            bool succeeded = false;
             try
             {
                 string? path = await request();
                 if (generation == _imageGeneration && !string.IsNullOrEmpty(path))
                 {
                     _fullResPath = path;
+                    succeeded = true;
                     ScheduleFullResLoad();
                 }
             }
@@ -360,6 +465,14 @@ namespace RAWtoJXL.Avalonia.Controls
             finally
             {
                 _fullResRequestInFlight = false;
+                if (!succeeded)
+                {
+                    _fullResRequestAttempted = false;
+                }
+                if (generation != _imageGeneration)
+                {
+                    ScheduleFullResLoad();
+                }
             }
         }
 
@@ -398,11 +511,24 @@ namespace RAWtoJXL.Avalonia.Controls
                     _image.Source = bitmap;
                     _preview?.Dispose();
                     _preview = null;
+                    SetDisplayState(CompareDisplayState.Full);
+                    RaiseViewportChanged();
                 }
             }
             catch
             {
             }
+        }
+
+        private void SetDisplayState(CompareDisplayState state)
+        {
+            if (_displayState == state)
+            {
+                return;
+            }
+
+            _displayState = state;
+            DisplayStateChanged?.Invoke(this, new DisplayStateChangedEventArgs(state));
         }
     }
 }

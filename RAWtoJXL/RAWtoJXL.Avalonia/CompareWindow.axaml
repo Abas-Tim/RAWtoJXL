@@ -40,6 +40,11 @@
                                        FontSize="11"
                                        Foreground="#626A72"
                                        Margin="8,0,0,0"/>
+                            <Border Background="#DCE4EA" CornerRadius="3" Padding="5,1" Margin="8,0,0,0">
+                                <TextBlock Text="{Binding Panes[0].DisplayStateText}"
+                                           FontSize="10"
+                                           Foreground="#44515C"/>
+                            </Border>
                         </StackPanel>
                     </Grid>
                 </Border>
@@ -75,6 +80,18 @@
                                        Foreground="#2E7D4F"
                                        VerticalAlignment="Center"
                                        Margin="4,0,0,0"/>
+                            <Border Background="#DCE4EA" CornerRadius="3" Padding="5,1" Margin="8,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Panes[1].DisplayStateText}"
+                                           FontSize="10"
+                                           Foreground="#44515C"/>
+                            </Border>
+                            <TextBlock Text="{Binding Panes[1].SsimText}"
+                                       FontSize="10"
+                                       FontWeight="SemiBold"
+                                       Foreground="#4C3A72"
+                                       VerticalAlignment="Center"
+                                       Margin="8,0,0,0"
+                                       ToolTip.Tip="SSIM for the currently visible image region"/>
                         </StackPanel>
                     </Grid>
                 </Border>
@@ -107,6 +124,18 @@
                                        Foreground="#2E7D4F"
                                        VerticalAlignment="Center"
                                        Margin="4,0,0,0"/>
+                            <Border Background="#DCE4EA" CornerRadius="3" Padding="5,1" Margin="8,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Panes[2].DisplayStateText}"
+                                           FontSize="10"
+                                           Foreground="#44515C"/>
+                            </Border>
+                            <TextBlock Text="{Binding Panes[2].SsimText}"
+                                       FontSize="10"
+                                       FontWeight="SemiBold"
+                                       Foreground="#4C3A72"
+                                       VerticalAlignment="Center"
+                                       Margin="8,0,0,0"
+                                       ToolTip.Tip="SSIM for the currently visible image region"/>
                         </StackPanel>
                     </Grid>
                 </Border>
@@ -144,6 +173,11 @@
                               IsChecked="{Binding IsMirroring, Mode=TwoWay}"
                               VerticalAlignment="Center"
                               Margin="14,0,0,0"/>
+                    <CheckBox Content="Differences x8"
+                              IsChecked="{Binding IsDifferenceOverlayEnabled, Mode=TwoWay}"
+                              VerticalAlignment="Center"
+                              Margin="14,0,0,0"
+                              ToolTip.Tip="Overlay pixel differences amplified eight times"/>
                 </StackPanel>
             </Grid>
         </Border>

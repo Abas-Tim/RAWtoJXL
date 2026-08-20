@@ -1,4 +1,5 @@
 using System;
+using RAWtoJXL.Core.Interfaces;
 
 namespace RAWtoJXL.Avalonia.Controls
 {
@@ -81,6 +82,27 @@ namespace RAWtoJXL.Avalonia.Controls
             double x = viewWidth / 2 - CenterX * imageWidth * Zoom;
             double y = viewHeight / 2 - CenterY * imageHeight * Zoom;
             return (x, y);
+        }
+
+        public CompareImageRegion GetVisibleImageRegion(
+            double viewWidth,
+            double viewHeight,
+            int imageWidth,
+            int imageHeight)
+        {
+            if (viewWidth <= 0 || viewHeight <= 0 || imageWidth <= 0 || imageHeight <= 0)
+            {
+                return new CompareImageRegion(0, 0, 1, 1);
+            }
+
+            var (tx, ty) = GetTranslate(viewWidth, viewHeight, imageWidth, imageHeight);
+            double scaledWidth = imageWidth * Zoom;
+            double scaledHeight = imageHeight * Zoom;
+            double left = Math.Clamp(-tx / scaledWidth, 0, 1);
+            double top = Math.Clamp(-ty / scaledHeight, 0, 1);
+            double right = Math.Clamp((viewWidth - tx) / scaledWidth, 0, 1);
+            double bottom = Math.Clamp((viewHeight - ty) / scaledHeight, 0, 1);
+            return new CompareImageRegion(left, top, right, bottom);
         }
 
         public bool Equals(in CompareViewport other)

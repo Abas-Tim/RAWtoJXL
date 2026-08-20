@@ -59,7 +59,7 @@ RAW files are inputs only and can never be produced as output. Converting a file
 - **Advanced cjxl options** — effort (1–9), thread count, near-lossless mode
 - **Cancel anytime** — graceful cancellation mid-batch
 - **Recent files** — quick-access list of last 50 files
-- **Compare tool** — pick one file and open a 3-pane comparison window (original | JXL | AVIF/JPEG, formats switchable) with synchronized zoom and pan, live file sizes, and on-the-fly quality and JXL effort controls
+- **Compare tool** — pick one file and open a 3-pane comparison window (original | JXL | AVIF/JPEG, formats switchable) with synchronized zoom and pan, live file sizes, on-the-fly quality and JXL effort controls, Preview/Full indicators, viewport-local SSIM, and an amplified difference overlay
 
 ## Screenshot
 

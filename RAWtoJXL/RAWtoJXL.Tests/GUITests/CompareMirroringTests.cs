@@ -54,7 +54,7 @@ public class CompareMirroringTests
         }
 
         var vp = new CompareViewport(2.0, 0.3, 0.4);
-        vm.OnPaneViewportChanged(vm.LeftPane, vp);
+        vm.OnPaneViewportChanged(vm.LeftPane, vp, new CompareImageRegion(0.1, 0.1, 0.9, 0.9), 500, 500);
 
         Assert.Empty(received[vm.LeftPane]);
         Assert.Single(received[vm.MiddlePane]);
@@ -73,7 +73,12 @@ public class CompareMirroringTests
             pane.RequestSetViewport += _ => events++;
         }
 
-        vm.OnPaneViewportChanged(vm.LeftPane, new CompareViewport(2.0, 0.3, 0.4));
+        vm.OnPaneViewportChanged(
+            vm.LeftPane,
+            new CompareViewport(2.0, 0.3, 0.4),
+            new CompareImageRegion(0.1, 0.1, 0.9, 0.9),
+            500,
+            500);
 
         Assert.Equal(0, events);
     }
