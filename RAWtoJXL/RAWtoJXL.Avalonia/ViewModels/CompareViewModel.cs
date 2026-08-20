@@ -95,6 +95,9 @@ namespace RAWtoJXL.Avalonia.ViewModels
         [ObservableProperty]
         private bool _isDifferenceOverlayEnabled;
 
+        [ObservableProperty]
+        private bool _isGpuPrototypeVisible;
+
         partial void OnIsDifferenceOverlayEnabledChanged(bool value)
         {
             if (_disposed)

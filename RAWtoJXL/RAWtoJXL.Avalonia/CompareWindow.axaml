@@ -294,11 +294,41 @@
                 BorderBrush="#D6DCE2"
                 BorderThickness="0,1,0,0"
                 Padding="10,6">
-            <Grid ColumnDefinitions="*,Auto">
-                <TextBlock Text="{Binding StatusMessage}"
+            <Grid ColumnDefinitions="Auto,Auto,*,Auto">
+                <CheckBox Content="GPU prototype"
+                          IsChecked="{Binding IsGpuPrototypeVisible, Mode=TwoWay}"
+                          FontSize="11"
+                          Foreground="#40474E"
+                          VerticalAlignment="Center"
+                          Margin="0,0,10,0"
+                          ToolTip.Tip="Show the render-only OpenGL prototype"/>
+                <Border Grid.Column="1"
+                        Width="240"
+                        Height="28"
+                        Background="#0B0D0F"
+                        BorderBrush="#394149"
+                        BorderThickness="1"
+                        CornerRadius="3"
+                        IsVisible="{Binding IsGpuPrototypeVisible}">
+                    <Grid ClipToBounds="True">
+                        <controls:GpuPrototypeControl x:Name="GpuPrototypeSurface"
+                                                      ImageSource="{Binding Panes[0].Preview}"/>
+                        <TextBlock Text="{Binding StatusText, ElementName=GpuPrototypeSurface}"
+                                   FontSize="10"
+                                   Foreground="White"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   IsHitTestVisible="False"
+                                   TextTrimming="CharacterEllipsis"/>
+                    </Grid>
+                </Border>
+                <TextBlock Grid.Column="2"
+                           Text="{Binding StatusMessage}"
                            FontSize="11"
-                           Foreground="#40474E"/>
-                <TextBlock Grid.Column="1"
+                           Foreground="#40474E"
+                           VerticalAlignment="Center"
+                           Margin="10,0,0,0"/>
+                <TextBlock Grid.Column="3"
                            Text="Scroll to zoom  |  Drag to pan  |  Double-click to fit"
                            FontSize="10"
                            Foreground="#6B737B"/>
