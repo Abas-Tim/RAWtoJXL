@@ -75,7 +75,6 @@ if ($commonText -match '__attribute__\(\(format\(printf') -and $commonText -notm
   Set-Content -LiteralPath $common -Value $commonText -NoNewline
   Write-Output "Common.h patched for MSVC."
 }
-}
 
 if ($withPugixml -eq "ON") {
   cmake -S (Join-Path $root "native") -B $build -A x64 `
