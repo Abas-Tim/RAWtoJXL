@@ -361,10 +361,12 @@ public class CompareConversionService : ICompareConversionService
         int height = (int)image.Height;
         image.ColorSpace = ColorSpace.sRGB;
         image.ColorType = ColorType.TrueColor;
+        image.SetBitDepth(8);
         image.Density = new Density(96, 96);
         image.Strip();
         image.Settings.SetDefines(new PngWriteDefines
         {
+            BitDepth = 8,
             ColorType = ColorType.TrueColor
         });
         image.Format = MagickFormat.Png;
