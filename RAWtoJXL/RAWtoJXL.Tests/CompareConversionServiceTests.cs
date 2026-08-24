@@ -486,7 +486,7 @@ public class CompareConversionServiceTests
             var full = await service.EnsureDisplayFullPngAsync(input, OutputFormat.Jpeg, 90, null);
 
             Assert.True(File.Exists(display.PreviewPath));
-            Assert.Empty(display.FullPath);
+            Assert.Equal(display.PreviewPath, display.FullPath);
             Assert.True(File.Exists(full));
             Assert.Equal(64, display.Width);
             Assert.Equal(48, display.Height);

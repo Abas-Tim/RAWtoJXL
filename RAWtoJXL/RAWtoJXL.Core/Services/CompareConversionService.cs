@@ -334,7 +334,7 @@ public class CompareConversionService : ICompareConversionService
             var result = await Task.Run(() =>
             {
                 (int Width, int Height) size = WriteDisplayPreview(effectiveSource, previewPath);
-                return new CompareDisplayPngs(previewPath, string.Empty, size.Width, size.Height);
+                return new CompareDisplayPngs(previewPath, previewPath, size.Width, size.Height);
             }, cancellationToken).ConfigureAwait(false);
 
             WriteMeta(metaPath, fp, result.Width, result.Height);
@@ -361,20 +361,13 @@ public class CompareConversionService : ICompareConversionService
         int height = (int)image.Height;
         image.ColorSpace = ColorSpace.sRGB;
         image.ColorType = ColorType.TrueColor;
-        image.SetBitDepth(8);
         image.Density = new Density(96, 96);
         image.Strip();
         image.Settings.SetDefines(new PngWriteDefines
         {
-            BitDepth = 8,
             ColorType = ColorType.TrueColor
         });
         image.Format = MagickFormat.Png;
-
-        if (image.Width > CompareDefaults.PreviewMaxDimension || image.Height > CompareDefaults.PreviewMaxDimension)
-        {
-            image.Thumbnail(CompareDefaults.PreviewMaxDimension, CompareDefaults.PreviewMaxDimension);
-        }
         image.Write(previewPath);
 
         return (width, height);
@@ -933,7 +926,7 @@ public class CompareConversionService : ICompareConversionService
             var result = await Task.Run(() =>
             {
                 (int Width, int Height) size = WriteDisplayPreview(source.SourcePath, previewPath);
-                return new CompareDisplayPngs(previewPath, string.Empty, size.Width, size.Height);
+                return new CompareDisplayPngs(previewPath, previewPath, size.Width, size.Height);
             }, cancellationToken).ConfigureAwait(false);
 
             WriteMeta(metaPath, fp, result.Width, result.Height);
@@ -970,24 +963,10 @@ public class CompareConversionService : ICompareConversionService
         {
             await Task.Run(() =>
             {
-                using var image = new MagickImage(source.SourcePath);
-                int width = (int)image.Width;
-                int height = (int)image.Height;
-                image.ColorSpace = ColorSpace.sRGB;
-                image.ColorType = ColorType.TrueColor;
-                image.SetBitDepth(8);
-                image.Density = new Density(96, 96);
-                image.Strip();
-                image.Settings.SetDefines(new PngWriteDefines
-                {
-                    BitDepth = 8,
-                    ColorType = ColorType.TrueColor
-                });
-                image.Format = MagickFormat.Png;
-                image.Write(fullPath);
+                (int Width, int Height) size = WriteDisplayPreview(source.SourcePath, fullPath);
 
                 var existingMeta = ReadMeta(metaPath);
-                WriteMeta(metaPath, fp, existingMeta?.Width > 0 ? existingMeta.Width : width, existingMeta?.Height > 0 ? existingMeta.Height : height);
+                WriteMeta(metaPath, fp, existingMeta?.Width > 0 ? existingMeta.Width : size.Width, existingMeta?.Height > 0 ? existingMeta.Height : size.Height);
             }, cancellationToken).ConfigureAwait(false);
 
             return fullPath;
