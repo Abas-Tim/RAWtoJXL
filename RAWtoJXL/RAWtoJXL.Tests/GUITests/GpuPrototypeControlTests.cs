@@ -115,7 +115,8 @@ public class GpuPrototypeControlTests
         Assert.Single(GUITestHelpers.GetAllControls<GpuPrototypeControl>(window));
         Assert.Contains(
             GUITestHelpers.GetAllControls<global::Avalonia.Controls.CheckBox>(window),
-            checkBox => checkBox.Content?.ToString() == "GPU prototype");
+            checkBox => checkBox.Content?.ToString() == "Show GPU prototype");
+        Assert.True(viewModel.IsGpuPrototypeVisible);
 
         window.Close();
         viewModel.Dispose();

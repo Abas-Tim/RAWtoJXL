@@ -1,5 +1,7 @@
 using System;
 using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
 using RAWtoJXL.Avalonia.Controls;
 using RAWtoJXL.Avalonia.ViewModels;
 
@@ -93,6 +95,24 @@ namespace RAWtoJXL.Avalonia
                 Math.Clamp(viewport.Zoom * scale, CompareViewport.MinZoom, CompareViewport.MaxZoom),
                 viewport.CenterX,
                 viewport.CenterY);
+        }
+
+        private void OnSettingsBackdropPressed(object? sender, PointerPressedEventArgs e)
+        {
+            SetSettingsOpen(false);
+        }
+
+        private void OnCloseSettingsClicked(object? sender, RoutedEventArgs e)
+        {
+            SetSettingsOpen(false);
+        }
+
+        private void SetSettingsOpen(bool open)
+        {
+            if (DataContext is CompareViewModel vm)
+            {
+                vm.IsSettingsPanelOpen = open;
+            }
         }
 
         private void OnGpuCapabilityChanged(object? sender, EventArgs e)
