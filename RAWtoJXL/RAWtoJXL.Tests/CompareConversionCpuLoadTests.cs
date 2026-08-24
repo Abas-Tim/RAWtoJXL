@@ -138,6 +138,218 @@ public class CompareConversionCpuLoadTests
         }
     }
 
+    [Fact]
+    public async Task ParallelRender_OverlapsRawRendererAndEncoder()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        string directory = Path.Combine(Path.GetTempPath(), $"RAWtoJXL_ParallelCpu_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+        string? largeAsset = Environment.GetEnvironmentVariable("RAWTOJXL_DIAG_LARGE_ASSET");
+        string sourceExtension = !string.IsNullOrWhiteSpace(largeAsset) && File.Exists(largeAsset)
+            ? Path.GetExtension(largeAsset).ToLowerInvariant()
+            : ".dng";
+        string inputPath = Path.Combine(directory, $"source{sourceExtension}");
+        File.Copy(
+            !string.IsNullOrWhiteSpace(largeAsset) && File.Exists(largeAsset) ? largeAsset : TestAssetGenerator.AssetPath,
+            inputPath);
+
+        using var process = Process.GetCurrentProcess();
+        IntPtr originalAffinity = process.ProcessorAffinity;
+        ProcessorAffinityService.TryExpandToAllLogicalProcessors();
+
+        try
+        {
+            using var provider = new ServiceCollection()
+                .AddCoreServices()
+                .BuildServiceProvider();
+            var conversionService = provider.GetRequiredService<ICompareConversionService>();
+            var orchestrator = new ComparePipelineOrchestrator(conversionService);
+            using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+            var token = cancellation.Token;
+            int threadsPerVariant = CompareDefaults.GetJobThreads(2);
+
+            var stopwatch = Stopwatch.StartNew();
+            _windowStart = DateTime.Now.AddSeconds(-1);
+            var originalTask = MeasureStage(
+                "original-display",
+                stopwatch,
+                () => orchestrator.RunPaneAsync(inputPath, null, 95, 9, true, token, null));
+            var jxlTask = MeasureStage(
+                "jxl-display",
+                stopwatch,
+                () => orchestrator.RunPaneAsync(inputPath, OutputFormat.Jxl, 95, 9, true, token, threadsPerVariant));
+            var avifTask = MeasureStage(
+                "avif-display",
+                stopwatch,
+                () => orchestrator.RunPaneAsync(inputPath, OutputFormat.Avif, 95, 9, true, token, threadsPerVariant));
+
+            var displayTasks = Task.WhenAll(originalTask, jxlTask, avifTask);
+            CpuLoadReport cpuReport = await SampleCpuAsync(
+                displayTasks,
+                stopwatch,
+                Math.Max(1, CompareDefaults.JxlThreads),
+                token);
+            await displayTasks;
+            _windowEnd = DateTime.Now.AddSeconds(1);
+
+            double renderEncodeOverlap = MaxTimelineOverlap(
+                "Rendering ",
+                "Rendered ",
+                "[CjxlEncoder] Full cjxl command (file)",
+                "cjxl stdout");
+            double encodeDecodeOverlap = MaxChildOverlap(cpuReport, "cjxl", "djxl");
+
+            _output.WriteLine(
+                $"Parallel compare diagnostic: affinity=0x{process.ProcessorAffinity.ToInt64():X}, " +
+                $"initial={cpuReport.Elapsed.TotalSeconds:F2}s, " +
+                $"cpu={cpuReport.AveragePercent:F1}% avg/{cpuReport.PeakPercent:F1}% peak, " +
+                $"renderEncodeOverlap={renderEncodeOverlap:F2}s, encodeDecodeOverlap={encodeDecodeOverlap:F2}s, " +
+                $"children=[{string.Join(", ", cpuReport.ChildProcesses.Select(c => $"{c.Name}={c.Start.TotalSeconds:F2}-{c.End.TotalSeconds:F2}s"))}]");
+
+            Assert.True(File.Exists(originalTask.Result.Preview.PreviewPath));
+            Assert.True(File.Exists(jxlTask.Result.TargetPath));
+            Assert.True(File.Exists(avifTask.Result.TargetPath));
+
+            bool rawTherapeeObserved = HasLogEvent("Rendering ");
+            int renderCompletions = CountLogEvents("Rendered ");
+
+            if (!rawTherapeeObserved && Environment.GetEnvironmentVariable("RAWTOJXL_DIAG_REQUIRE_RAWTHERAPEE") == "0")
+            {
+                _output.WriteLine("rawtherapee-cli not present; overlap assertions skipped.");
+                return;
+            }
+
+            Assert.True(rawTherapeeObserved, "rawtherapee-cli was not observed; install RawTherapee or set RAWTOJXL_RAWTHERAPEE_CLI.");
+            Assert.True(renderCompletions >= CompareDefaults.MaxConcurrentMasterRenders,
+                $"expected {CompareDefaults.MaxConcurrentMasterRenders} concurrent render slots but observed {renderCompletions} completions");
+            Assert.True(displayTasks.Result.Length == 3);
+
+            if (!string.IsNullOrWhiteSpace(largeAsset) && File.Exists(largeAsset))
+            {
+                Assert.True(renderEncodeOverlap > 0,
+                    $"large-asset run must show render/encode intersection: {renderEncodeOverlap:F2}s");
+            }
+        }
+        finally
+        {
+            process.ProcessorAffinity = originalAffinity;
+            TryDeleteDirectory(directory);
+        }
+    }
+
+    private static readonly string LogPath = Path.Combine(Path.GetTempPath(), "RAWtoJXL.log");
+    private DateTime _windowStart;
+    private DateTime _windowEnd;
+
+    private List<(DateTime Timestamp, string Line)> ReadWindowLines()
+    {
+        if (!File.Exists(LogPath))
+        {
+            return new List<(DateTime, string)>();
+        }
+
+        var lines = new List<(DateTime, string)>();
+        foreach (string line in File.ReadAllLines(LogPath))
+        {
+            if (line.Length <= 24 || !DateTime.TryParseExact(
+                    line.Substring(0, 23),
+                    "yyyy-MM-dd HH:mm:ss.fff",
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.None,
+                    out DateTime timestamp))
+            {
+                continue;
+            }
+
+            if (timestamp >= _windowStart && timestamp <= _windowEnd)
+            {
+                lines.Add((timestamp, line));
+            }
+        }
+
+        return lines;
+    }
+
+    private int CountLogEvents(string marker)
+    {
+        return ReadWindowLines().Count(entry => entry.Line.Contains(marker, StringComparison.Ordinal));
+    }
+
+    private bool HasLogEvent(string marker)
+    {
+        return ReadWindowLines().Any(entry => entry.Line.Contains(marker, StringComparison.Ordinal));
+    }
+
+    private double MaxTimelineOverlap(
+        string firstStartMarker,
+        string firstEndMarker,
+        string secondStartMarker,
+        string secondEndMarker)
+    {
+        var lines = ReadWindowLines();
+        var firstIntervals = PairIntervals(lines, firstStartMarker, firstEndMarker);
+        var secondIntervals = PairIntervals(lines, secondStartMarker, secondEndMarker);
+
+        double best = 0;
+        foreach (var (fs, fe) in firstIntervals)
+        {
+            foreach (var (ss, se) in secondIntervals)
+            {
+                DateTime start = fs > ss ? fs : ss;
+                DateTime end = fe < se ? fe : se;
+                if (end > start)
+                {
+                    best = Math.Max(best, (end - start).TotalSeconds);
+                }
+            }
+        }
+
+        return best;
+    }
+
+    private static List<(DateTime Start, DateTime End)> PairIntervals(
+        List<(DateTime Timestamp, string Line)> lines,
+        string startMarker,
+        string endMarker)
+    {
+        var intervals = new List<(DateTime Start, DateTime End)>();
+        DateTime? open = null;
+        foreach (var (timestamp, line) in lines)
+        {
+            if (line.Contains(startMarker, StringComparison.Ordinal))
+            {
+                open ??= timestamp;
+            }
+            else if (open != null && line.Contains(endMarker, StringComparison.Ordinal))
+            {
+                intervals.Add((open.Value, timestamp));
+                open = null;
+            }
+        }
+
+        return intervals;
+    }
+
+    private static double MaxChildOverlap(CpuLoadReport report, string firstName, string secondName)
+    {
+        double best = 0;
+        foreach (var first in report.ChildProcesses.Where(c => c.Name == firstName))
+        {
+            foreach (var second in report.ChildProcesses.Where(c => c.Name == secondName))
+            {
+                var a = new StageMeasurement(first.Name, first.Start, first.End);
+                var b = new StageMeasurement(second.Name, second.Start, second.End);
+                best = Math.Max(best, GetOverlap(a, b).TotalSeconds);
+            }
+        }
+
+        return best;
+    }
+
     private readonly List<StageMeasurement> Stages = new();
 
     private async Task<T> MeasureStage<T>(string name, Stopwatch stopwatch, Func<Task<T>> operation)
@@ -178,7 +390,6 @@ public class CompareConversionCpuLoadTests
 
         while (!operation.IsCompleted)
         {
-            await Task.Delay(100, cancellationToken).ConfigureAwait(false);
             CpuSnapshot current = CaptureCpu(ignoredChildIds, knownChildProcesses, stopwatch);
             TimeSpan wallDelta = current.Timestamp - previous.Timestamp;
             TimeSpan cpuDelta = current.TotalCpu - previous.TotalCpu;
@@ -192,6 +403,7 @@ public class CompareConversionCpuLoadTests
             }
 
             previous = current;
+            await Task.Delay(40, cancellationToken).ConfigureAwait(false);
         }
 
         CpuSnapshot final = CaptureCpu(ignoredChildIds, knownChildProcesses, stopwatch);

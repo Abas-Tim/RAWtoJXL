@@ -50,6 +50,7 @@ public sealed class RawTherapeeRenderer : IRawRenderer
         startInfo.ArgumentList.Add(inputPath);
 
         _logger.Write($"[RawTherapeeRenderer] Rendering {Path.GetFileName(inputPath)} with {Math.Max(1, threads)} threads.");
+        var renderStopwatch = Stopwatch.StartNew();
 
         using var process = Process.Start(startInfo)
             ?? throw new InvalidOperationException("Failed to start rawtherapee-cli.");
@@ -61,6 +62,8 @@ public sealed class RawTherapeeRenderer : IRawRenderer
         Task<string> stdout = process.StandardOutput.ReadToEndAsync();
         Task<string> stderr = process.StandardError.ReadToEndAsync();
         await process.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false);
+        renderStopwatch.Stop();
+        _logger.Write($"[RawTherapeeRenderer] Rendered {Path.GetFileName(inputPath)} in {renderStopwatch.Elapsed.TotalSeconds:F2}s.");
 
         if (cancellationToken.IsCancellationRequested)
         {
