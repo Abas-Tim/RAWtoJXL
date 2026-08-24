@@ -111,7 +111,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
 
         public event EventHandler<OutputFormat?>? FormatChanged;
 
-        public event Action<CompareViewport>? RequestSetViewport;
+        public event Action<CompareViewport, int>? RequestSetViewport;
 
         public event Action? RequestFit;
 
@@ -122,9 +122,9 @@ namespace RAWtoJXL.Avalonia.ViewModels
             IsOriginal = isOriginal;
         }
 
-        public void RaiseSetViewport(CompareViewport viewport)
+        public void RaiseSetViewport(CompareViewport viewport, int sourcePixelWidth)
         {
-            RequestSetViewport?.Invoke(viewport);
+            RequestSetViewport?.Invoke(viewport, sourcePixelWidth);
         }
 
         public void RaiseFit()

@@ -93,7 +93,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
             {
                 foreach (var pane in Panes)
                 {
-                    pane.RaiseSetViewport(NormalizeViewportForPane(pane, snapshot.Viewport, snapshot.PixelWidth));
+                    pane.RaiseSetViewport(snapshot.Viewport, snapshot.PixelWidth);
                 }
 
                 return;
@@ -270,7 +270,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
                     {
                         if (!ReferenceEquals(pane, source))
                         {
-                            pane.RaiseSetViewport(NormalizeViewportForPane(pane, viewport, pixelWidth));
+                            pane.RaiseSetViewport(viewport, pixelWidth);
                         }
                     }
                 }
@@ -279,24 +279,6 @@ namespace RAWtoJXL.Avalonia.ViewModels
                     _applyingMirror = false;
                 }
             }
-        }
-
-        private CompareViewport NormalizeViewportForPane(
-            ComparePaneViewModel pane,
-            CompareViewport viewport,
-            int sourcePixelWidth)
-        {
-            int targetPixelWidth = pane.Preview?.PixelSize.Width ?? sourcePixelWidth;
-            if (targetPixelWidth <= 0 || sourcePixelWidth <= 0)
-            {
-                return viewport;
-            }
-
-            double scale = (double)sourcePixelWidth / targetPixelWidth;
-            return new CompareViewport(
-                Math.Clamp(viewport.Zoom * scale, CompareViewport.MinZoom, CompareViewport.MaxZoom),
-                viewport.CenterX,
-                viewport.CenterY);
         }
 
         public void OnPaneDisplayStateChanged(ComparePaneViewModel pane, CompareDisplayState state)
@@ -498,7 +480,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
                     {
                         if (!ReferenceEquals(mirrorSource, pane))
                         {
-                            pane.RaiseSetViewport(NormalizeViewportForPane(pane, mirrorSnapshot.Viewport, mirrorSnapshot.PixelWidth));
+                            pane.RaiseSetViewport(mirrorSnapshot.Viewport, mirrorSnapshot.PixelWidth);
                         }
                     }
 

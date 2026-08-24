@@ -52,7 +52,9 @@ namespace RAWtoJXL.Avalonia
                     args.PixelHeight);
                 viewer.DisplayStateChanged += (_, args) => vm.OnPaneDisplayStateChanged(pane, args.State);
                 viewer.FullResRequested += async () => (string?)await vm.EnsureFullResolutionAsync(pane).ConfigureAwait(false);
-                pane.RequestSetViewport += viewport => viewer.SetViewport(viewport, raiseEvent: true);
+                pane.RequestSetViewport += (viewport, sourcePixelWidth) => viewer.SetViewport(
+                    NormalizeViewport(viewer, viewport, sourcePixelWidth),
+                    raiseEvent: true);
                 pane.RequestFit += viewer.FitToView;
                 pane.RequestSetDifferenceOverlay += viewer.SetDifferenceOverlay;
             }
@@ -71,6 +73,24 @@ namespace RAWtoJXL.Avalonia
                 }
                 vm.Dispose();
             };
+        }
+
+        private static CompareViewport NormalizeViewport(
+            ZoomPanImageViewer viewer,
+            CompareViewport viewport,
+            int sourcePixelWidth)
+        {
+            int targetPixelWidth = viewer.ImagePixelWidth;
+            if (targetPixelWidth <= 0 || sourcePixelWidth <= 0)
+            {
+                return viewport;
+            }
+
+            double scale = (double)sourcePixelWidth / targetPixelWidth;
+            return new CompareViewport(
+                Math.Clamp(viewport.Zoom * scale, CompareViewport.MinZoom, CompareViewport.MaxZoom),
+                viewport.CenterX,
+                viewport.CenterY);
         }
 
         private void OnGpuCapabilityChanged(object? sender, EventArgs e)

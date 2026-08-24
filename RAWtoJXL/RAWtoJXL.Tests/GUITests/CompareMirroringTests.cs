@@ -50,7 +50,7 @@ public class CompareMirroringTests
         {
             received[pane] = new List<CompareViewport>();
             var captured = pane;
-            captured.RequestSetViewport += vp => received[captured].Add(vp);
+            captured.RequestSetViewport += (vp, _) => received[captured].Add(vp);
         }
 
         var vp = new CompareViewport(2.0, 0.3, 0.4);
@@ -70,7 +70,7 @@ public class CompareMirroringTests
         int events = 0;
         foreach (var pane in vm.Panes)
         {
-            pane.RequestSetViewport += _ => events++;
+            pane.RequestSetViewport += (_, _) => events++;
         }
 
         vm.OnPaneViewportChanged(

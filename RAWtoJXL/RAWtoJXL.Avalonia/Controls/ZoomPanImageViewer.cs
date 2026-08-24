@@ -102,6 +102,10 @@ namespace RAWtoJXL.Avalonia.Controls
 
         public CompareViewport Viewport => _viewport;
 
+        public int ImagePixelWidth => _imageWidth;
+
+        public int ImagePixelHeight => _imageHeight;
+
         public CompareDisplayState DisplayState => _displayState;
 
         public ZoomPanImageViewer()
