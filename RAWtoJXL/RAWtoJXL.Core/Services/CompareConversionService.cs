@@ -1006,23 +1006,32 @@ public class CompareConversionService : ICompareConversionService
             return (targetPath, null);
         }
 
-        string tempPng = Path.Combine(dir, $"djxl_{Guid.NewGuid():N}.png");
+        string decodedPath = Path.Combine(Path.GetDirectoryName(targetPath)!, "decoded.png");
+        string? owned = null;
         try
         {
-            try
+            if (!File.Exists(decodedPath) || new FileInfo(decodedPath).Length == 0)
             {
-                await _jxlDecoder.DecodeToPngAsync(targetPath, tempPng, cancellationToken, numThreads: threads).ConfigureAwait(false);
-            }
-            catch (Exception ex) when (IsMissingTool(ex, "djxl"))
-            {
-                await _imageConverterService.ConvertToPngAsync(targetPath, tempPng, cancellationToken).ConfigureAwait(false);
+                owned = decodedPath;
+                try
+                {
+                    await _jxlDecoder.DecodeToPngAsync(targetPath, decodedPath, cancellationToken, numThreads: threads ?? CompareDefaults.JxlThreads).ConfigureAwait(false);
+                }
+                catch (Exception ex) when (IsMissingTool(ex, "djxl"))
+                {
+                    await _imageConverterService.ConvertToPngAsync(targetPath, decodedPath, cancellationToken).ConfigureAwait(false);
+                }
             }
 
-            return (tempPng, tempPng);
+            return (decodedPath, owned);
         }
         catch
         {
-            _fileService.DeleteFile(tempPng);
+            if (owned != null)
+            {
+                _fileService.DeleteFile(owned);
+            }
+
             throw;
         }
     }

@@ -272,6 +272,7 @@ namespace RAWtoJXL.Core.Services;
                         image.Depth = 16;
                     }
                     image.ColorSpace = ColorSpace.sRGB;
+                    image.Settings.SetDefine(MagickFormat.Avif, "speed", SpeedForQuality(quality).ToString());
                     image.Format = MagickFormat.Avif;
 
                     var outputDir = Path.GetDirectoryName(outputPath);
@@ -301,6 +302,11 @@ namespace RAWtoJXL.Core.Services;
                 }
             });
         }, cancellationToken);
+    }
+
+    internal static int SpeedForQuality(int quality)
+    {
+        return quality >= 95 ? 4 : quality >= 80 ? 6 : 8;
     }
 
     private static bool IsLosslessAvifDelegateError(Exception exception)

@@ -89,12 +89,11 @@ namespace RAWtoJXL.Avalonia.ViewModels
                 return;
             }
 
-            var sourceSnapshot = _viewportSnapshots.Values.FirstOrDefault();
-            if (sourceSnapshot.PixelWidth <= 0)
+            if (TryGetMirrorSource(out var source, out var snapshot))
             {
                 foreach (var pane in Panes)
                 {
-                    pane.RaiseFit();
+                    pane.RaiseSetViewport(NormalizeViewportForPane(pane, snapshot.Viewport, snapshot.PixelWidth));
                 }
 
                 return;
@@ -102,8 +101,28 @@ namespace RAWtoJXL.Avalonia.ViewModels
 
             foreach (var pane in Panes)
             {
-                pane.RaiseSetViewport(NormalizeViewportForPane(pane, sourceSnapshot.Viewport, sourceSnapshot.PixelWidth));
+                pane.RaiseFit();
             }
+        }
+
+        private bool TryGetMirrorSource(out ComparePaneViewModel source, out ViewportSnapshot snapshot)
+        {
+            var original = Panes.FirstOrDefault(p => p.IsOriginal);
+            if (original != null && _viewportSnapshots.TryGetValue(original, out snapshot))
+            {
+                source = original;
+                return true;
+            }
+
+            if (_lastViewportSource != null && _viewportSnapshots.TryGetValue(_lastViewportSource, out snapshot))
+            {
+                source = _lastViewportSource;
+                return true;
+            }
+
+            source = original ?? _lastViewportSource!;
+            snapshot = default;
+            return false;
         }
 
         [ObservableProperty]
@@ -475,13 +494,12 @@ namespace RAWtoJXL.Avalonia.ViewModels
                     pane.DimensionsText = $"{display.Width}×{display.Height}";
                     pane.SetFileSizes(fileBytes, pane.IsOriginal ? null : SourceFileBytes);
                     pane.Status = PaneStatus.Ready;
-                    if (IsMirroring &&
-                        _lastViewportSource != null &&
-                        !ReferenceEquals(_lastViewportSource, pane) &&
-                        _viewportSnapshots.TryGetValue(_lastViewportSource, out var mirrorSnapshot) &&
-                        mirrorSnapshot.PixelWidth > 0)
+                    if (IsMirroring && TryGetMirrorSource(out var mirrorSource, out var mirrorSnapshot))
                     {
-                        pane.RaiseSetViewport(NormalizeViewportForPane(pane, mirrorSnapshot.Viewport, mirrorSnapshot.PixelWidth));
+                        if (!ReferenceEquals(mirrorSource, pane))
+                        {
+                            pane.RaiseSetViewport(NormalizeViewportForPane(pane, mirrorSnapshot.Viewport, mirrorSnapshot.PixelWidth));
+                        }
                     }
 
                     ScheduleAnalysis(pane);
