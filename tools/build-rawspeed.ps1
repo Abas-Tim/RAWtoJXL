@@ -25,6 +25,9 @@ if (-not (Test-Path $zlibTar) -or (Get-Item $zlibTar).Length -lt 100000) {
   if ($LASTEXITCODE -ne 0 -or (Get-Item $zlibTar).Length -lt 100000) { $fetchOk = $false }
 }
 
+$pugixmlTree = Join-Path $thirdParty "pugixml-1.14"
+$zlibTree    = Join-Path $thirdParty "zlib-ng-2.2.1"
+
 $withPugixml = "ON"
 $withZlib = "ON"
 if (-not $fetchOk) {
@@ -32,15 +35,14 @@ if (-not $fetchOk) {
   $withPugixml = "OFF"
   $withZlib = "OFF"
 } else {
-$pugixmlTree = Join-Path $thirdParty "pugixml-1.14"
-$zlibTree    = Join-Path $thirdParty "zlib-ng-2.2.1"
-if (-not (Test-Path $pugixmlTree)) {
-  tar.exe -xf $pugixmlZip -C $thirdParty 2>$null
-  if (-not (Test-Path $pugixmlTree)) { Write-Error "pugixml extraction failed"; exit 1 }
-}
-if (-not (Test-Path $zlibTree)) {
-  tar.exe -xzf $zlibTar -C $thirdParty 2>$null
-  if (-not (Test-Path $zlibTree)) { Write-Error "zlib extraction failed"; exit 1 }
+  if (-not (Test-Path $pugixmlTree)) {
+    tar.exe -xf $pugixmlZip -C $thirdParty 2>$null
+    if (-not (Test-Path $pugixmlTree)) { Write-Error "pugixml extraction failed"; exit 1 }
+  }
+  if (-not (Test-Path $zlibTree)) {
+    tar.exe -xzf $zlibTar -C $thirdParty 2>$null
+    if (-not (Test-Path $zlibTree)) { Write-Error "zlib extraction failed"; exit 1 }
+  }
 }
 
 # Patch rawspeed for MSVC compatibility (upstream uses GCC/clang-cl on Windows;
@@ -69,7 +71,7 @@ if ($configText -notmatch '_MSC_VER && !defined\(__clang__\)') {
 
 $common = Join-Path $root "native\rawspeed\src\librawspeed\common\Common.h"
 $commonText = Get-Content $common -Raw
-if ($commonText -match '__attribute__\(\(format\(printf' -and $commonText -notmatch 'not defined\(_MSC_VER\)' ) {
+if ($commonText -match '__attribute__\(\(format\(printf' -and $commonText -notmatch 'not defined\(_MSC_VER\)') {
   $commonText = $commonText -replace [regex]::Escape("__attribute__((format(printf, 2, 3)));"),
     "#if !defined(_MSC_VER) || defined(__clang__)`n__attribute__((format(printf, 2, 3)));`n#endif"
   Set-Content -LiteralPath $common -Value $commonText -NoNewline
