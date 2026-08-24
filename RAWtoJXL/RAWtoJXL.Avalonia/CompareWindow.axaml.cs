@@ -49,7 +49,9 @@ namespace RAWtoJXL.Avalonia
                     args.Viewport,
                     args.VisibleRegion,
                     args.PixelWidth,
-                    args.PixelHeight);
+                    args.PixelHeight,
+                    args.ImagePixelWidth,
+                    args.ImagePixelHeight);
                 viewer.DisplayStateChanged += (_, args) => vm.OnPaneDisplayStateChanged(pane, args.State);
                 viewer.FullResRequested += async () => (string?)await vm.EnsureFullResolutionAsync(pane).ConfigureAwait(false);
                 pane.RequestSetViewport += (viewport, sourcePixelWidth) => viewer.SetViewport(

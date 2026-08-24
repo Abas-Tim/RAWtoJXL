@@ -93,7 +93,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
             {
                 foreach (var pane in Panes)
                 {
-                    pane.RaiseSetViewport(snapshot.Viewport, snapshot.PixelWidth);
+                    pane.RaiseSetViewport(snapshot.Viewport, snapshot.ImagePixelWidth);
                 }
 
                 return;
@@ -231,9 +231,11 @@ namespace RAWtoJXL.Avalonia.ViewModels
             CompareViewport viewport,
             CompareImageRegion visibleRegion,
             int pixelWidth,
-            int pixelHeight)
+            int pixelHeight,
+            int imagePixelWidth,
+            int imagePixelHeight)
         {
-            if (_disposed)
+            if (_disposed || imagePixelWidth <= 0 || imagePixelHeight <= 0)
             {
                 return;
             }
@@ -243,7 +245,9 @@ namespace RAWtoJXL.Avalonia.ViewModels
                 viewport,
                 visibleRegion,
                 Math.Max(1, pixelWidth),
-                Math.Max(1, pixelHeight));
+                Math.Max(1, pixelHeight),
+                Math.Max(1, imagePixelWidth),
+                Math.Max(1, imagePixelHeight));
             if (!source.IsOriginal)
             {
                 CancelAnalysis(source);
@@ -270,7 +274,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
                     {
                         if (!ReferenceEquals(pane, source))
                         {
-                            pane.RaiseSetViewport(viewport, pixelWidth);
+                            pane.RaiseSetViewport(viewport, imagePixelWidth);
                         }
                     }
                 }
@@ -480,7 +484,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
                     {
                         if (!ReferenceEquals(mirrorSource, pane))
                         {
-                            pane.RaiseSetViewport(mirrorSnapshot.Viewport, mirrorSnapshot.PixelWidth);
+                            pane.RaiseSetViewport(mirrorSnapshot.Viewport, mirrorSnapshot.ImagePixelWidth);
                         }
                     }
 
@@ -811,7 +815,9 @@ namespace RAWtoJXL.Avalonia.ViewModels
             CompareViewport Viewport,
             CompareImageRegion Region,
             int PixelWidth,
-            int PixelHeight);
+            int PixelHeight,
+            int ImagePixelWidth,
+            int ImagePixelHeight);
 
         private readonly record struct AnalysisRequest(
             OutputFormat Format,

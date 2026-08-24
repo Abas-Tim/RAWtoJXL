@@ -26,13 +26,17 @@ public class CompareAnalysisTests
                 new CompareViewport(1, 0.25, 0.25),
                 first,
                 400,
-                300);
+                300,
+                9556,
+                6366);
             context.ViewModel.OnPaneViewportChanged(
                 context.ViewModel.MiddlePane,
                 new CompareViewport(2, 0.6, 0.5),
                 final,
                 500,
-                350);
+                350,
+                9556,
+                6366);
 
             await Task.Delay(500, TestContext.Current.CancellationToken);
 
@@ -70,7 +74,9 @@ public class CompareAnalysisTests
                 new CompareViewport(2, 0.45, 0.45),
                 region,
                 520,
-                420);
+                420,
+                9556,
+                6366);
             context.ViewModel.IsDifferenceOverlayEnabled = true;
             context.ViewModel.OnPaneDisplayStateChanged(
                 context.ViewModel.MiddlePane,

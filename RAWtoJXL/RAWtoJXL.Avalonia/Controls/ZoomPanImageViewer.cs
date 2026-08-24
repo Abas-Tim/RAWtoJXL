@@ -16,18 +16,26 @@ namespace RAWtoJXL.Avalonia.Controls
         public CompareViewport Viewport { get; }
         public CompareImageRegion VisibleRegion { get; }
         public int PixelWidth { get; }
+
         public int PixelHeight { get; }
 
+        public int ImagePixelWidth { get; }
+
+        public int ImagePixelHeight { get; }
         public ViewportChangedEventArgs(
             CompareViewport viewport,
             CompareImageRegion visibleRegion,
             int pixelWidth,
-            int pixelHeight)
+            int pixelHeight,
+            int imagePixelWidth,
+            int imagePixelHeight)
         {
             Viewport = viewport;
             VisibleRegion = visibleRegion;
             PixelWidth = pixelWidth;
             PixelHeight = pixelHeight;
+            ImagePixelWidth = imagePixelWidth;
+            ImagePixelHeight = imagePixelHeight;
         }
     }
 
@@ -325,7 +333,9 @@ namespace RAWtoJXL.Avalonia.Controls
                     _viewport,
                     region,
                     Math.Max(1, (int)Math.Ceiling(visibleWidth)),
-                    Math.Max(1, (int)Math.Ceiling(visibleHeight))));
+                    Math.Max(1, (int)Math.Ceiling(visibleHeight)),
+                    _imageWidth,
+                    _imageHeight));
         }
 
         private void OnPointerWheelChanged(object? sender, PointerWheelEventArgs e)
