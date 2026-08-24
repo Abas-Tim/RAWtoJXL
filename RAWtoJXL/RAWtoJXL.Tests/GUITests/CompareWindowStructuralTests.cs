@@ -46,7 +46,8 @@ public class CompareWindowStructuralTests
         Assert.InRange(Math.Abs(viewers[1].Bounds.Width - viewers[2].Bounds.Width), 0, 1);
 
         var checkBoxes = GUITestHelpers.GetAllControls<CheckBox>(window).ToList();
-        Assert.Contains(checkBoxes, checkBox => checkBox.Content?.ToString() == "Differences x8");
+        Assert.Contains(checkBoxes, checkBox => checkBox.Content?.ToString() == "Mirror");
+        Assert.Contains(checkBoxes, checkBox => checkBox.Content?.ToString() == "Show GPU prototype");
 
         var textBlocks = GUITestHelpers.GetAllControls<TextBlock>(window).ToList();
         Assert.Equal(3, textBlocks.Count(text => text.Text == "Preview"));
