@@ -297,6 +297,7 @@
             <Grid ColumnDefinitions="Auto,Auto,*,Auto">
                 <CheckBox Content="GPU prototype"
                           IsChecked="{Binding IsGpuPrototypeVisible, Mode=TwoWay}"
+                          IsEnabled="{Binding IsGpuPrototypeAvailable}"
                           FontSize="11"
                           Foreground="#40474E"
                           VerticalAlignment="Center"

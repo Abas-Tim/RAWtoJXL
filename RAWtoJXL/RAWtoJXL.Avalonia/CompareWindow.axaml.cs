@@ -12,6 +12,7 @@ namespace RAWtoJXL.Avalonia
         public CompareWindow()
         {
             InitializeComponent();
+            GpuPrototypeSurface.CapabilityChanged += OnGpuCapabilityChanged;
         }
 
         protected override void OnDataContextChanged(EventArgs e)
@@ -56,14 +57,32 @@ namespace RAWtoJXL.Avalonia
                 pane.RequestSetDifferenceOverlay += viewer.SetDifferenceOverlay;
             }
 
+            if (GpuPrototypeSurface.Capability != null)
+            {
+                OnGpuCapabilityChanged(GpuPrototypeSurface, EventArgs.Empty);
+            }
+
             Closed += (_, _) =>
             {
+                GpuPrototypeSurface.CapabilityChanged -= OnGpuCapabilityChanged;
                 foreach (var viewer in viewers)
                 {
                     viewer.DisposeImages();
                 }
                 vm.Dispose();
             };
+        }
+
+        private void OnGpuCapabilityChanged(object? sender, EventArgs e)
+        {
+            if (DataContext is not CompareViewModel vm)
+            {
+                return;
+            }
+
+            bool supported = GpuPrototypeSurface.Capability?.SupportsRenderPrototype == true &&
+                             GpuPrototypeSurface.Capability.FailureReason == null;
+            vm.SetGpuPrototypeAvailability(supported);
         }
     }
 }

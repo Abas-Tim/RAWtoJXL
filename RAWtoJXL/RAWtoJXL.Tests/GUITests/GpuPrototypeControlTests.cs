@@ -87,7 +87,7 @@ public class GpuPrototypeControlTests
     }
 
     [AvaloniaFact]
-    public void CompareWindow_ContainsOptInGpuPrototype()
+    public void CompareWindow_EnablesGpuPrototypeByDefault()
     {
         var service = new Moq.Mock<RAWtoJXL.Core.Interfaces.ICompareConversionService>();
         var dispatcher = new Moq.Mock<RAWtoJXL.Avalonia.Services.IDispatcherService>();
@@ -102,6 +102,8 @@ public class GpuPrototypeControlTests
             90,
             service.Object,
             dispatcher.Object);
+        Assert.True(viewModel.IsGpuPrototypeVisible);
+        Assert.True(viewModel.IsGpuPrototypeAvailable);
         var window = new RAWtoJXL.Avalonia.CompareWindow
         {
             DataContext = viewModel
@@ -116,6 +118,24 @@ public class GpuPrototypeControlTests
             checkBox => checkBox.Content?.ToString() == "GPU prototype");
 
         window.Close();
+        viewModel.Dispose();
+    }
+
+    [Fact]
+    public void CompareViewModel_DisablesGpuPrototypeWhenUnavailable()
+    {
+        var service = new Moq.Mock<RAWtoJXL.Core.Interfaces.ICompareConversionService>();
+        var dispatcher = new Moq.Mock<RAWtoJXL.Avalonia.Services.IDispatcherService>();
+        var viewModel = new RAWtoJXL.Avalonia.ViewModels.CompareViewModel(
+            Path.Combine(Path.GetTempPath(), "gpu-prototype.dng"),
+            90,
+            service.Object,
+            dispatcher.Object);
+
+        viewModel.SetGpuPrototypeAvailability(false);
+
+        Assert.False(viewModel.IsGpuPrototypeAvailable);
+        Assert.False(viewModel.IsGpuPrototypeVisible);
         viewModel.Dispose();
     }
 }

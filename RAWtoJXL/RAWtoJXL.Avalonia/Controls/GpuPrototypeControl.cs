@@ -128,6 +128,8 @@ public sealed class GpuPrototypeControl : OpenGlControlBase
 
     public OpenGlCapabilityReport? Capability { get; private set; }
 
+    public event EventHandler? CapabilityChanged;
+
     public Bitmap? ImageSource
     {
         get => GetValue(ImageSourceProperty);
@@ -154,6 +156,7 @@ public sealed class GpuPrototypeControl : OpenGlControlBase
             RefreshStatusText();
             if (!Capability.HasContext || !Capability.SupportsRenderPrototype)
             {
+                CapabilityChanged?.Invoke(this, EventArgs.Empty);
                 return;
             }
 
@@ -167,6 +170,7 @@ public sealed class GpuPrototypeControl : OpenGlControlBase
             _textureUniformLocation = gl.GetUniformLocationString(_program, "uTexture");
             _hasTextureUniformLocation = gl.GetUniformLocationString(_program, "uHasTexture");
             RefreshStatusText();
+            CapabilityChanged?.Invoke(this, EventArgs.Empty);
             RequestNextFrameRendering();
         }
         catch (Exception exception)
@@ -175,6 +179,7 @@ public sealed class GpuPrototypeControl : OpenGlControlBase
             Capability = (Capability ?? OpenGlCapabilityReport.From(GlVersion, gl.Version, gl.Vendor, gl.Renderer))
                 .WithFailure(exception.GetType().Name);
             RefreshStatusText();
+            CapabilityChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 
@@ -228,6 +233,7 @@ public sealed class GpuPrototypeControl : OpenGlControlBase
         _hasTextureUniformLocation = -1;
         Capability = new OpenGlCapabilityReport(false, false, false, false, string.Empty, string.Empty, string.Empty, "context lost");
         RefreshStatusText();
+        CapabilityChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private int CreateProgram(GlInterface gl, bool isDesktopOpenGl)
