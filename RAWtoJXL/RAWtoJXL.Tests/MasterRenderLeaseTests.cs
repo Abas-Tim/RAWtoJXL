@@ -1,4 +1,6 @@
 using System.IO;
+using System.Security.Cryptography;
+using System.Text;
 using Moq;
 using RAWtoJXL.Core.Interfaces;
 using RAWtoJXL.Core.Models;
@@ -11,13 +13,10 @@ public class MasterRenderLeaseTests
     private sealed record ServiceHarness(
         CompareConversionService Service,
         Mock<IRawRenderer> RawRenderer,
-        string Dir)
+        string Dir,
+        string MasterDir)
     {
         public string InputPath => Path.Combine(Dir, "source.dng");
-        public string MasterDir => Directory
-            .EnumerateDirectories(Path.Combine(CompareDefaults.CacheRoot, "master"))
-            .FirstOrDefault(d => Path.GetFileName(d).StartsWith("m-", StringComparison.Ordinal))
-            ?? string.Empty;
     }
 
     private static ServiceHarness CreateHarness(Action<Mock<IRawRenderer>>? configureRenderer = null)
@@ -37,7 +36,15 @@ public class MasterRenderLeaseTests
         var fileService = new FileService(logger.Object);
         var converter = new ImageConverterService(exif.Object, fileService, logger.Object, djxl.Object);
         var service = new CompareConversionService(converter, cjxl.Object, djxl.Object, rawRenderer.Object, fileService, logger.Object);
-        return new ServiceHarness(service, rawRenderer, dir);
+        return new ServiceHarness(service, rawRenderer, dir, ExpectedMasterDir(input));
+    }
+
+    private static string ExpectedMasterDir(string inputPath)
+    {
+        var fi = new FileInfo(inputPath);
+        string raw = $"{CompareDefaults.CacheSchemaVersion}|{fi.FullName}|{fi.Length}|{fi.LastWriteTimeUtc.Ticks}|orig|0|0";
+        string hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(raw))).ToLowerInvariant();
+        return Path.Combine(CompareDefaults.CacheRoot, "master", $"m-{hash}");
     }
 
     [Fact]
@@ -63,10 +70,8 @@ public class MasterRenderLeaseTests
                 await File.WriteAllTextAsync(output, "png");
             });
 
-        string[]? before = null;
         try
         {
-            before = SnapshotMasterDirs();
             var firstTask = harness.Service.EnsureMasterRenderLeaseAsync(harness.InputPath);
             var secondTask = harness.Service.EnsureMasterRenderLeaseAsync(harness.InputPath);
             var leases = await Task.WhenAll(firstTask, secondTask);
@@ -80,24 +85,18 @@ public class MasterRenderLeaseTests
                 lease.Complete();
             }
 
-            string masterDir = harness.MasterDir;
-            Assert.True(File.Exists(Path.Combine(masterDir, "master.png")));
-            Assert.True(File.Exists(Path.Combine(masterDir, "meta.json")));
-            Assert.Empty(Directory.EnumerateFiles(masterDir, "master.slot-*.png"));
+            Assert.True(File.Exists(Path.Combine(harness.MasterDir, "master.png")));
+            Assert.True(File.Exists(Path.Combine(harness.MasterDir, "meta.json")));
+            Assert.Empty(Directory.EnumerateFiles(harness.MasterDir, "master.slot-*.png"));
 
             var cached = await harness.Service.EnsureMasterRenderLeaseAsync(harness.InputPath);
             Assert.True(cached.IsPromotedMaster);
             cached.Complete();
-
-            foreach (var lease in leases)
-            {
-                lease.Complete();
-            }
         }
         finally
         {
             TryDelete(harness.Dir);
-            CleanupNewMasterDirs(before!);
+            TryDelete(harness.MasterDir);
         }
     }
 
@@ -127,10 +126,8 @@ public class MasterRenderLeaseTests
                 await File.WriteAllTextAsync(output, "png");
             });
 
-        string[]? before = null;
         try
         {
-            before = SnapshotMasterDirs();
             var tasks = new[]
             {
                 harness.Service.EnsureMasterRenderLeaseAsync(harness.InputPath),
@@ -150,7 +147,7 @@ public class MasterRenderLeaseTests
         finally
         {
             TryDelete(harness.Dir);
-            CleanupNewMasterDirs(before!);
+            TryDelete(harness.MasterDir);
         }
     }
 
@@ -162,10 +159,8 @@ public class MasterRenderLeaseTests
                 .Setup(x => x.RenderToPngAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new InvalidOperationException("render boom")));
 
-        string[]? before = null;
         try
         {
-            before = SnapshotMasterDirs();
             var tasks = new[]
             {
                 harness.Service.EnsureMasterRenderLeaseAsync(harness.InputPath),
@@ -177,35 +172,14 @@ public class MasterRenderLeaseTests
                 Assert.ThrowsAsync<InvalidOperationException>(() => tasks[1]));
 
             Assert.All(failures, f => Assert.Equal("render boom", f.Message));
-
-            string masterDir = harness.MasterDir;
-            Assert.False(Directory.Exists(masterDir) && File.Exists(Path.Combine(masterDir, "master.png")));
-            Assert.Empty(Directory.Exists(masterDir) ? Directory.EnumerateFiles(masterDir, "master.slot-*.png") : Array.Empty<string>());
+            Assert.False(File.Exists(Path.Combine(harness.MasterDir, "master.png")));
+            Assert.False(Directory.Exists(harness.MasterDir) &&
+                         Directory.EnumerateFiles(harness.MasterDir, "master.slot-*.png").Any());
         }
         finally
         {
             TryDelete(harness.Dir);
-            CleanupNewMasterDirs(before!);
-        }
-    }
-
-    private static string[] SnapshotMasterDirs()
-    {
-        string root = Path.Combine(CompareDefaults.CacheRoot, "master");
-        return Directory.Exists(root)
-            ? Directory.EnumerateDirectories(root).ToArray()
-            : Array.Empty<string>();
-    }
-
-    private static void CleanupNewMasterDirs(string[] before)
-    {
-        var known = new HashSet<string>(before, StringComparer.OrdinalIgnoreCase);
-        foreach (string dir in SnapshotMasterDirs())
-        {
-            if (!known.Contains(dir))
-            {
-                TryDelete(dir);
-            }
+            TryDelete(harness.MasterDir);
         }
     }
 

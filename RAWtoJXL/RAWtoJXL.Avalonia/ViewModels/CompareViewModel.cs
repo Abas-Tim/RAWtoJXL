@@ -11,6 +11,7 @@ using RAWtoJXL.Avalonia.Services;
 using RAWtoJXL.Avalonia.Controls;
 using RAWtoJXL.Core.Interfaces;
 using RAWtoJXL.Core.Models;
+using RAWtoJXL.Core.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace RAWtoJXL.Avalonia.ViewModels
@@ -19,8 +20,9 @@ namespace RAWtoJXL.Avalonia.ViewModels
     {
         private static readonly OutputFormat[] AllFormats = { OutputFormat.Jxl, OutputFormat.Avif, OutputFormat.Jpeg };
 
-        private readonly ICompareConversionService _conversionService;
-        private readonly IDispatcherService _dispatcherService;
+    private readonly ICompareConversionService _conversionService;
+    private readonly ComparePipelineOrchestrator _orchestrator;
+    private readonly IDispatcherService _dispatcherService;
         private readonly CancellationTokenSource _lifetimeCts = new();
         private readonly Dictionary<ComparePaneViewModel, CancellationTokenSource> _paneCts = new();
         private readonly Dictionary<ComparePaneViewModel, CancellationTokenSource> _analysisCts = new();
@@ -141,6 +143,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
             SourceFileBytes = GetFileSize(filePath);
             _conversionService = conversionService ?? throw new ArgumentNullException(nameof(conversionService));
             _dispatcherService = dispatcherService ?? throw new ArgumentNullException(nameof(dispatcherService));
+            _orchestrator = new ComparePipelineOrchestrator(_conversionService);
             _quality = quality;
             SourceFileName = Path.GetFileName(filePath);
             OriginalFormat = GetOriginalFormat(filePath);
@@ -384,17 +387,42 @@ namespace RAWtoJXL.Avalonia.ViewModels
             Bitmap? bitmap = null;
             try
             {
-                var display = await _conversionService.EnsureDisplayPngsAsync(
-                    SourceFilePath, pane.Format, Quality, JxlEffort, ct, threads).ConfigureAwait(false);
-                ct.ThrowIfCancellationRequested();
-
+                CompareDisplayPngs display;
                 long fileBytes = SourceFileBytes;
-                if (!pane.IsOriginal && pane.Format != null)
+
+                if (ComparePipelineOrchestrator.IsParallelRenderEnabled)
                 {
-                    var target = await _conversionService.EnsureTargetFileAsync(
-                        SourceFilePath, pane.Format.Value, Quality, JxlEffort, ct, threads).ConfigureAwait(false);
+                    OutputFormat? pipelineFormat = pane.IsOriginal ? null : pane.Format;
+                    int? pipelineThreads = pane.IsOriginal ? null : threads;
+                    var result = await _orchestrator.RunPaneAsync(
+                        SourceFilePath,
+                        pipelineFormat,
+                        Quality,
+                        JxlEffort,
+                        allowParallelRender: true,
+                        ct,
+                        pipelineThreads).ConfigureAwait(false);
                     ct.ThrowIfCancellationRequested();
-                    fileBytes = GetFileSize(target);
+
+                    display = result.Preview;
+                    if (result.TargetPath != null)
+                    {
+                        fileBytes = GetFileSize(result.TargetPath);
+                    }
+                }
+                else
+                {
+                    display = await _conversionService.EnsureDisplayPngsAsync(
+                        SourceFilePath, pane.Format, Quality, JxlEffort, ct, threads).ConfigureAwait(false);
+                    ct.ThrowIfCancellationRequested();
+
+                    if (!pane.IsOriginal && pane.Format != null)
+                    {
+                        var target = await _conversionService.EnsureTargetFileAsync(
+                            SourceFilePath, pane.Format.Value, Quality, JxlEffort, ct, threads).ConfigureAwait(false);
+                        ct.ThrowIfCancellationRequested();
+                        fileBytes = GetFileSize(target);
+                    }
                 }
 
                 bitmap = await Task.Run(() => new Bitmap(display.PreviewPath), ct).ConfigureAwait(false);
