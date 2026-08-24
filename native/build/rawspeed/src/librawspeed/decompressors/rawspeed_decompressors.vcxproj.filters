@@ -1,0 +1,204 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\AbstractDngDecompressor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\AbstractLJpegDecoder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\Cr2Decompressor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\Cr2LJpegDecoder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\CrwDecompressor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\DeflateDecompressor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\FujiDecompressor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\HasselbladDecompressor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\HasselbladLJpegDecoder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\JpegDecompressor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\KodakDecompressor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\LJpegDecoder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\LJpegDecompressor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\NikonDecompressor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\OlympusDecompressor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\PanasonicV4Decompressor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\PanasonicV5Decompressor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\PanasonicV6Decompressor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\PanasonicV7Decompressor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\PanasonicV8Decompressor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\PentaxDecompressor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\PhaseOneDecompressor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\SamsungV0Decompressor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\SamsungV1Decompressor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\SamsungV2Decompressor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\SonyArw1Decompressor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\SonyArw2Decompressor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\UncompressedDecompressor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\VC5Decompressor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\AbstractDecompressor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\AbstractDngDecompressor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\AbstractLJpegDecoder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\AbstractSamsungDecompressor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\Cr2Decompressor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\Cr2DecompressorImpl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\Cr2LJpegDecoder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\CrwDecompressor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\DeflateDecompressor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\FujiDecompressor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\HasselbladDecompressor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\HasselbladLJpegDecoder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\JpegDecompressor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\JpegMarkers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\KodakDecompressor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\LJpegDecoder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\LJpegDecompressor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\NikonDecompressor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\OlympusDecompressor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\PanasonicV4Decompressor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\PanasonicV5Decompressor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\PanasonicV6Decompressor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\PanasonicV7Decompressor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\PanasonicV8Decompressor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\PentaxDecompressor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\PhaseOneDecompressor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\SamsungV0Decompressor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\SamsungV1Decompressor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\SamsungV2Decompressor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\SonyArw1Decompressor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\SonyArw2Decompressor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\UncompressedDecompressor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\VC5Decompressor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\decompressors\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{BEAF4AFF-C111-3341-953A-AEFB780C7F55}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{294674FE-4CC4-3427-BB98-3A59AE067B7B}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

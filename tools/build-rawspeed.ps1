@@ -32,16 +32,49 @@ if (-not $fetchOk) {
   $withPugixml = "OFF"
   $withZlib = "OFF"
 } else {
-  $pugixmlTree = Join-Path $thirdParty "pugixml-1.14"
-  $zlibTree    = Join-Path $thirdParty "zlib-ng-2.2.1"
-  if (-not (Test-Path $pugixmlTree)) {
-    tar.exe -xf $pugixmlZip -C $thirdParty 2>$null
-    if (-not (Test-Path $pugixmlTree)) { Write-Error "pugixml extraction failed"; exit 1 }
-  }
-  if (-not (Test-Path $zlibTree)) {
-    tar.exe -xzf $zlibTar -C $thirdParty 2>$null
-    if (-not (Test-Path $zlibTree)) { Write-Error "zlib extraction failed"; exit 1 }
-  }
+$pugixmlTree = Join-Path $thirdParty "pugixml-1.14"
+$zlibTree    = Join-Path $thirdParty "zlib-ng-2.2.1"
+if (-not (Test-Path $pugixmlTree)) {
+  tar.exe -xf $pugixmlZip -C $thirdParty 2>$null
+  if (-not (Test-Path $pugixmlTree)) { Write-Error "pugixml extraction failed"; exit 1 }
+}
+if (-not (Test-Path $zlibTree)) {
+  tar.exe -xzf $zlibTar -C $thirdParty 2>$null
+  if (-not (Test-Path $zlibTree)) { Write-Error "zlib extraction failed"; exit 1 }
+}
+
+# Patch rawspeed for MSVC compatibility (upstream uses GCC/clang-cl on Windows;
+# its config.h.in hardcodes __attribute__ macros which MSVC rejects)
+$config = Join-Path $root "native\rawspeed\src\config.h.in"
+$configText = Get-Content $config -Raw
+if ($configText -notmatch '_MSC_VER && !defined\(__clang__\)') {
+  $configText = $configText -replace [regex]::Escape("#define RAWSPEED_UNLIKELY_FUNCTION __attribute__((cold))"), @"
+#if defined(_MSC_VER) && !defined(__clang__)
+#define RAWSPEED_UNLIKELY_FUNCTION
+#define RAWSPEED_NOINLINE __declspec(noinline)
+#define RAWSPEED_READONLY
+#define RAWSPEED_READNONE
+#define RAWSPEED_ALWAYS_INLINE __forceinline
+#else
+#define RAWSPEED_UNLIKELY_FUNCTION __attribute__((cold))
+#define RAWSPEED_NOINLINE __attribute__((noinline))
+#define RAWSPEED_READONLY __attribute__((pure))
+#define RAWSPEED_READNONE __attribute__((const))
+#define RAWSPEED_ALWAYS_INLINE __attribute__((always_inline))
+#endif
+"@
+  Set-Content -LiteralPath $config -Value $configText -NoNewline
+  Write-Output "config.h.in patched for MSVC."
+}
+
+$common = Join-Path $root "native\rawspeed\src\librawspeed\common\Common.h"
+$commonText = Get-Content $common -Raw
+if ($commonText -match '__attribute__\(\(format\(printf') -and $commonText -notmatch 'not defined\(_MSC_VER\)' ) {
+  $commonText = $commonText -replace [regex]::Escape("__attribute__((format(printf, 2, 3)));"),
+    "#if !defined(_MSC_VER) || defined(__clang__)`n__attribute__((format(printf, 2, 3)));`n#endif"
+  Set-Content -LiteralPath $common -Value $commonText -NoNewline
+  Write-Output "Common.h patched for MSVC."
+}
 }
 
 if ($withPugixml -eq "ON") {

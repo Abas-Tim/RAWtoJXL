@@ -1,0 +1,11 @@
+# CMake generation dependency list for this directory.
+C:/Program Files/CMake/share/cmake-4.3/Modules/CheckCXXSourceCompiles.cmake
+H:/Playground/RAWtoJXL/native/rawspeed/cmake/Modules/cpu-cache-line-size.cmake
+H:/Playground/RAWtoJXL/native/rawspeed/cmake/Modules/cpu-cache-line-size.cpp
+H:/Playground/RAWtoJXL/native/rawspeed/cmake/Modules/cpu-large-page-size.cmake
+H:/Playground/RAWtoJXL/native/rawspeed/cmake/Modules/cpu-large-page-size.cpp
+H:/Playground/RAWtoJXL/native/rawspeed/cmake/Modules/cpu-page-size.cmake
+H:/Playground/RAWtoJXL/native/rawspeed/cmake/Modules/cpu-page-size.cpp
+H:/Playground/RAWtoJXL/native/rawspeed/cmake/Modules/thread-local.cmake
+H:/Playground/RAWtoJXL/native/rawspeed/src/CMakeLists.txt
+H:/Playground/RAWtoJXL/native/rawspeed/src/config.h.in

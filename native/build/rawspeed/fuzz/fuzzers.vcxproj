@@ -1,0 +1,411 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseWithAsserts|x64">
+      <Configuration>ReleaseWithAsserts</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Coverage|x64">
+      <Configuration>Coverage</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Sanitize|x64">
+      <Configuration>Sanitize</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="TSan|x64">
+      <Configuration>TSan</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Fuzz|x64">
+      <Configuration>Fuzz</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{258DEAC0-B47E-3E33-86BE-68925ADB02D6}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
+    <Platform>x64</Platform>
+    <ProjectName>fuzzers</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseWithAsserts|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Coverage|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Sanitize|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TSan|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Fuzz|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='ReleaseWithAsserts|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Coverage|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Sanitize|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='TSan|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Fuzz|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseWithAsserts|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Coverage|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Sanitize|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TSan|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Fuzz|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="H:\Playground\RAWtoJXL\native\rawspeed\fuzz\CMakeLists.txt">
+      <UseUtf8Encoding>Always</UseUtf8Encoding>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule H:/Playground/RAWtoJXL/native/rawspeed/fuzz/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SH:/Playground/RAWtoJXL/native -BH:/Playground/RAWtoJXL/native/build --check-stamp-file H:/Playground/RAWtoJXL/native/build/rawspeed/fuzz/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='ReleaseWithAsserts|x64'">Building Custom Rule H:/Playground/RAWtoJXL/native/rawspeed/fuzz/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='ReleaseWithAsserts|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SH:/Playground/RAWtoJXL/native -BH:/Playground/RAWtoJXL/native/build --check-stamp-file H:/Playground/RAWtoJXL/native/build/rawspeed/fuzz/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='ReleaseWithAsserts|x64'">%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='ReleaseWithAsserts|x64'">H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='ReleaseWithAsserts|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule H:/Playground/RAWtoJXL/native/rawspeed/fuzz/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SH:/Playground/RAWtoJXL/native -BH:/Playground/RAWtoJXL/native/build --check-stamp-file H:/Playground/RAWtoJXL/native/build/rawspeed/fuzz/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Coverage|x64'">Building Custom Rule H:/Playground/RAWtoJXL/native/rawspeed/fuzz/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Coverage|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SH:/Playground/RAWtoJXL/native -BH:/Playground/RAWtoJXL/native/build --check-stamp-file H:/Playground/RAWtoJXL/native/build/rawspeed/fuzz/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Coverage|x64'">%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Coverage|x64'">H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Coverage|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Sanitize|x64'">Building Custom Rule H:/Playground/RAWtoJXL/native/rawspeed/fuzz/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Sanitize|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SH:/Playground/RAWtoJXL/native -BH:/Playground/RAWtoJXL/native/build --check-stamp-file H:/Playground/RAWtoJXL/native/build/rawspeed/fuzz/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Sanitize|x64'">%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Sanitize|x64'">H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Sanitize|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='TSan|x64'">Building Custom Rule H:/Playground/RAWtoJXL/native/rawspeed/fuzz/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='TSan|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SH:/Playground/RAWtoJXL/native -BH:/Playground/RAWtoJXL/native/build --check-stamp-file H:/Playground/RAWtoJXL/native/build/rawspeed/fuzz/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='TSan|x64'">%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='TSan|x64'">H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='TSan|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Fuzz|x64'">Building Custom Rule H:/Playground/RAWtoJXL/native/rawspeed/fuzz/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Fuzz|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SH:/Playground/RAWtoJXL/native -BH:/Playground/RAWtoJXL/native/build --check-stamp-file H:/Playground/RAWtoJXL/native/build/rawspeed/fuzz/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Fuzz|x64'">%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Fuzz|x64'">H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Fuzz|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="H:\Playground\RAWtoJXL\native\build\ZERO_CHECK.vcxproj">
+      <Project>{4A7E900B-96FC-3490-86E6-39D94ED39D14}</Project>
+      <Name>ZERO_CHECK</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\librawspeed\bitstreams\BitVacuumerRoundtripFuzzer.vcxproj">
+      <Project>{910E972E-A1E1-307F-BC74-9BF396396E97}</Project>
+      <Name>BitVacuumerRoundtripFuzzer</Name>
+    </ProjectReference>
+    <ProjectReference Include="H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\librawspeed\decompressors\Cr2LJpegDecoderFuzzer.vcxproj">
+      <Project>{F73C670B-E75B-3F93-8E38-7883F564D6D5}</Project>
+      <Name>Cr2LJpegDecoderFuzzer</Name>
+    </ProjectReference>
+    <ProjectReference Include="H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\librawspeed\decompressors\CrwDecompressorFuzzer.vcxproj">
+      <Project>{BB34286D-F668-3E1E-A7D7-4B35A5DB07E4}</Project>
+      <Name>CrwDecompressorFuzzer</Name>
+    </ProjectReference>
+    <ProjectReference Include="H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\librawspeed\common\DngOpcodesFuzzer.vcxproj">
+      <Project>{7A5F429C-6E81-391C-8147-4617AA438B52}</Project>
+      <Name>DngOpcodesFuzzer</Name>
+    </ProjectReference>
+    <ProjectReference Include="H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\librawspeed\decompressors\DummyLJpegDecoderFuzzer.vcxproj">
+      <Project>{0C7C0320-8234-335F-B27A-F3D12F31947A}</Project>
+      <Name>DummyLJpegDecoderFuzzer</Name>
+    </ProjectReference>
+    <ProjectReference Include="H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\librawspeed\decompressors\FujiDecompressorFuzzer.vcxproj">
+      <Project>{73D149C2-EEF6-3DEE-8C27-6998D47D35E6}</Project>
+      <Name>FujiDecompressorFuzzer</Name>
+    </ProjectReference>
+    <ProjectReference Include="H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\librawspeed\decompressors\HasselbladDecompressorFuzzer.vcxproj">
+      <Project>{C72D876E-82F5-3FA3-AFC8-9B5F9B151EEF}</Project>
+      <Name>HasselbladDecompressorFuzzer</Name>
+    </ProjectReference>
+    <ProjectReference Include="H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\librawspeed\decompressors\HasselbladLJpegDecoderFuzzer.vcxproj">
+      <Project>{843434FD-D23C-3F2F-AFE3-2294DCE504BC}</Project>
+      <Name>HasselbladLJpegDecoderFuzzer</Name>
+    </ProjectReference>
+    <ProjectReference Include="H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\librawspeed\decompressors\KodakDecompressorFuzzer.vcxproj">
+      <Project>{4C11680B-685F-3057-9BEA-7CB8CBDD825D}</Project>
+      <Name>KodakDecompressorFuzzer</Name>
+    </ProjectReference>
+    <ProjectReference Include="H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\librawspeed\decompressors\LJpegDecoderFuzzer.vcxproj">
+      <Project>{E0503F79-F094-3158-B237-CE13EE366AD2}</Project>
+      <Name>LJpegDecoderFuzzer</Name>
+    </ProjectReference>
+    <ProjectReference Include="H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\librawspeed\decompressors\LJpegDecompressorFuzzer.vcxproj">
+      <Project>{F505099C-CCCE-3C96-B03E-A27D643E0699}</Project>
+      <Name>LJpegDecompressorFuzzer</Name>
+    </ProjectReference>
+    <ProjectReference Include="H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\librawspeed\decompressors\NikonDecompressorFuzzer.vcxproj">
+      <Project>{861F38DA-0DB7-3BD4-8B78-59F4BC287380}</Project>
+      <Name>NikonDecompressorFuzzer</Name>
+    </ProjectReference>
+    <ProjectReference Include="H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\librawspeed\decompressors\OlympusDecompressorFuzzer.vcxproj">
+      <Project>{703C191A-E442-3000-8B77-8FABC651EDD7}</Project>
+      <Name>OlympusDecompressorFuzzer</Name>
+    </ProjectReference>
+    <ProjectReference Include="H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\librawspeed\decompressors\PanasonicV4DecompressorFuzzer.vcxproj">
+      <Project>{9C97A556-557E-3FA9-AC57-712E6158296F}</Project>
+      <Name>PanasonicV4DecompressorFuzzer</Name>
+    </ProjectReference>
+    <ProjectReference Include="H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\librawspeed\decompressors\PanasonicV5DecompressorFuzzer.vcxproj">
+      <Project>{C8560736-A5CE-3289-A17E-4AD25AC8E9FF}</Project>
+      <Name>PanasonicV5DecompressorFuzzer</Name>
+    </ProjectReference>
+    <ProjectReference Include="H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\librawspeed\decompressors\PanasonicV6DecompressorFuzzer.vcxproj">
+      <Project>{9FBC9FE0-53AC-36E3-A78A-BA03040473B5}</Project>
+      <Name>PanasonicV6DecompressorFuzzer</Name>
+    </ProjectReference>
+    <ProjectReference Include="H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\librawspeed\decompressors\PanasonicV7DecompressorFuzzer.vcxproj">
+      <Project>{B8485B88-B456-339C-A4B0-CC94B75C580A}</Project>
+      <Name>PanasonicV7DecompressorFuzzer</Name>
+    </ProjectReference>
+    <ProjectReference Include="H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\librawspeed\decompressors\PanasonicV8DecompressorFuzzer.vcxproj">
+      <Project>{BF2A884F-ECC0-371B-8DFA-4CDD301270C2}</Project>
+      <Name>PanasonicV8DecompressorFuzzer</Name>
+    </ProjectReference>
+    <ProjectReference Include="H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\librawspeed\parsers\ParserFuzzers.vcxproj">
+      <Project>{EA56853E-4EFF-3DA1-BD74-4D02BBD99DD7}</Project>
+      <Name>ParserFuzzers</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\librawspeed\decompressors\PentaxDecompressorFuzzer.vcxproj">
+      <Project>{EC9E8E0A-2488-352B-AD05-14EA4FB33CD1}</Project>
+      <Name>PentaxDecompressorFuzzer</Name>
+    </ProjectReference>
+    <ProjectReference Include="H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\librawspeed\decompressors\PhaseOneDecompressorFuzzer.vcxproj">
+      <Project>{CB560CB8-80B1-3A5D-839A-1C204C3427A4}</Project>
+      <Name>PhaseOneDecompressorFuzzer</Name>
+    </ProjectReference>
+    <ProjectReference Include="H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\librawspeed\codes\PrefixCodeDecoder\PrefixCodeDecoderFuzzers.vcxproj">
+      <Project>{A5347C54-8A6C-37D7-B029-4E299EB6D1B7}</Project>
+      <Name>PrefixCodeDecoderFuzzers</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\librawspeed\codes\PrefixCodeEncoder\PrefixCodeEncoderFuzzer.vcxproj">
+      <Project>{CEE02243-BE55-34FD-AF2F-8C50AEF2FA78}</Project>
+      <Name>PrefixCodeEncoderFuzzer</Name>
+    </ProjectReference>
+    <ProjectReference Include="H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\rawspeed\RawSpeedFuzzer.vcxproj">
+      <Project>{E688F1D1-76B2-372A-95D2-1CBF91858DF6}</Project>
+      <Name>RawSpeedFuzzer</Name>
+    </ProjectReference>
+    <ProjectReference Include="H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\librawspeed\decompressors\SamsungV0DecompressorFuzzer.vcxproj">
+      <Project>{5588039B-6AC1-33B1-B641-D1EAAC01DAAA}</Project>
+      <Name>SamsungV0DecompressorFuzzer</Name>
+    </ProjectReference>
+    <ProjectReference Include="H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\librawspeed\decompressors\SamsungV1DecompressorFuzzer.vcxproj">
+      <Project>{4FAB4709-AC36-3EF5-BEC5-21CC9F7225F1}</Project>
+      <Name>SamsungV1DecompressorFuzzer</Name>
+    </ProjectReference>
+    <ProjectReference Include="H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\librawspeed\decompressors\SamsungV2DecompressorFuzzer.vcxproj">
+      <Project>{0E1DFACA-879E-38F7-91DE-A5A4C87CB2E1}</Project>
+      <Name>SamsungV2DecompressorFuzzer</Name>
+    </ProjectReference>
+    <ProjectReference Include="H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\librawspeed\decompressors\SonyArw1DecompressorFuzzer.vcxproj">
+      <Project>{74CF245A-BA13-3553-92DC-96839720357A}</Project>
+      <Name>SonyArw1DecompressorFuzzer</Name>
+    </ProjectReference>
+    <ProjectReference Include="H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\librawspeed\decompressors\SonyArw2DecompressorFuzzer.vcxproj">
+      <Project>{0DB583D8-9D1A-3499-BA62-B2E393B01C51}</Project>
+      <Name>SonyArw2DecompressorFuzzer</Name>
+    </ProjectReference>
+    <ProjectReference Include="H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\librawspeed\decoders\TiffDecoders\TiffBasedDecoderFuzzers.vcxproj">
+      <Project>{596D1FAA-68CD-3ECE-8683-8DE28BD37257}</Project>
+      <Name>TiffBasedDecoderFuzzers</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\librawspeed\decompressors\UncompressedDecompressorFuzzer.vcxproj">
+      <Project>{817E93C4-549F-3CD6-A933-C384A5E93AD1}</Project>
+      <Name>UncompressedDecompressorFuzzer</Name>
+    </ProjectReference>
+    <ProjectReference Include="H:\Playground\RAWtoJXL\native\build\rawspeed\fuzz\librawspeed\decompressors\VC5DecompressorFuzzer.vcxproj">
+      <Project>{1CCB982A-3205-3E96-AEF7-FB1128FF1EE4}</Project>
+      <Name>VC5DecompressorFuzzer</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

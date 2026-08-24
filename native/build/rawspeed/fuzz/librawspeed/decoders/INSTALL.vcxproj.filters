@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="H:\Playground\RAWtoJXL\native\build\CMakeFiles\72f86e84e8ee45010872bec9bb29a851\INSTALL_force.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{3132809F-5FD7-37BC-813F-F864DB856FA2}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

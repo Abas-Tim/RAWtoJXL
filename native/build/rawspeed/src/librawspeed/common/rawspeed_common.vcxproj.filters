@@ -1,0 +1,90 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\common\ChecksumFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\common\Common.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\common\CpuFeatures.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\common\DngOpcodes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\common\ErrorLog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\common\GetNumberOfProcessorCores.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\common\RawImage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\common\RawImageDataFloat.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\common\RawImageDataU16.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\common\RawspeedException.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\common\TableLookUp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\common\BayerPhase.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\common\ChecksumFile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\common\Common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\common\CpuFeatures.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\common\DngOpcodes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\common\ErrorLog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\common\FloatingPoint.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\common\RawImage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\common\RawspeedException.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\common\SimpleLUT.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\common\Spline.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\common\TableLookUp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\common\XTransPhase.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\common\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{BEAF4AFF-C111-3341-953A-AEFB780C7F55}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{294674FE-4CC4-3427-BB98-3A59AE067B7B}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

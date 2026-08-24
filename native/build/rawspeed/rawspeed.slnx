@@ -1,0 +1,1468 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Solution>
+	<Configurations>
+		<BuildType Name="Debug"/>
+		<BuildType Name="ReleaseWithAsserts"/>
+		<BuildType Name="Release"/>
+		<BuildType Name="Coverage"/>
+		<BuildType Name="Sanitize"/>
+		<BuildType Name="TSan"/>
+		<BuildType Name="Fuzz"/>
+		<Platform Name="x64"/>
+	</Configurations>
+	<Project Path="ALL_BUILD.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="58b56598-7aaf-3b44-95f3-13a45e141167" DefaultStartup="true">
+		<BuildDependency Project="fuzz/librawspeed/bitstreams/BitVacuumerRoundtripFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/parsers/CiffParserFuzzer-GetDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/parsers/CiffParserFuzzer-GetDecoder-Decode.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/Cr2DecompressorFuzzer-DummyPrefixCodeDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/Cr2DecompressorFuzzer-PrefixCodeDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/Cr2LJpegDecoderFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/CrwDecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/common/DngOpcodesFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/DummyLJpegDecoderFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/parsers/FiffParserFuzzer-GetDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/parsers/FiffParserFuzzer-GetDecoder-Decode.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/FujiDecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/HasselbladDecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/HasselbladLJpegDecoderFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/KodakDecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/LJpegDecoderFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/LJpegDecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/NikonDecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/OlympusDecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/PanasonicV4DecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/PanasonicV5DecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/PanasonicV6DecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/PanasonicV7DecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/PanasonicV8DecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/parsers/ParserFuzzers.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/PentaxDecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/PhaseOneDecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LUTWithLookupVsLUTWithTree.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LUTWithLookupVsLUTWithVector.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LUTWithLookupVsLookup.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LUTWithLookupVsTree.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LUTWithLookupVsVector.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LUTWithTreeVsLUTWithVector.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LUTWithTreeVsLookup.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LUTWithTreeVsTree.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LUTWithTreeVsVector.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LUTWithVectorVsLookup.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LUTWithVectorVsTree.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LUTWithVectorVsVector.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LookupVsTree.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LookupVsVector.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-TreeVsVector.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzers.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeEncoder/PrefixCodeEncoderFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeLUTWithLookupDecoderFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeLUTWithTreeDecoderFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeLUTWithVectorDecoderFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeLookupDecoderFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeTreeDecoderFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeVectorDecoderFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/parsers/RawParserFuzzer-GetDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/parsers/RawParserFuzzer-GetDecoder-Decode.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed/RawSpeedFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/SamsungV0DecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/SamsungV1DecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/SamsungV2DecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/SonyArw1DecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/SonyArw2DecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decoders/TiffDecoders/TiffBasedDecoderFuzzers.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-ArwDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-Cr2Decoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-DcrDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-DcsDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-DngDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-ErfDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-IiqDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-KdcDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-MefDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-MosDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-NefDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-OrfDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-PefDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-Rw2Decoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-SrwDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-StiDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-ThreefrDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/parsers/TiffParserFuzzer-GetDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/parsers/TiffParserFuzzer-GetDecoder-Decode.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/UncompressedDecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/VC5DecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="check-rawspeed.vcxproj"/>
+		<BuildDependency Project="dependencies.vcxproj"/>
+		<BuildDependency Project="fuzz/fuzzers.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_get_number_of_processor_cores.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+		<BuildDependency Project="src/utilities/identify/rs-identify.vcxproj"/>
+		<BuildDependency Project="tests.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/bitstreams/BitVacuumerRoundtripFuzzer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="910e972e-a1e1-307f-bc74-9bf396396e97">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/parsers/CiffParserFuzzer-GetDecoder.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="0450bcb4-f64c-36df-893e-4ebe54024f86">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/parsers/CiffParserFuzzer-GetDecoder-Decode.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="22bc6317-c372-3caf-ac8d-19bcd979e577">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decompressors/Cr2DecompressorFuzzer-DummyPrefixCodeDecoder.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="63ac8886-f371-3f84-8516-84bfc9c7d492">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decompressors/Cr2DecompressorFuzzer-PrefixCodeDecoder.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="a6c100d3-dc54-35b6-914d-adfaa103c448">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decompressors/Cr2LJpegDecoderFuzzer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="f73c670b-e75b-3f93-8e38-7883f564d6d5">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decompressors/CrwDecompressorFuzzer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="bb34286d-f668-3e1e-a7d7-4b35a5db07e4">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/common/DngOpcodesFuzzer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="7a5f429c-6e81-391c-8147-4617aa438b52">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decompressors/DummyLJpegDecoderFuzzer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="0c7c0320-8234-335f-b27a-f3d12f31947a">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/parsers/FiffParserFuzzer-GetDecoder.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="7695c772-dc6a-3881-acf0-f99febf7fce2">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/parsers/FiffParserFuzzer-GetDecoder-Decode.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="f6efd38c-5779-3d2e-ad09-1344fabd9e6b">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decompressors/FujiDecompressorFuzzer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="73d149c2-eef6-3dee-8c27-6998d47d35e6">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decompressors/HasselbladDecompressorFuzzer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="c72d876e-82f5-3fa3-afc8-9b5f9b151eef">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decompressors/HasselbladLJpegDecoderFuzzer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="843434fd-d23c-3f2f-afe3-2294dce504bc">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="INSTALL.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="0a539991-48ba-31da-873d-1ca2fe1bfedf">
+		<BuildDependency Project="ALL_BUILD.vcxproj"/>
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<Build Solution="Debug|*" Project="false"/>
+		<Build Solution="ReleaseWithAsserts|*" Project="false"/>
+		<Build Solution="Release|*" Project="false"/>
+		<Build Solution="Coverage|*" Project="false"/>
+		<Build Solution="Sanitize|*" Project="false"/>
+		<Build Solution="TSan|*" Project="false"/>
+		<Build Solution="Fuzz|*" Project="false"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decompressors/KodakDecompressorFuzzer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="4c11680b-685f-3057-9bea-7cb8cbdd825d">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decompressors/LJpegDecoderFuzzer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="e0503f79-f094-3158-b237-ce13ee366ad2">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decompressors/LJpegDecompressorFuzzer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="f505099c-ccce-3c96-b03e-a27d643e0699">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decompressors/NikonDecompressorFuzzer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="861f38da-0db7-3bd4-8b78-59f4bc287380">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decompressors/OlympusDecompressorFuzzer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="703c191a-e442-3000-8b77-8fabc651edd7">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decompressors/PanasonicV4DecompressorFuzzer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="9c97a556-557e-3fa9-ac57-712e6158296f">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decompressors/PanasonicV5DecompressorFuzzer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="c8560736-a5ce-3289-a17e-4ad25ac8e9ff">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decompressors/PanasonicV6DecompressorFuzzer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="9fbc9fe0-53ac-36e3-a78a-ba03040473b5">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decompressors/PanasonicV7DecompressorFuzzer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="b8485b88-b456-339c-a4b0-cc94b75c580a">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decompressors/PanasonicV8DecompressorFuzzer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="bf2a884f-ecc0-371b-8dfa-4cdd301270c2">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/parsers/ParserFuzzers.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="ea56853e-4eff-3da1-bd74-4d02bbd99dd7">
+		<BuildDependency Project="fuzz/librawspeed/parsers/CiffParserFuzzer-GetDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/parsers/CiffParserFuzzer-GetDecoder-Decode.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/parsers/FiffParserFuzzer-GetDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/parsers/FiffParserFuzzer-GetDecoder-Decode.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/parsers/RawParserFuzzer-GetDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/parsers/RawParserFuzzer-GetDecoder-Decode.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/parsers/TiffParserFuzzer-GetDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/parsers/TiffParserFuzzer-GetDecoder-Decode.vcxproj"/>
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decompressors/PentaxDecompressorFuzzer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="ec9e8e0a-2488-352b-ad05-14ea4fb33cd1">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decompressors/PhaseOneDecompressorFuzzer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="cb560cb8-80b1-3a5d-839a-1c204c3427a4">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LUTWithLookupVsLUTWithTree.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="e1663f8b-0dbc-3bfc-b53f-42f846cfbddb">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LUTWithLookupVsLUTWithVector.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="28f0528c-683f-3afa-bbf5-b65521274c42">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LUTWithLookupVsLookup.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="de89687b-a470-3928-ab2e-3cbb0c5c0ed5">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LUTWithLookupVsTree.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="f1f356e1-26df-3964-8cc3-c4a500c68849">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LUTWithLookupVsVector.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="44000d6a-be96-3ccc-b6c0-accce824acd3">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LUTWithTreeVsLUTWithVector.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="e81a89b5-d892-3521-8907-3b8455a5161c">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LUTWithTreeVsLookup.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="75d0a66c-5b35-313f-815f-8525a3414021">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LUTWithTreeVsTree.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="f4ee2f7f-2a11-3330-9ed4-fb304cedc01e">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LUTWithTreeVsVector.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="7288c010-ad21-3950-8e71-995f464e0413">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LUTWithVectorVsLookup.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="1ea22d31-2886-3da2-82b6-3b11943ffced">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LUTWithVectorVsTree.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="a5cf89ab-8984-36e1-9ff9-63ab81317d76">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LUTWithVectorVsVector.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="a9290ea0-2365-373e-bad0-87f27d4f8fe9">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LookupVsTree.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="7a3c537d-5808-3754-a7f2-9530e83fcc2c">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LookupVsVector.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="7d16b3ff-fa58-3748-aed6-7bb0997b1f8c">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-TreeVsVector.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="d045c149-7e4b-3070-88cd-5303be7a65f7">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzers.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="a5347c54-8a6c-37d7-b029-4e299eb6d1b7">
+		<BuildDependency Project="fuzz/librawspeed/decompressors/Cr2DecompressorFuzzer-DummyPrefixCodeDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/Cr2DecompressorFuzzer-PrefixCodeDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LUTWithLookupVsLUTWithTree.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LUTWithLookupVsLUTWithVector.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LUTWithLookupVsLookup.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LUTWithLookupVsTree.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LUTWithLookupVsVector.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LUTWithTreeVsLUTWithVector.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LUTWithTreeVsLookup.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LUTWithTreeVsTree.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LUTWithTreeVsVector.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LUTWithVectorVsLookup.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LUTWithVectorVsTree.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LUTWithVectorVsVector.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LookupVsTree.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-LookupVsVector.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzer-TreeVsVector.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeLUTWithLookupDecoderFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeLUTWithTreeDecoderFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeLUTWithVectorDecoderFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeLookupDecoderFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeTreeDecoderFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeVectorDecoderFuzzer.vcxproj"/>
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/codes/PrefixCodeEncoder/PrefixCodeEncoderFuzzer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="cee02243-be55-34fd-af2f-8c50aef2fa78">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeLUTWithLookupDecoderFuzzer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="5a93e457-0286-37d6-a28c-e0f12da99ed9">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeLUTWithTreeDecoderFuzzer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="db18ba5f-c66d-389c-9482-e4bfa7a1b262">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeLUTWithVectorDecoderFuzzer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="f14a240f-427c-31ee-8fd8-aa7065517e82">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeLookupDecoderFuzzer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="13a0cdea-9661-397e-88db-8d1ef24e0f61">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeTreeDecoderFuzzer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="401b881c-2500-3695-9312-a7924ad1f717">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeVectorDecoderFuzzer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="1eabfe9d-5258-34e7-b76a-e8317e586e19">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/parsers/RawParserFuzzer-GetDecoder.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="a9f329c6-82bc-3bdc-b5f0-a09b5d3e0df3">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/parsers/RawParserFuzzer-GetDecoder-Decode.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="0bf532ae-3724-3be2-90ac-f0659c0a88c3">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/rawspeed/RawSpeedFuzzer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="e688f1d1-76b2-372a-95d2-1cbf91858df6">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decompressors/SamsungV0DecompressorFuzzer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="5588039b-6ac1-33b1-b641-d1eaac01daaa">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decompressors/SamsungV1DecompressorFuzzer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="4fab4709-ac36-3ef5-bec5-21cc9f7225f1">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decompressors/SamsungV2DecompressorFuzzer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="0e1dfaca-879e-38f7-91de-a5a4c87cb2e1">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decompressors/SonyArw1DecompressorFuzzer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="74cf245a-ba13-3553-92dc-96839720357a">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decompressors/SonyArw2DecompressorFuzzer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="0db583d8-9d1a-3499-ba62-b2e393b01c51">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decoders/TiffDecoders/TiffBasedDecoderFuzzers.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="596d1faa-68cd-3ece-8683-8de28bd37257">
+		<BuildDependency Project="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-ArwDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-Cr2Decoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-DcrDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-DcsDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-DngDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-ErfDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-IiqDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-KdcDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-MefDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-MosDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-NefDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-OrfDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-PefDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-Rw2Decoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-SrwDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-StiDecoder.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-ThreefrDecoder.vcxproj"/>
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-ArwDecoder.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="477cedff-94cd-330d-859b-7e042d8a0340">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-Cr2Decoder.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="eb96a755-a05c-333e-80a7-74258ab6b55f">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-DcrDecoder.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="c77dc2a8-d147-3ff2-b901-88bec0d3862e">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-DcsDecoder.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="cb3d4146-ba87-39e7-abc8-f39512e91b14">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-DngDecoder.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="caa251ed-c498-33a1-95a6-ccc8d76dea93">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-ErfDecoder.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="d6421f96-d073-3e2a-8ed7-dd898e2514ee">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-IiqDecoder.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="c4545bd5-e961-3bd1-869c-71c756c557e0">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-KdcDecoder.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="57113b8c-2cf8-36e7-80bb-228269b821be">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-MefDecoder.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="41c35961-5695-3ceb-bb2e-3971cd0c800f">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-MosDecoder.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="11ec1489-c5e9-3f9f-8e1e-89c97953e61e">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-NefDecoder.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="9b8713ad-5a0b-3ec7-b436-846614718499">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-OrfDecoder.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="16e76596-0205-3ac3-aafd-2025d1329c46">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-PefDecoder.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="d69a0f82-08cb-39d4-b302-d2efa3c12e7f">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-Rw2Decoder.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="4195d95c-f6bf-3b93-9423-e34f2b53d31f">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-SrwDecoder.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="f296c0a8-801c-32dd-9457-27f7104fbddf">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-StiDecoder.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="2e493755-42ed-38c8-b07c-9432136392f1">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decoders/TiffDecoders/TiffDecoderFuzzer-ThreefrDecoder.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="bb7cb399-1a10-3614-a021-f9ecca53dd1e">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/parsers/TiffParserFuzzer-GetDecoder.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="7dad4b87-2b14-380b-8660-d9cf6d44e5cd">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/parsers/TiffParserFuzzer-GetDecoder-Decode.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="a6037c51-5843-37cc-a57d-b2103e727ee2">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decompressors/UncompressedDecompressorFuzzer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="817e93c4-549f-3cd6-a933-c384a5e93ad1">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/librawspeed/decompressors/VC5DecompressorFuzzer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="1ccb982a-3205-3e96-aef7-fb1128ff1ee4">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed_fuzz.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="../ZERO_CHECK.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="4a7e900b-96fc-3490-86e6-39d94ed39d14"/>
+	<Project Path="check-rawspeed.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="7967ad22-02f1-37e2-abe9-a1cce8f8065c">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="dependencies.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="01a9c1c8-14e4-3640-855f-3bae445ae3ba">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/fuzzers.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="258deac0-b47e-3e33-86be-68925adb02d6">
+		<BuildDependency Project="fuzz/librawspeed/bitstreams/BitVacuumerRoundtripFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/Cr2LJpegDecoderFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/CrwDecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/common/DngOpcodesFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/DummyLJpegDecoderFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/FujiDecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/HasselbladDecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/HasselbladLJpegDecoderFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/KodakDecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/LJpegDecoderFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/LJpegDecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/NikonDecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/OlympusDecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/PanasonicV4DecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/PanasonicV5DecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/PanasonicV6DecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/PanasonicV7DecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/PanasonicV8DecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/parsers/ParserFuzzers.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/PentaxDecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/PhaseOneDecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeDecoder/PrefixCodeDecoderFuzzers.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/codes/PrefixCodeEncoder/PrefixCodeEncoderFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/rawspeed/RawSpeedFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/SamsungV0DecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/SamsungV1DecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/SamsungV2DecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/SonyArw1DecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/SonyArw2DecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decoders/TiffDecoders/TiffBasedDecoderFuzzers.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/UncompressedDecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="fuzz/librawspeed/decompressors/VC5DecompressorFuzzer.vcxproj"/>
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="rawspeed.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="c788f02f-e6e8-3462-add9-e6e51b2549d0">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="src/librawspeed/adt/rawspeed_adt.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="c4fc41dc-7478-3f39-9d18-56b4d2da32f6">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="src/librawspeed/codes/rawspeed_codes.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="926f6d4a-f8d4-3749-acd4-d124b88c1291">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="src/librawspeed/common/rawspeed_common.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="76692316-a032-3283-a595-0f1ca5a858bb">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="src/librawspeed/decoders/rawspeed_decoders.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="860c887e-4e78-3be8-8754-fe5b71ce5d1a">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="18680672-1786-3a3d-9b41-56972e27b93c">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="fuzz/rawspeed_fuzz.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="9172386d-4d53-3f40-b8b6-e81e24f71ca5">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="src/librawspeed/common/rawspeed_get_number_of_processor_cores.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="ab29ab02-55ab-3e9e-97e9-4fa57c7a698e">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="6b3a38a7-d503-3084-ad1b-9fb5e61c4b2c">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="src/librawspeed/io/rawspeed_io.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="a4a7403f-a49e-3723-8f37-408d25efe2a4">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="src/librawspeed/metadata/rawspeed_metadata.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="c4364eee-bbeb-39c4-b9fd-3758a704cb26">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="src/librawspeed/parsers/rawspeed_parsers.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="02c11601-e28d-32ee-976c-f5341a90f713">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="src/librawspeed/tiff/rawspeed_tiff.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="b8d4b63c-5b87-3e65-b75d-a3096277cb58">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="src/utilities/identify/rs-identify.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="05421197-e7ac-3e15-b763-0a694d66b40b">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="rawspeed.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/adt/rawspeed_adt.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/codes/rawspeed_codes.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_common.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decoders/rawspeed_decoders.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/decompressors/rawspeed_decompressors.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/common/rawspeed_get_number_of_processor_cores.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/interpolators/rawspeed_interpolators.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/io/rawspeed_io.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/metadata/rawspeed_metadata.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/parsers/rawspeed_parsers.vcxproj"/>
+		<BuildDependency Project="src/librawspeed/tiff/rawspeed_tiff.vcxproj"/>
+	</Project>
+	<Project Path="tests.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="f7d4f11c-3052-3483-91f8-9d6bdf01b95a">
+		<BuildDependency Project="../ZERO_CHECK.vcxproj"/>
+	</Project>
+</Solution>
