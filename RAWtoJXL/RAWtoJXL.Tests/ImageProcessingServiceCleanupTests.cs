@@ -142,7 +142,7 @@ public class ImageProcessingServiceCleanupTests
         {
             var decoder = new Mock<IJxlDecoder>();
             decoder.Setup(x => x.DecodeToPngAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<int>(), It.IsAny<int?>()))
-                .Callback<string, string, CancellationToken, int>((_, outPath, _, _) => File.WriteAllText(outPath, "partial"))
+                .Callback<string, string, CancellationToken, int, int?>((_, outPath, _, _, _) => File.WriteAllText(outPath, "partial"))
                 .ThrowsAsync(new IOException("simulated djxl failure"));
             var svc = CreateService(jxlDecoder: decoder.Object);
 
@@ -168,7 +168,7 @@ public class ImageProcessingServiceCleanupTests
             string? decodedTemp = null;
             var decoder = new Mock<IJxlDecoder>();
             decoder.Setup(x => x.DecodeToPngAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<int>(), It.IsAny<int?>()))
-                .Callback<string, string, CancellationToken, int>((_, outPath, _, _) =>
+                .Callback<string, string, CancellationToken, int, int?>((_, outPath, _, _, _) =>
                 {
                     decodedTemp = outPath;
                     File.WriteAllText(outPath, "png");

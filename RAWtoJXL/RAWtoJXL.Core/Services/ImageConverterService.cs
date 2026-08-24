@@ -267,12 +267,13 @@ namespace RAWtoJXL.Core.Services;
                 {
                     using var image = new MagickImage(inputPath);
                     image.Quality = (uint)Math.Max(1, Math.Min(100, quality));
-                    if (image.Depth > 8)
+                    int speed = SpeedForQuality(quality);
+                    if (quality < 100 && image.Depth > 8)
                     {
-                        image.Depth = 16;
+                        image.Depth = 8;
                     }
                     image.ColorSpace = ColorSpace.sRGB;
-                    image.Settings.SetDefine(MagickFormat.Avif, "speed", SpeedForQuality(quality).ToString());
+                    image.Settings.SetDefine(MagickFormat.Avif, "speed", speed.ToString());
                     image.Format = MagickFormat.Avif;
 
                     var outputDir = Path.GetDirectoryName(outputPath);
@@ -281,6 +282,8 @@ namespace RAWtoJXL.Core.Services;
                         Directory.CreateDirectory(outputDir);
                     }
 
+                    _logger.Write($"[ImageConverterService] AVIF encode start: {Path.GetFileName(inputPath)} q={quality} speed={speed} depth={image.Depth}");
+                    var encodeStopwatch = System.Diagnostics.Stopwatch.StartNew();
                     try
                     {
                         image.Write(outputPath);
@@ -291,6 +294,8 @@ namespace RAWtoJXL.Core.Services;
                         image.Quality = 99;
                         image.Write(outputPath);
                     }
+                    encodeStopwatch.Stop();
+                    _logger.Write($"[ImageConverterService] AVIF encode done in {encodeStopwatch.Elapsed.TotalSeconds:F1}s -> {Path.GetFileName(outputPath)} ({new FileInfo(outputPath).Length} bytes)");
                 }
                 catch (IOException ex) when (FileLockedException.IsFileLocked(ex))
                 {
@@ -306,7 +311,7 @@ namespace RAWtoJXL.Core.Services;
 
     internal static int SpeedForQuality(int quality)
     {
-        return quality >= 95 ? 4 : quality >= 80 ? 6 : 8;
+        return quality >= 95 ? 6 : quality >= 80 ? 7 : 8;
     }
 
     private static bool IsLosslessAvifDelegateError(Exception exception)
