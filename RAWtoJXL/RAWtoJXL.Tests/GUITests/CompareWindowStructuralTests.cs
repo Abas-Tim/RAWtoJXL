@@ -1,6 +1,7 @@
 using System.IO;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Avalonia.Threading;
 using Moq;
 using RAWtoJXL.Avalonia;
 using RAWtoJXL.Avalonia.Controls;
@@ -23,6 +24,40 @@ public class CompareWindowStructuralTests
             Path.Combine(Path.GetTempPath(), "photo.dng"),
             mock.Object,
             dispatcher.Object);
+    }
+
+    [AvaloniaFact]
+    public async Task SettingsPanel_PaneFormatsAndQualityBind()
+    {
+        var vm = CreateViewModel();
+        var window = new CompareWindow
+        {
+            DataContext = vm
+        };
+        window.Show();
+        window.UpdateLayout();
+        await vm.InitializeAsync();
+        window.UpdateLayout();
+
+        vm.IsSettingsPanelOpen = true;
+        window.UpdateLayout();
+        await Dispatcher.UIThread.InvokeAsync(() => vm.InitializeAsync());
+        window.UpdateLayout();
+
+        Assert.Equal("JXL", vm.MiddleFormatText);
+        Assert.Equal("AVIF", vm.RightFormatText);
+        Assert.Equal(90, vm.MiddleQuality);
+        Assert.Equal(90, vm.RightQuality);
+
+        vm.CycleMiddleFormat(1);
+        Assert.Equal("JPEG", vm.MiddleFormatText);
+        Assert.Equal(OutputFormat.Jpeg, vm.MiddlePane.Format);
+
+        vm.CycleMiddleFormat(-1);
+        Assert.Equal("JXL", vm.MiddleFormatText);
+
+        window.Close();
+        vm.Dispose();
     }
 
     [AvaloniaFact]

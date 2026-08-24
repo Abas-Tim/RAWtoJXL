@@ -332,21 +332,32 @@ public sealed class GpuPrototypeControl : OpenGlControlBase
         {
             try
             {
-                var format = bitmap.Format.GetValueOrDefault(PixelFormat.Bgra8888);
+                const int maxTextureDimension = 2048;
+                Bitmap sourceBitmap = bitmap;
+                using var scaledBitmap = sourceBitmap.PixelSize.Width > maxTextureDimension ||
+                                         sourceBitmap.PixelSize.Height > maxTextureDimension
+                    ? sourceBitmap.CreateScaledBitmap(ComputeScaledSize(sourceBitmap.PixelSize, maxTextureDimension))
+                    : null;
+                if (scaledBitmap != null)
+                {
+                    sourceBitmap = scaledBitmap;
+                }
+
+                var format = sourceBitmap.Format.GetValueOrDefault(PixelFormat.Bgra8888);
                 if (format != PixelFormat.Rgba8888 && format != PixelFormat.Bgra8888)
                 {
                     throw new NotSupportedException($"pixel format {format}");
                 }
 
-                int width = bitmap.PixelSize.Width;
-                int height = bitmap.PixelSize.Height;
+                int width = sourceBitmap.PixelSize.Width;
+                int height = sourceBitmap.PixelSize.Height;
                 int stride = checked(width * 4);
                 int bufferSize = checked(stride * height);
                 var pixels = new byte[bufferSize];
                 IntPtr buffer = Marshal.AllocHGlobal(bufferSize);
                 try
                 {
-                    bitmap.CopyPixels(new PixelRect(bitmap.PixelSize), buffer, bufferSize, stride);
+                    sourceBitmap.CopyPixels(new PixelRect(sourceBitmap.PixelSize), buffer, bufferSize, stride);
                     Marshal.Copy(buffer, pixels, 0, bufferSize);
                 }
                 finally
@@ -445,6 +456,14 @@ public sealed class GpuPrototypeControl : OpenGlControlBase
         {
             StatusText += $" | image unavailable: {_imageFailure}";
         }
+    }
+
+    private static PixelSize ComputeScaledSize(PixelSize size, int maxDimension)
+    {
+        double scale = (double)maxDimension / Math.Max(size.Width, size.Height);
+        return new PixelSize(
+            Math.Max(1, (int)Math.Round(size.Width * scale)),
+            Math.Max(1, (int)Math.Round(size.Height * scale)));
     }
 
     private static void ThrowIfShaderFailed(string? error)

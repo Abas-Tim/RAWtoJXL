@@ -2,6 +2,7 @@ using System;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
 using RAWtoJXL.Avalonia.Controls;
 using RAWtoJXL.Avalonia.ViewModels;
 
@@ -95,6 +96,38 @@ namespace RAWtoJXL.Avalonia
                 Math.Clamp(viewport.Zoom * scale, CompareViewport.MinZoom, CompareViewport.MaxZoom),
                 viewport.CenterX,
                 viewport.CenterY);
+        }
+
+        private void OnMiddleFormatPrev(object? sender, RoutedEventArgs e)
+        {
+            if (DataContext is CompareViewModel vm)
+            {
+                vm.CycleMiddleFormat(-1);
+            }
+        }
+
+        private void OnMiddleFormatNext(object? sender, RoutedEventArgs e)
+        {
+            if (DataContext is CompareViewModel vm)
+            {
+                vm.CycleMiddleFormat(1);
+            }
+        }
+
+        private void OnRightFormatPrev(object? sender, RoutedEventArgs e)
+        {
+            if (DataContext is CompareViewModel vm)
+            {
+                vm.CycleRightFormat(-1);
+            }
+        }
+
+        private void OnRightFormatNext(object? sender, RoutedEventArgs e)
+        {
+            if (DataContext is CompareViewModel vm)
+            {
+                vm.CycleRightFormat(1);
+            }
         }
 
         private void OnSettingsBackdropPressed(object? sender, PointerPressedEventArgs e)

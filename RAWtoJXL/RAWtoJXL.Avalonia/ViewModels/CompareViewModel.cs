@@ -75,6 +75,32 @@ namespace RAWtoJXL.Avalonia.ViewModels
         [ObservableProperty]
         private bool _rightIsJxl;
 
+        public string MiddleFormatText => MiddlePane.Format?.ToString().ToUpperInvariant() ?? "—";
+
+        public string RightFormatText => RightPane.Format?.ToString().ToUpperInvariant() ?? "—";
+
+        public void CycleMiddleFormat(int delta)
+        {
+            CyclePaneFormat(MiddlePane, delta);
+        }
+
+        public void CycleRightFormat(int delta)
+        {
+            CyclePaneFormat(RightPane, delta);
+        }
+
+        private void CyclePaneFormat(ComparePaneViewModel pane, int delta)
+        {
+            if (pane.Format is not { } current || pane.AvailableFormats.Count == 0)
+            {
+                return;
+            }
+
+            int index = pane.AvailableFormats.IndexOf(current);
+            int next = index < 0 ? 0 : (index + delta + pane.AvailableFormats.Count) % pane.AvailableFormats.Count;
+            pane.Format = pane.AvailableFormats[next];
+        }
+
         partial void OnMiddleQualityChanged(int value)
         {
             if (MiddlePane.Format is { } format && value != QualityFor(format))
@@ -416,6 +442,8 @@ namespace RAWtoJXL.Avalonia.ViewModels
 
             RecomputeAvailableFormats();
             SyncPaneQualityProperties();
+            OnPropertyChanged(nameof(MiddleFormatText));
+            OnPropertyChanged(nameof(RightFormatText));
             _ = RunPaneAsync(pane);
         }
 
@@ -455,13 +483,21 @@ namespace RAWtoJXL.Avalonia.ViewModels
                     }
 
                     var options = AllFormats.Where(f => !taken.Contains(f)).ToList();
-                    pane.AvailableFormats = new ObservableCollection<OutputFormat>(options);
+                    pane.AvailableFormats.Clear();
+                    foreach (OutputFormat option in options)
+                    {
+                        pane.AvailableFormats.Add(option);
+                    }
 
                     if (pane.Format != null && !options.Contains(pane.Format.Value) && options.Count > 0)
                     {
                         pane.Format = options[0];
                     }
                 }
+
+                SyncPaneQualityProperties();
+                OnPropertyChanged(nameof(MiddleFormatText));
+                OnPropertyChanged(nameof(RightFormatText));
             }
             finally
             {

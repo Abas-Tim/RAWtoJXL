@@ -293,16 +293,15 @@
                         <TextBlock Text="{Binding Panes[1].Label}" FontSize="11" FontWeight="SemiBold" Foreground="#44515C"/>
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <TextBlock Text="Format" FontSize="11" Foreground="#626A72" Width="52"/>
-                            <ComboBox ItemsSource="{Binding Panes[1].AvailableFormats}"
-                                      SelectedItem="{Binding Panes[1].Format, Mode=TwoWay}"
-                                      Width="150"
-                                      Height="28">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding Converter={StaticResource OutputFormatToTextConverter}}"/>
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
+                            <Button Content="◀" Click="OnMiddleFormatPrev" Padding="6,2" FontSize="11"/>
+                            <TextBlock Text="{Binding MiddleFormatText}"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       Foreground="#20252A"
+                                       Width="72"
+                                       TextAlignment="Center"
+                                       VerticalAlignment="Center"/>
+                            <Button Content="▶" Click="OnMiddleFormatNext" Padding="6,2" FontSize="11"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <TextBlock Text="Quality" FontSize="11" Foreground="#626A72" Width="52"/>
@@ -327,16 +326,15 @@
                         <TextBlock Text="{Binding Panes[2].Label}" FontSize="11" FontWeight="SemiBold" Foreground="#44515C"/>
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <TextBlock Text="Format" FontSize="11" Foreground="#626A72" Width="52"/>
-                            <ComboBox ItemsSource="{Binding Panes[2].AvailableFormats}"
-                                      SelectedItem="{Binding Panes[2].Format, Mode=TwoWay}"
-                                      Width="150"
-                                      Height="28">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding Converter={StaticResource OutputFormatToTextConverter}}"/>
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
+                            <Button Content="◀" Click="OnRightFormatPrev" Padding="6,2" FontSize="11"/>
+                            <TextBlock Text="{Binding RightFormatText}"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       Foreground="#20252A"
+                                       Width="72"
+                                       TextAlignment="Center"
+                                       VerticalAlignment="Center"/>
+                            <Button Content="▶" Click="OnRightFormatNext" Padding="6,2" FontSize="11"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <TextBlock Text="Quality" FontSize="11" Foreground="#626A72" Width="52"/>
