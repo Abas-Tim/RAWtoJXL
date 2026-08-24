@@ -69,6 +69,21 @@ public sealed class PreferredRawRenderer : IRawRenderer
         int threads,
         CancellationToken cancellationToken = default)
     {
+        string? rawspeed = RawSpeedCliRenderer.ResolveExecutable();
+        if (rawspeed != null)
+        {
+            var rawspeedRenderer = new RawSpeedCliRenderer(_logger, new FileService(_logger));
+            try
+            {
+                await rawspeedRenderer.RenderToPngAsync(inputPath, outputPath, threads, cancellationToken).ConfigureAwait(false);
+                return;
+            }
+            catch (Exception)
+            {
+                _logger.Write("[PreferredRawRenderer] rawspeed-cli failed; trying next renderer.");
+            }
+        }
+
         string? darktable = ResolveDarktableExecutable();
         if (darktable == null)
         {

@@ -29,6 +29,10 @@
       <Link>Darktable\%(RecursiveDir)%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="..\RawSpeedTools\**\*.*" Condition="Exists('..\RawSpeedTools')">
+      <Link>RawSpeedTools\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="..\exiftool_files\**\*.*" Condition="Exists('..\exiftool_files')">
       <Link>exiftool_files\%(RecursiveDir)%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

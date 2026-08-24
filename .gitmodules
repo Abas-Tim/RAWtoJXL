@@ -1,0 +1,3 @@
+[submodule "native/rawspeed"]
+	path = native/rawspeed
+	url = https://github.com/darktable-org/rawspeed.git

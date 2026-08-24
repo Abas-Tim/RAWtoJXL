@@ -144,3 +144,6 @@ RawTherapee is an optional external application used for high-fidelity RAW rende
 ## ImageMagick
 
 Magick.NET is a wrapper for ImageMagick. ImageMagick itself is distributed under its own license. See https://imagemagick.org/script/license.php for details.
+
+## rawspeed
+RawSpeed (https://github.com/darktable-org/rawspeed) is vendored as a git submodule under native/rawspeed and used for multithreaded raw decoding/demosaicing.License: LGPL-2.1-or-later. See native/rawspeed/COPYING.
