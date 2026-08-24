@@ -69,7 +69,7 @@ if ($configText -notmatch '_MSC_VER && !defined\(__clang__\)') {
 
 $common = Join-Path $root "native\rawspeed\src\librawspeed\common\Common.h"
 $commonText = Get-Content $common -Raw
-if ($commonText -match '__attribute__\(\(format\(printf') -and $commonText -notmatch 'not defined\(_MSC_VER\)' ) {
+if ($commonText -match '__attribute__\(\(format\(printf' -and $commonText -notmatch 'not defined\(_MSC_VER\)' ) {
   $commonText = $commonText -replace [regex]::Escape("__attribute__((format(printf, 2, 3)));"),
     "#if !defined(_MSC_VER) || defined(__clang__)`n__attribute__((format(printf, 2, 3)));`n#endif"
   Set-Content -LiteralPath $common -Value $commonText -NoNewline
