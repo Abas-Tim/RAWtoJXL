@@ -11,7 +11,7 @@ namespace RAWtoJXL.Tests;
 [Trait("category", "diagnostic")]
 public class CompareConversionCpuLoadTests
 {
-    private static readonly string[] ChildProcessNames = { "cjxl", "djxl", "rawtherapee-cli" };
+    private static readonly string[] ChildProcessNames = { "cjxl", "djxl" };
     private readonly ITestOutputHelper _output;
 
     public CompareConversionCpuLoadTests(ITestOutputHelper output)
@@ -214,16 +214,16 @@ public class CompareConversionCpuLoadTests
             Assert.True(File.Exists(jxlTask.Result.TargetPath));
             Assert.True(File.Exists(avifTask.Result.TargetPath));
 
-            bool rawTherapeeObserved = HasLogEvent("Rendering ");
+            bool rawRenderObserved = HasLogEvent("Rendering ");
             int renderCompletions = CountLogEvents("Rendered ");
 
-            if (!rawTherapeeObserved && Environment.GetEnvironmentVariable("RAWTOJXL_DIAG_REQUIRE_RAWTHERAPEE") == "0")
+            if (!rawRenderObserved && Environment.GetEnvironmentVariable("RAWTOJXL_DIAG_REQUIRE_RAWTHERAPEE") == "0")
             {
-                _output.WriteLine("rawtherapee-cli not present; overlap assertions skipped.");
+                _output.WriteLine("raw render marker not observed; overlap assertions skipped.");
                 return;
             }
 
-            Assert.True(rawTherapeeObserved, "rawtherapee-cli was not observed; install RawTherapee or set RAWTOJXL_RAWTHERAPEE_CLI.");
+            Assert.True(rawRenderObserved, "raw render marker was not observed (MagickRawRenderer log missing).");
             Assert.True(renderCompletions >= CompareDefaults.MaxConcurrentMasterRenders,
                 $"expected {CompareDefaults.MaxConcurrentMasterRenders} concurrent render slots but observed {renderCompletions} completions");
             Assert.True(displayTasks.Result.Length == 3);

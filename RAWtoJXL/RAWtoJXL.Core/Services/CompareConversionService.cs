@@ -162,18 +162,11 @@ public class CompareConversionService : ICompareConversionService
         Directory.CreateDirectory(dir);
         try
         {
-            try
-            {
-                await _rawRenderer.RenderToPngAsync(
-                    inputPath,
-                    tempPath,
-                    Math.Max(1, renderThreads ?? CompareDefaults.JxlThreads),
-                    cancellationToken).ConfigureAwait(false);
-            }
-            catch (FileNotFoundException)
-            {
-                await DecodeRawWithMagickAsync(inputPath, tempPath, cancellationToken).ConfigureAwait(false);
-            }
+            await _rawRenderer.RenderToPngAsync(
+                inputPath,
+                tempPath,
+                Math.Max(1, renderThreads ?? CompareDefaults.JxlThreads),
+                cancellationToken).ConfigureAwait(false);
 
             bool promotedHere = false;
             await state.Gate.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -809,15 +802,8 @@ public class CompareConversionService : ICompareConversionService
             }
             else if (SupportedFormats.IsRawFile(ext))
             {
-                try
-                {
-                    await _rawRenderer.RenderToPngAsync(
-                        inputPath, masterPath, CompareDefaults.JxlThreads, cancellationToken).ConfigureAwait(false);
-                }
-                catch (FileNotFoundException)
-                {
-                    await DecodeRawWithMagickAsync(inputPath, masterPath, cancellationToken).ConfigureAwait(false);
-                }
+                await _rawRenderer.RenderToPngAsync(
+                    inputPath, masterPath, CompareDefaults.JxlThreads, cancellationToken).ConfigureAwait(false);
             }
             else
             {
