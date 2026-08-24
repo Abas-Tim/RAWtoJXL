@@ -282,73 +282,78 @@
 
                         <Separator/>
 
-                        <TextBlock Text="Pane formats" FontSize="11" FontWeight="SemiBold" Foreground="#44515C"/>
-                        <StackPanel Orientation="Vertical" Spacing="6">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <TextBlock Text="Panel 2" FontSize="11" Foreground="#626A72" Width="52"/>
-                                <ComboBox ItemsSource="{Binding Panes[1].AvailableFormats}"
-                                          SelectedItem="{Binding Panes[1].Format, Mode=TwoWay}"
-                                          Width="150"
-                                          Height="28">
-                                    <ComboBox.ItemTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding Converter={StaticResource OutputFormatToTextConverter}}"/>
-                                        </DataTemplate>
-                                    </ComboBox.ItemTemplate>
-                                </ComboBox>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <TextBlock Text="Panel 3" FontSize="11" Foreground="#626A72" Width="52"/>
-                                <ComboBox ItemsSource="{Binding Panes[2].AvailableFormats}"
-                                          SelectedItem="{Binding Panes[2].Format, Mode=TwoWay}"
-                                          Width="150"
-                                          Height="28">
-                                    <ComboBox.ItemTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding Converter={StaticResource OutputFormatToTextConverter}}"/>
-                                        </DataTemplate>
-                                    </ComboBox.ItemTemplate>
-                                </ComboBox>
-                            </StackPanel>
+                        <TextBlock Text="Pane 1" FontSize="11" FontWeight="SemiBold" Foreground="#44515C"/>
+                        <TextBlock Text="Original RAW render, full quality (16-bit)"
+                                   FontSize="11"
+                                   Foreground="#8A939C"
+                                   TextWrapping="Wrap"/>
+
+                        <Separator/>
+
+                        <TextBlock Text="{Binding Panes[1].Label}" FontSize="11" FontWeight="SemiBold" Foreground="#44515C"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="Format" FontSize="11" Foreground="#626A72" Width="52"/>
+                            <ComboBox ItemsSource="{Binding Panes[1].AvailableFormats}"
+                                      SelectedItem="{Binding Panes[1].Format, Mode=TwoWay}"
+                                      Width="150"
+                                      Height="28">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Converter={StaticResource OutputFormatToTextConverter}}"/>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="Quality" FontSize="11" Foreground="#626A72" Width="52"/>
+                            <Slider Minimum="0" Maximum="100"
+                                    Value="{Binding MiddleQuality, Mode=TwoWay}"
+                                    Width="150"
+                                    VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding MiddleQuality}" FontSize="11" Foreground="#626A72" Width="24"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="8"
+                                    Margin="60,0,0,0"
+                                    IsVisible="{Binding MiddleIsJxl}">
+                            <TextBlock Text="Effort" FontSize="11" Foreground="#626A72"/>
+                            <ComboBox ItemsSource="{Binding EffortOptions}"
+                                      SelectedItem="{Binding JxlEffort, Mode=TwoWay}"
+                                      Width="54"
+                                      Height="26"/>
                         </StackPanel>
 
                         <Separator/>
 
-                        <TextBlock Text="Quality per format" FontSize="11" FontWeight="SemiBold" Foreground="#44515C"/>
-                        <StackPanel Orientation="Vertical" Spacing="10">
-                            <StackPanel Orientation="Vertical" Spacing="2">
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock Text="JXL" FontSize="11" Foreground="#626A72" Width="52"/>
-                                    <Slider Minimum="0" Maximum="100"
-                                            Value="{Binding JxlQuality, Mode=TwoWay}"
-                                            Width="150"
-                                            VerticalAlignment="Center"/>
-                                    <TextBlock Text="{Binding JxlQuality}" FontSize="11" Foreground="#626A72" Width="24"/>
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal" Spacing="8" Margin="60,0,0,0">
-                                    <TextBlock Text="Effort" FontSize="11" Foreground="#626A72"/>
-                                    <ComboBox ItemsSource="{Binding EffortOptions}"
-                                              SelectedItem="{Binding JxlEffort, Mode=TwoWay}"
-                                              Width="54"
-                                              Height="26"/>
-                                </StackPanel>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <TextBlock Text="AVIF" FontSize="11" Foreground="#626A72" Width="52"/>
-                                <Slider Minimum="0" Maximum="100"
-                                        Value="{Binding AvifQuality, Mode=TwoWay}"
-                                        Width="150"
-                                        VerticalAlignment="Center"/>
-                                <TextBlock Text="{Binding AvifQuality}" FontSize="11" Foreground="#626A72" Width="24"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <TextBlock Text="JPEG" FontSize="11" Foreground="#626A72" Width="52"/>
-                                <Slider Minimum="0" Maximum="100"
-                                        Value="{Binding JpegQuality, Mode=TwoWay}"
-                                        Width="150"
-                                        VerticalAlignment="Center"/>
-                                <TextBlock Text="{Binding JpegQuality}" FontSize="11" Foreground="#626A72" Width="24"/>
-                            </StackPanel>
+                        <TextBlock Text="{Binding Panes[2].Label}" FontSize="11" FontWeight="SemiBold" Foreground="#44515C"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="Format" FontSize="11" Foreground="#626A72" Width="52"/>
+                            <ComboBox ItemsSource="{Binding Panes[2].AvailableFormats}"
+                                      SelectedItem="{Binding Panes[2].Format, Mode=TwoWay}"
+                                      Width="150"
+                                      Height="28">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Converter={StaticResource OutputFormatToTextConverter}}"/>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="Quality" FontSize="11" Foreground="#626A72" Width="52"/>
+                            <Slider Minimum="0" Maximum="100"
+                                    Value="{Binding RightQuality, Mode=TwoWay}"
+                                    Width="150"
+                                    VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding RightQuality}" FontSize="11" Foreground="#626A72" Width="24"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="8"
+                                    Margin="60,0,0,0"
+                                    IsVisible="{Binding RightIsJxl}">
+                            <TextBlock Text="Effort" FontSize="11" Foreground="#626A72"/>
+                            <ComboBox ItemsSource="{Binding EffortOptions}"
+                                      SelectedItem="{Binding JxlEffort, Mode=TwoWay}"
+                                      Width="54"
+                                      Height="26"/>
                         </StackPanel>
 
                         <Separator/>
@@ -362,20 +367,16 @@
                                 BorderBrush="#394149"
                                 BorderThickness="1"
                                 CornerRadius="3"
-                                Height="70"
+                                Height="64"
                                 IsVisible="{Binding IsGpuPrototypeVisible}">
-                            <Grid ClipToBounds="True">
-                                <controls:GpuPrototypeControl x:Name="GpuPrototypeSurface"
-                                                              ImageSource="{Binding Panes[0].Preview}"/>
-                                <TextBlock Text="{Binding StatusText, ElementName=GpuPrototypeSurface}"
-                                           FontSize="10"
-                                           Foreground="White"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center"
-                                           IsHitTestVisible="False"
-                                           TextTrimming="CharacterEllipsis"/>
-                            </Grid>
+                            <controls:GpuPrototypeControl x:Name="GpuPrototypeSurface"
+                                                          ImageSource="{Binding Panes[0].Preview}"/>
                         </Border>
+                        <TextBlock Text="{Binding StatusText, ElementName=GpuPrototypeSurface}"
+                                   FontSize="9"
+                                   Foreground="#B6BEC6"
+                                   TextTrimming="CharacterEllipsis"
+                                   IsVisible="{Binding IsGpuPrototypeVisible}"/>
                     </StackPanel>
                 </ScrollViewer>
             </Border>

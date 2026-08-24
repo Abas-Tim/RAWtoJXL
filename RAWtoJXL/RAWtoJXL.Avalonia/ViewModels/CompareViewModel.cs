@@ -61,13 +61,77 @@ namespace RAWtoJXL.Avalonia.ViewModels
         private int _jpegQuality = 90;
 
         [ObservableProperty]
-        private bool _isSettingsPanelOpen = true;
+        private bool _isSettingsPanelOpen;
 
-        partial void OnJxlQualityChanged(int value) => MarkQualityPending(OutputFormat.Jxl);
+        [ObservableProperty]
+        private int _middleQuality = 90;
 
-        partial void OnAvifQualityChanged(int value) => MarkQualityPending(OutputFormat.Avif);
+        [ObservableProperty]
+        private int _rightQuality = 90;
 
-        partial void OnJpegQualityChanged(int value) => MarkQualityPending(OutputFormat.Jpeg);
+        [ObservableProperty]
+        private bool _middleIsJxl;
+
+        [ObservableProperty]
+        private bool _rightIsJxl;
+
+        partial void OnMiddleQualityChanged(int value)
+        {
+            if (MiddlePane.Format is { } format && value != QualityFor(format))
+            {
+                SetFormatQuality(format, value);
+            }
+        }
+
+        partial void OnRightQualityChanged(int value)
+        {
+            if (RightPane.Format is { } format && value != QualityFor(format))
+            {
+                SetFormatQuality(format, value);
+            }
+        }
+
+        private void SetFormatQuality(OutputFormat format, int value)
+        {
+            switch (format)
+            {
+                case OutputFormat.Jxl:
+                    JxlQuality = value;
+                    break;
+                case OutputFormat.Avif:
+                    AvifQuality = value;
+                    break;
+                case OutputFormat.Jpeg:
+                    JpegQuality = value;
+                    break;
+            }
+        }
+
+        private void SyncPaneQualityProperties()
+        {
+            MiddleQuality = QualityFor(MiddlePane.Format);
+            RightQuality = QualityFor(RightPane.Format);
+            MiddleIsJxl = MiddlePane.Format == OutputFormat.Jxl;
+            RightIsJxl = RightPane.Format == OutputFormat.Jxl;
+        }
+
+        partial void OnJxlQualityChanged(int value)
+        {
+            MarkQualityPending(OutputFormat.Jxl);
+            SyncPaneQualityProperties();
+        }
+
+        partial void OnAvifQualityChanged(int value)
+        {
+            MarkQualityPending(OutputFormat.Avif);
+            SyncPaneQualityProperties();
+        }
+
+        partial void OnJpegQualityChanged(int value)
+        {
+            MarkQualityPending(OutputFormat.Jpeg);
+            SyncPaneQualityProperties();
+        }
 
         private void MarkQualityPending(OutputFormat format)
         {
@@ -201,6 +265,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
             AssignDefaultFormats();
             RecomputeAvailableFormats();
             _initializing = false;
+            SyncPaneQualityProperties();
             LeftPane.SetFileSizes(SourceFileBytes, null);
             _ = LoadQuickOriginalPreviewAsync();
 
@@ -350,6 +415,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
             }
 
             RecomputeAvailableFormats();
+            SyncPaneQualityProperties();
             _ = RunPaneAsync(pane);
         }
 
