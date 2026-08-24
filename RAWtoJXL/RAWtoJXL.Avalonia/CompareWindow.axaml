@@ -375,7 +375,7 @@
                         <TextBlock Text="{Binding StatusText, ElementName=GpuPrototypeSurface}"
                                    FontSize="9"
                                    Foreground="#B6BEC6"
-                                   TextTrimming="CharacterEllipsis"
+                                   TextWrapping="Wrap"
                                    IsVisible="{Binding IsGpuPrototypeVisible}"/>
                     </StackPanel>
                 </ScrollViewer>
