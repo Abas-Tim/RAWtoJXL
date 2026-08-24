@@ -91,8 +91,8 @@ public class ImageProcessingServiceCleanupTests
         try
         {
             var converter = new Mock<IImageConverterService>();
-            converter.Setup(x => x.ConvertToJpegAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .Callback<string, string, int, CancellationToken>((_, outPath, _, _) => File.WriteAllText(outPath, "partial"))
+            converter.Setup(x => x.ConvertToJpegAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>(), It.IsAny<int?>()))
+                .Callback<string, string, int, CancellationToken, int?>((_, outPath, _, _, _) => File.WriteAllText(outPath, "partial"))
                 .ThrowsAsync(new IOException("simulated JPEG failure"));
             var svc = CreateService(converter: converter.Object);
 
@@ -116,8 +116,8 @@ public class ImageProcessingServiceCleanupTests
         try
         {
             var converter = new Mock<IImageConverterService>();
-            converter.Setup(x => x.ConvertToAvifAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .Callback<string, string, int, CancellationToken>((_, outPath, _, _) => File.WriteAllText(outPath, "partial"))
+            converter.Setup(x => x.ConvertToAvifAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>(), It.IsAny<int?>()))
+                .Callback<string, string, int, CancellationToken, int?>((_, outPath, _, _, _) => File.WriteAllText(outPath, "partial"))
                 .ThrowsAsync(new IOException("simulated AVIF failure"));
             var svc = CreateService(converter: converter.Object);
 
@@ -177,8 +177,8 @@ public class ImageProcessingServiceCleanupTests
 
             string? converterInput = null;
             var converter = new Mock<IImageConverterService>();
-            converter.Setup(x => x.ConvertToJpegAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .Callback<string, string, int, CancellationToken>((inPath, outPath, _, _) =>
+            converter.Setup(x => x.ConvertToJpegAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>(), It.IsAny<int?>()))
+                .Callback<string, string, int, CancellationToken, int?>((inPath, outPath, _, _, _) =>
                 {
                     converterInput = inPath;
                     File.WriteAllText(outPath, "jpg");

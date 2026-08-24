@@ -93,8 +93,8 @@ public class SameFormatGuardTests
         {
             var converter = new Mock<IImageConverterService>();
             string? converterInput = null;
-            converter.Setup(x => x.ConvertToJpegAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .Callback<string, string, int, CancellationToken>((inPath, _, _, _) => converterInput = inPath)
+            converter.Setup(x => x.ConvertToJpegAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>(), It.IsAny<int?>()))
+                .Callback<string, string, int, CancellationToken, int?>((inPath, _, _, _, _) => converterInput = inPath)
                 .Returns(Task.CompletedTask);
 
             var svc = CreateService(converter: converter);
@@ -127,8 +127,8 @@ public class SameFormatGuardTests
 
             string? converterInput = null;
             var converter = new Mock<IImageConverterService>();
-            converter.Setup(x => x.ConvertToAvifAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .Callback<string, string, int, CancellationToken>((inPath, _, _, _) => converterInput = inPath)
+            converter.Setup(x => x.ConvertToAvifAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>(), It.IsAny<int?>()))
+                .Callback<string, string, int, CancellationToken, int?>((inPath, _, _, _, _) => converterInput = inPath)
                 .Returns(Task.CompletedTask);
 
             var svc = CreateService(converter: converter, decoder: decoder);

@@ -18,6 +18,8 @@ namespace RAWtoJXL.Core.Services;
 
         private const uint MaxThumbnailDimension = 300;
 
+        private static readonly object MagickThreadBudgetLock = new();
+
         public ImageConverterService(IExiftoolService exiftoolService, IFileService fileService, ILogger logger, IJxlDecoder jxlDecoder)
         {
             _exiftoolService = exiftoolService ?? throw new ArgumentNullException(nameof(exiftoolService));
@@ -193,7 +195,7 @@ namespace RAWtoJXL.Core.Services;
         return ms.ToArray();
     }
 
-   public async Task ConvertToJpegAsync(string inputPath, string outputPath, int quality, CancellationToken cancellationToken = default)
+   public async Task ConvertToJpegAsync(string inputPath, string outputPath, int quality, CancellationToken cancellationToken = default, int? threads = null)
     {
         if (string.IsNullOrWhiteSpace(inputPath))
         {
@@ -212,32 +214,35 @@ namespace RAWtoJXL.Core.Services;
 
         await Task.Run(() =>
         {
-            try
+            WithThreadBudget(threads, () =>
             {
-                using var image = new MagickImage(inputPath);
-                image.Quality = (uint)Math.Max(1, Math.Min(100, quality));
-                image.Format = MagickFormat.Jpg;
-
-                var outputDir = Path.GetDirectoryName(outputPath);
-                if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+                try
                 {
-                    Directory.CreateDirectory(outputDir);
-                }
+                    using var image = new MagickImage(inputPath);
+                    image.Quality = (uint)Math.Max(1, Math.Min(100, quality));
+                    image.Format = MagickFormat.Jpg;
 
-                image.Write(outputPath);
-            }
-            catch (IOException ex) when (FileLockedException.IsFileLocked(ex))
-            {
-                throw new FileLockedException(inputPath, ex);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Failed to convert {Path.GetFileName(inputPath)} to JPEG: {ex.Message}", ex);
-            }
+                    var outputDir = Path.GetDirectoryName(outputPath);
+                    if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+                    {
+                        Directory.CreateDirectory(outputDir);
+                    }
+
+                    image.Write(outputPath);
+                }
+                catch (IOException ex) when (FileLockedException.IsFileLocked(ex))
+                {
+                    throw new FileLockedException(inputPath, ex);
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception($"Failed to convert {Path.GetFileName(inputPath)} to JPEG: {ex.Message}", ex);
+                }
+            });
         }, cancellationToken);
     }
 
-    public async Task ConvertToAvifAsync(string inputPath, string outputPath, int quality, CancellationToken cancellationToken = default)
+    public async Task ConvertToAvifAsync(string inputPath, string outputPath, int quality, CancellationToken cancellationToken = default, int? threads = null)
     {
         if (string.IsNullOrWhiteSpace(inputPath))
         {
@@ -256,42 +261,45 @@ namespace RAWtoJXL.Core.Services;
 
         await Task.Run(() =>
         {
-            try
+            WithThreadBudget(threads, () =>
             {
-                using var image = new MagickImage(inputPath);
-                image.Quality = (uint)Math.Max(1, Math.Min(100, quality));
-                if (image.Depth > 8)
-                {
-                    image.Depth = 16;
-                }
-                image.ColorSpace = ColorSpace.sRGB;
-                image.Format = MagickFormat.Avif;
-
-                var outputDir = Path.GetDirectoryName(outputPath);
-                if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-                {
-                    Directory.CreateDirectory(outputDir);
-                }
-
                 try
                 {
-                    image.Write(outputPath);
+                    using var image = new MagickImage(inputPath);
+                    image.Quality = (uint)Math.Max(1, Math.Min(100, quality));
+                    if (image.Depth > 8)
+                    {
+                        image.Depth = 16;
+                    }
+                    image.ColorSpace = ColorSpace.sRGB;
+                    image.Format = MagickFormat.Avif;
+
+                    var outputDir = Path.GetDirectoryName(outputPath);
+                    if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+                    {
+                        Directory.CreateDirectory(outputDir);
+                    }
+
+                    try
+                    {
+                        image.Write(outputPath);
+                    }
+                    catch (Exception ex) when (quality >= 100 && IsLosslessAvifDelegateError(ex))
+                    {
+                        _logger.Write("[ImageConverterService] AVIF lossless encoding is unavailable in the bundled delegate; retrying at quality 99.");
+                        image.Quality = 99;
+                        image.Write(outputPath);
+                    }
                 }
-                catch (Exception ex) when (quality >= 100 && IsLosslessAvifDelegateError(ex))
+                catch (IOException ex) when (FileLockedException.IsFileLocked(ex))
                 {
-                    _logger.Write("[ImageConverterService] AVIF lossless encoding is unavailable in the bundled delegate; retrying at quality 99.");
-                    image.Quality = 99;
-                    image.Write(outputPath);
+                    throw new FileLockedException(inputPath, ex);
                 }
-            }
-            catch (IOException ex) when (FileLockedException.IsFileLocked(ex))
-            {
-                throw new FileLockedException(inputPath, ex);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Failed to convert {Path.GetFileName(inputPath)} to AVIF: {ex.Message}", ex);
-            }
+                catch (Exception ex)
+                {
+                    throw new Exception($"Failed to convert {Path.GetFileName(inputPath)} to AVIF: {ex.Message}", ex);
+                }
+            });
         }, cancellationToken);
     }
 
@@ -314,7 +322,8 @@ namespace RAWtoJXL.Core.Services;
         string outputPath,
         int quality,
         int? effort = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        int? threads = null)
     {
         if (string.IsNullOrWhiteSpace(inputPath))
         {
@@ -333,38 +342,64 @@ namespace RAWtoJXL.Core.Services;
 
         await Task.Run(() =>
         {
+            WithThreadBudget(threads, () =>
+            {
+                try
+                {
+                    using var image = new MagickImage(inputPath);
+                    image.ColorSpace = ColorSpace.sRGB;
+                    image.Settings.SetDefines(new JxlWriteDefines
+                    {
+                        Effort = Math.Clamp(effort ?? CompareDefaults.JxlEffort, 3, 9)
+                    });
+                    image.Settings.SetDefine(
+                        MagickFormat.Jxl,
+                        "distance",
+                        "0");
+                    image.Format = MagickFormat.Jxl;
+
+                    var outputDir = Path.GetDirectoryName(outputPath);
+                    if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+                    {
+                        Directory.CreateDirectory(outputDir);
+                    }
+
+                    _logger.Write("[ImageConverterService] Using lossless JPEG XL fallback because cjxl.exe is unavailable.");
+                    image.Write(outputPath);
+                }
+                catch (IOException ex) when (FileLockedException.IsFileLocked(ex))
+                {
+                    throw new FileLockedException(inputPath, ex);
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception($"Failed to convert {Path.GetFileName(inputPath)} to JPEG XL: {ex.Message}", ex);
+                }
+            });
+        }, cancellationToken);
+    }
+
+    internal static void WithThreadBudget(int? threads, Action action)
+    {
+        if (threads is not > 0)
+        {
+            action();
+            return;
+        }
+
+        lock (MagickThreadBudgetLock)
+        {
+            ulong previous = ResourceLimits.Thread;
+            ResourceLimits.Thread = (ulong)threads.Value;
             try
             {
-                using var image = new MagickImage(inputPath);
-                image.ColorSpace = ColorSpace.sRGB;
-                image.Settings.SetDefines(new JxlWriteDefines
-                {
-                    Effort = Math.Clamp(effort ?? CompareDefaults.JxlEffort, 3, 9)
-                });
-                image.Settings.SetDefine(
-                    MagickFormat.Jxl,
-                    "distance",
-                    "0");
-                image.Format = MagickFormat.Jxl;
-
-                var outputDir = Path.GetDirectoryName(outputPath);
-                if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-                {
-                    Directory.CreateDirectory(outputDir);
-                }
-
-                _logger.Write("[ImageConverterService] Using lossless JPEG XL fallback because cjxl.exe is unavailable.");
-                image.Write(outputPath);
+                action();
             }
-            catch (IOException ex) when (FileLockedException.IsFileLocked(ex))
+            finally
             {
-                throw new FileLockedException(inputPath, ex);
+                ResourceLimits.Thread = previous;
             }
-            catch (Exception ex)
-            {
-                throw new Exception($"Failed to convert {Path.GetFileName(inputPath)} to JPEG XL: {ex.Message}", ex);
-            }
-        }, cancellationToken);
+        }
     }
 
     public async Task ConvertToPngAsync(string inputPath, string outputPath, CancellationToken cancellationToken = default)

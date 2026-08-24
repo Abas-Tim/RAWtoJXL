@@ -114,14 +114,16 @@ public class CompareAnalysisTests
                 It.IsAny<OutputFormat?>(),
                 It.IsAny<int>(),
                 It.IsAny<int?>(),
-                It.IsAny<CancellationToken>()))
+                It.IsAny<CancellationToken>(),
+                It.IsAny<int?>()))
             .ReturnsAsync(new CompareDisplayPngs(sourcePath, string.Empty, 64, 48));
         service.Setup(item => item.EnsureTargetFileAsync(
                 It.IsAny<string>(),
                 It.IsAny<OutputFormat>(),
                 It.IsAny<int>(),
                 It.IsAny<int?>(),
-                It.IsAny<CancellationToken>()))
+                It.IsAny<CancellationToken>(),
+                It.IsAny<int?>()))
             .ReturnsAsync(sourcePath);
         service.Setup(item => item.AnalyzeViewportAsync(
                 It.IsAny<string>(),

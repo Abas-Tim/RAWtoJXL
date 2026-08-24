@@ -29,7 +29,8 @@ public class CompareConversionServiceTests
     private static CompareConversionService CreateService(
         Mock<ICjxlEncoder>? cjxl = null,
         Mock<IJxlDecoder>? djxl = null,
-        Mock<IRawRenderer>? rawRenderer = null)
+        Mock<IRawRenderer>? rawRenderer = null,
+        Mock<IImageConverterService>? converter = null)
     {
         cjxl ??= new Mock<ICjxlEncoder>();
         djxl ??= new Mock<IJxlDecoder>();
@@ -40,7 +41,7 @@ public class CompareConversionServiceTests
         var exif = new Mock<IExiftoolService>();
         var logger = new Mock<ILogger>();
         var fileService = new FileService(logger.Object);
-        var imageConverter = new ImageConverterService(exif.Object, fileService, logger.Object, djxl.Object);
+        var imageConverter = converter?.Object ?? new ImageConverterService(exif.Object, fileService, logger.Object, djxl.Object);
         return new CompareConversionService(
             imageConverter, cjxl.Object, djxl.Object, rawRenderer.Object, fileService, logger.Object);
     }
@@ -196,6 +197,65 @@ public class CompareConversionServiceTests
             cjxl.Verify(x => x.EncodeFromFileAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>(),
                 It.IsAny<int>(), It.IsAny<Action<double>?>(), It.IsAny<int?>(), It.IsAny<int?>()), Times.Once);
+        }
+        finally
+        {
+            Directory.Delete(dir, true);
+        }
+    }
+
+    [Fact]
+    public async Task EnsureTargetFileAsync_JxlFormat_UsesProvidedThreadBudget()
+    {
+        var dir = CreateTempDir();
+        var input = CreateTestJpeg(dir);
+        var cjxl = new Mock<ICjxlEncoder>();
+        int? cjxlThreads = null;
+        cjxl.Setup(x => x.EncodeFromFileAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>(),
+                It.IsAny<int>(), It.IsAny<Action<double>?>(), It.IsAny<int?>(), It.IsAny<int?>()))
+            .Callback<string, string, int, CancellationToken, int, Action<double>?, int?, int?>((_, o, _, _, _, _, _, threads) =>
+            {
+                cjxlThreads = threads;
+                File.WriteAllText(o, "encoded");
+            })
+            .Returns(Task.CompletedTask);
+        var service = CreateService(cjxl: cjxl);
+
+        try
+        {
+            await service.EnsureTargetFileAsync(input, OutputFormat.Jxl, 90, 4, CancellationToken.None, 6);
+
+            Assert.Equal(6, cjxlThreads);
+        }
+        finally
+        {
+            Directory.Delete(dir, true);
+        }
+    }
+
+    [Fact]
+    public async Task EnsureTargetFileAsync_AvifFormat_ForwardsThreadBudgetToConverter()
+    {
+        var dir = CreateTempDir();
+        var input = CreateTestJpeg(dir);
+        int? avifThreads = null;
+        var converter = new Mock<IImageConverterService>();
+        converter.Setup(x => x.ConvertToAvifAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>(), It.IsAny<int?>()))
+            .Callback<string, string, int, CancellationToken, int?>((_, o, _, _, threads) =>
+            {
+                avifThreads = threads;
+                File.WriteAllText(o, "avif");
+            })
+            .Returns(Task.CompletedTask);
+        var service = CreateService(converter: converter);
+
+        try
+        {
+            await service.EnsureTargetFileAsync(input, OutputFormat.Avif, 90, null, CancellationToken.None, 4);
+
+            Assert.Equal(4, avifThreads);
         }
         finally
         {

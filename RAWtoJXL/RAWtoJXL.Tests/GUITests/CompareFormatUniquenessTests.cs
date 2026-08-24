@@ -32,11 +32,11 @@ public class CompareFormatUniquenessTests
     {
         var png = CreateTinyPng(dir);
         var mock = new Mock<ICompareConversionService>();
-        mock.Setup(s => s.EnsureDisplayPngsAsync(It.IsAny<string>(), It.IsAny<OutputFormat?>(), It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-            .Callback<string, OutputFormat?, int, int?, CancellationToken>((_, f, _, _, _) => onDisplay?.Invoke(f))
+        mock.Setup(s => s.EnsureDisplayPngsAsync(It.IsAny<string>(), It.IsAny<OutputFormat?>(), It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<CancellationToken>(), It.IsAny<int?>()))
+            .Callback<string, OutputFormat?, int, int?, CancellationToken, int?>((_, f, _, _, _, _) => onDisplay?.Invoke(f))
             .ReturnsAsync(new CompareDisplayPngs(png, png, 64, 48));
-        mock.Setup(s => s.EnsureTargetFileAsync(It.IsAny<string>(), It.IsAny<OutputFormat>(), It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-            .Callback<string, OutputFormat, int, int?, CancellationToken>((_, f, _, _, _) => onTarget?.Invoke(f))
+        mock.Setup(s => s.EnsureTargetFileAsync(It.IsAny<string>(), It.IsAny<OutputFormat>(), It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<CancellationToken>(), It.IsAny<int?>()))
+            .Callback<string, OutputFormat, int, int?, CancellationToken, int?>((_, f, _, _, _, _) => onTarget?.Invoke(f))
             .ReturnsAsync(png);
         return mock;
     }

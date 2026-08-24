@@ -96,7 +96,19 @@ namespace RAWtoJXL.Avalonia.ViewModels
         private bool _isDifferenceOverlayEnabled;
 
         [ObservableProperty]
-        private bool _isGpuPrototypeVisible;
+        private bool _isGpuPrototypeVisible = true;
+
+        [ObservableProperty]
+        private bool _isGpuPrototypeAvailable = true;
+
+        internal void SetGpuPrototypeAvailability(bool available)
+        {
+            IsGpuPrototypeAvailable = available;
+            if (!available)
+            {
+                IsGpuPrototypeVisible = false;
+            }
+        }
 
         partial void OnIsDifferenceOverlayEnabledChanged(bool value)
         {
@@ -160,7 +172,10 @@ namespace RAWtoJXL.Avalonia.ViewModels
             LeftPane.SetFileSizes(SourceFileBytes, null);
             _ = LoadQuickOriginalPreviewAsync();
 
-            await Task.WhenAll(Panes.Select(RunPaneAsync)).ConfigureAwait(false);
+            int jobs = Math.Max(1, Panes.Count(pane => !pane.IsOriginal));
+            int threadsPerJob = CompareDefaults.GetJobThreads(jobs);
+            await Task.WhenAll(Panes.Select(pane =>
+                RunPaneAsync(pane, pane.IsOriginal ? null : (int?)threadsPerJob))).ConfigureAwait(false);
         }
 
         public Task<string> EnsureFullResolutionAsync(ComparePaneViewModel pane)
@@ -351,7 +366,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
             }
         }
 
-        private async Task RunPaneAsync(ComparePaneViewModel pane)
+        private async Task RunPaneAsync(ComparePaneViewModel pane, int? threads = null)
         {
             var cts = CreatePaneCts(pane);
             var ct = cts.Token;
@@ -370,14 +385,14 @@ namespace RAWtoJXL.Avalonia.ViewModels
             try
             {
                 var display = await _conversionService.EnsureDisplayPngsAsync(
-                    SourceFilePath, pane.Format, Quality, JxlEffort, ct).ConfigureAwait(false);
+                    SourceFilePath, pane.Format, Quality, JxlEffort, ct, threads).ConfigureAwait(false);
                 ct.ThrowIfCancellationRequested();
 
                 long fileBytes = SourceFileBytes;
                 if (!pane.IsOriginal && pane.Format != null)
                 {
                     var target = await _conversionService.EnsureTargetFileAsync(
-                        SourceFilePath, pane.Format.Value, Quality, JxlEffort, ct).ConfigureAwait(false);
+                        SourceFilePath, pane.Format.Value, Quality, JxlEffort, ct, threads).ConfigureAwait(false);
                     ct.ThrowIfCancellationRequested();
                     fileBytes = GetFileSize(target);
                 }
@@ -657,18 +672,13 @@ namespace RAWtoJXL.Avalonia.ViewModels
             _qualityPending = false;
             _effortPending = false;
 
-            foreach (var pane in Panes)
+            var affected = Panes
+                .Where(pane => !pane.IsOriginal && (quality || (effort && pane.Format == OutputFormat.Jxl)))
+                .ToList();
+            int threadsPerJob = CompareDefaults.GetJobThreads(affected.Count);
+            foreach (var pane in affected)
             {
-                if (pane.IsOriginal)
-                {
-                    continue;
-                }
-
-                bool affected = quality || (effort && pane.Format == OutputFormat.Jxl);
-                if (affected)
-                {
-                    _ = RunPaneAsync(pane);
-                }
+                _ = RunPaneAsync(pane, threadsPerJob);
             }
         }
 

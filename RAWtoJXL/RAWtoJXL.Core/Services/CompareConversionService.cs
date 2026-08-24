@@ -116,7 +116,8 @@ public class CompareConversionService : ICompareConversionService
         OutputFormat format,
         int quality,
         int? effort,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        int? threads = null)
     {
         var fp = ReadFingerprint(inputPath);
         string dir = Path.Combine(CompareDefaults.CacheRoot, "variant", $"v-{ComputeHash(fp, format, quality, effort)}");
@@ -136,7 +137,7 @@ public class CompareConversionService : ICompareConversionService
         string masterPath = await EnsureMasterPngAsync(inputPath, cancellationToken).ConfigureAwait(false);
         TryDeleteDirectory(dir);
 
-        var task = ConvertTargetAsync(masterPath, targetPath, metaPath, fp, format, quality, effort, cancellationToken);
+        var task = ConvertTargetAsync(masterPath, targetPath, metaPath, fp, format, quality, effort, cancellationToken, threads);
         if (!_inflightVariants.TryAdd(targetPath, task))
         {
             return await _inflightVariants[targetPath].ConfigureAwait(false);
@@ -157,7 +158,8 @@ public class CompareConversionService : ICompareConversionService
         OutputFormat? format,
         int quality,
         int? effort,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        int? threads = null)
     {
         var fp = ReadFingerprint(inputPath);
         string dir = Path.Combine(CompareDefaults.CacheRoot, "display", $"d-{ComputeHash(fp, format, format == null ? 0 : quality, format == null ? null : effort)}");
@@ -177,7 +179,7 @@ public class CompareConversionService : ICompareConversionService
 
         TryDeleteDirectory(dir);
 
-        var task = GenerateDisplayPngsAsync(inputPath, dir, previewPath, metaPath, fp, format, quality, effort, cancellationToken);
+        var task = GenerateDisplayPngsAsync(inputPath, dir, previewPath, metaPath, fp, format, quality, effort, cancellationToken, threads);
         if (!_inflightDisplays.TryAdd(dir, task))
         {
             return await _inflightDisplays[dir].ConfigureAwait(false);
@@ -542,7 +544,8 @@ public class CompareConversionService : ICompareConversionService
         OutputFormat format,
         int quality,
         int? effort,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        int? threads)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
         try
@@ -556,19 +559,19 @@ public class CompareConversionService : ICompareConversionService
                             masterPath, targetPath, quality, cancellationToken,
                             timeoutSeconds: 300, progress: null,
                             effort: effort ?? CompareDefaults.JxlEffort,
-                            threads: CompareDefaults.JxlThreads).ConfigureAwait(false);
+                            threads: threads ?? CompareDefaults.JxlThreads).ConfigureAwait(false);
                     }
                 catch (Exception ex) when (IsMissingTool(ex, "cjxl"))
                     {
                         await _imageConverterService.ConvertToJxlAsync(
-                            masterPath, targetPath, quality, effort, cancellationToken).ConfigureAwait(false);
+                            masterPath, targetPath, quality, effort, cancellationToken, threads).ConfigureAwait(false);
                     }
                     break;
                 case OutputFormat.Jpeg:
-                    await _imageConverterService.ConvertToJpegAsync(masterPath, targetPath, quality, cancellationToken).ConfigureAwait(false);
+                    await _imageConverterService.ConvertToJpegAsync(masterPath, targetPath, quality, cancellationToken, threads).ConfigureAwait(false);
                     break;
                 case OutputFormat.Avif:
-                    await _imageConverterService.ConvertToAvifAsync(masterPath, targetPath, quality, cancellationToken).ConfigureAwait(false);
+                    await _imageConverterService.ConvertToAvifAsync(masterPath, targetPath, quality, cancellationToken, threads).ConfigureAwait(false);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(format), $"Unsupported output format: {format}");
@@ -593,10 +596,11 @@ public class CompareConversionService : ICompareConversionService
         OutputFormat? format,
         int quality,
         int? effort,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        int? threads)
     {
         Directory.CreateDirectory(dir);
-        var source = await ResolveDisplaySourceAsync(inputPath, dir, format, quality, effort, cancellationToken).ConfigureAwait(false);
+        var source = await ResolveDisplaySourceAsync(inputPath, dir, format, quality, effort, cancellationToken, threads).ConfigureAwait(false);
         try
         {
             var result = await Task.Run(() =>
@@ -654,7 +658,7 @@ public class CompareConversionService : ICompareConversionService
         CancellationToken cancellationToken)
     {
         Directory.CreateDirectory(dir);
-        var source = await ResolveDisplaySourceAsync(inputPath, dir, format, quality, effort, cancellationToken).ConfigureAwait(false);
+        var source = await ResolveDisplaySourceAsync(inputPath, dir, format, quality, effort, cancellationToken, null).ConfigureAwait(false);
         try
         {
             await Task.Run(() =>
@@ -701,7 +705,8 @@ public class CompareConversionService : ICompareConversionService
         OutputFormat? format,
         int quality,
         int? effort,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        int? threads)
     {
         if (format == null)
         {
@@ -709,7 +714,7 @@ public class CompareConversionService : ICompareConversionService
         }
 
         string targetPath = await EnsureTargetFileAsync(
-            inputPath, format.Value, quality, effort, cancellationToken).ConfigureAwait(false);
+            inputPath, format.Value, quality, effort, cancellationToken, threads).ConfigureAwait(false);
         if (format != OutputFormat.Jxl)
         {
             return (targetPath, null);

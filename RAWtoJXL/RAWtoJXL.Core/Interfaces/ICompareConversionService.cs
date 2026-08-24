@@ -15,14 +15,16 @@ namespace RAWtoJXL.Core.Interfaces
             OutputFormat format,
             int quality,
             int? effort,
-            CancellationToken cancellationToken = default);
+            CancellationToken cancellationToken = default,
+            int? threads = null);
 
         Task<CompareDisplayPngs> EnsureDisplayPngsAsync(
             string inputPath,
             OutputFormat? format,
             int quality,
             int? effort,
-            CancellationToken cancellationToken = default);
+            CancellationToken cancellationToken = default,
+            int? threads = null);
 
         Task<string> EnsureDisplayFullPngAsync(
             string inputPath,
