@@ -89,16 +89,6 @@ namespace RAWtoJXL.Avalonia.ViewModels
                 return;
             }
 
-            if (TryGetMirrorSource(out var source, out var snapshot))
-            {
-                foreach (var pane in Panes)
-                {
-                    pane.RaiseSetViewport(snapshot.Viewport, snapshot.ImagePixelWidth);
-                }
-
-                return;
-            }
-
             foreach (var pane in Panes)
             {
                 pane.RaiseFit();
