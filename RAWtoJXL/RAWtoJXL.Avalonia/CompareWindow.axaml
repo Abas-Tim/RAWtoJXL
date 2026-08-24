@@ -346,10 +346,6 @@
 
                         <Separator/>
 
-                        <TextBlock Text="GPU disabled"
-                                   FontSize="11"
-                                   FontWeight="SemiBold"
-                                   Foreground="#8A939C"/>
                     </StackPanel>
                 </ScrollViewer>
             </Border>
