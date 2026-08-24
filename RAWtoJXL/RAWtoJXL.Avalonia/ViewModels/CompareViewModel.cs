@@ -27,6 +27,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
         private readonly Dictionary<ComparePaneViewModel, CancellationTokenSource> _paneCts = new();
         private readonly Dictionary<ComparePaneViewModel, CancellationTokenSource> _analysisCts = new();
         private readonly Dictionary<ComparePaneViewModel, ViewportSnapshot> _viewportSnapshots = new();
+    private ComparePaneViewModel? _lastViewportSource;
         private readonly object _mirrorGuard = new();
         private const int AnalysisDebounceMs = 300;
 
@@ -88,9 +89,20 @@ namespace RAWtoJXL.Avalonia.ViewModels
                 return;
             }
 
+            var sourceSnapshot = _viewportSnapshots.Values.FirstOrDefault();
+            if (sourceSnapshot.PixelWidth <= 0)
+            {
+                foreach (var pane in Panes)
+                {
+                    pane.RaiseFit();
+                }
+
+                return;
+            }
+
             foreach (var pane in Panes)
             {
-                pane.RaiseFit();
+                pane.RaiseSetViewport(NormalizeViewportForPane(pane, sourceSnapshot.Viewport, sourceSnapshot.PixelWidth));
             }
         }
 
@@ -175,8 +187,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
             LeftPane.SetFileSizes(SourceFileBytes, null);
             _ = LoadQuickOriginalPreviewAsync();
 
-            int jobs = Math.Max(1, Panes.Count(pane => !pane.IsOriginal));
-            int threadsPerJob = CompareDefaults.GetJobThreads(jobs);
+            int threadsPerJob = CompareDefaults.JxlThreads;
             await Task.WhenAll(Panes.Select(pane =>
                 RunPaneAsync(pane, pane.IsOriginal ? null : (int?)threadsPerJob))).ConfigureAwait(false);
         }
@@ -208,7 +219,9 @@ namespace RAWtoJXL.Avalonia.ViewModels
                 return;
             }
 
+            _lastViewportSource = source;
             _viewportSnapshots[source] = new ViewportSnapshot(
+                viewport,
                 visibleRegion,
                 Math.Max(1, pixelWidth),
                 Math.Max(1, pixelHeight));
@@ -238,7 +251,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
                     {
                         if (!ReferenceEquals(pane, source))
                         {
-                            pane.RaiseSetViewport(viewport);
+                            pane.RaiseSetViewport(NormalizeViewportForPane(pane, viewport, pixelWidth));
                         }
                     }
                 }
@@ -247,6 +260,24 @@ namespace RAWtoJXL.Avalonia.ViewModels
                     _applyingMirror = false;
                 }
             }
+        }
+
+        private CompareViewport NormalizeViewportForPane(
+            ComparePaneViewModel pane,
+            CompareViewport viewport,
+            int sourcePixelWidth)
+        {
+            int targetPixelWidth = pane.Preview?.PixelSize.Width ?? sourcePixelWidth;
+            if (targetPixelWidth <= 0 || sourcePixelWidth <= 0)
+            {
+                return viewport;
+            }
+
+            double scale = (double)sourcePixelWidth / targetPixelWidth;
+            return new CompareViewport(
+                Math.Clamp(viewport.Zoom * scale, CompareViewport.MinZoom, CompareViewport.MaxZoom),
+                viewport.CenterX,
+                viewport.CenterY);
         }
 
         public void OnPaneDisplayStateChanged(ComparePaneViewModel pane, CompareDisplayState state)
@@ -444,6 +475,15 @@ namespace RAWtoJXL.Avalonia.ViewModels
                     pane.DimensionsText = $"{display.Width}×{display.Height}";
                     pane.SetFileSizes(fileBytes, pane.IsOriginal ? null : SourceFileBytes);
                     pane.Status = PaneStatus.Ready;
+                    if (IsMirroring &&
+                        _lastViewportSource != null &&
+                        !ReferenceEquals(_lastViewportSource, pane) &&
+                        _viewportSnapshots.TryGetValue(_lastViewportSource, out var mirrorSnapshot) &&
+                        mirrorSnapshot.PixelWidth > 0)
+                    {
+                        pane.RaiseSetViewport(NormalizeViewportForPane(pane, mirrorSnapshot.Viewport, mirrorSnapshot.PixelWidth));
+                    }
+
                     ScheduleAnalysis(pane);
                 }).ConfigureAwait(false);
             }
@@ -703,7 +743,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
             var affected = Panes
                 .Where(pane => !pane.IsOriginal && (quality || (effort && pane.Format == OutputFormat.Jxl)))
                 .ToList();
-            int threadsPerJob = CompareDefaults.GetJobThreads(affected.Count);
+            int threadsPerJob = CompareDefaults.JxlThreads;
             foreach (var pane in affected)
             {
                 _ = RunPaneAsync(pane, threadsPerJob);
@@ -768,6 +808,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
         }
 
         private readonly record struct ViewportSnapshot(
+            CompareViewport Viewport,
             CompareImageRegion Region,
             int PixelWidth,
             int PixelHeight);

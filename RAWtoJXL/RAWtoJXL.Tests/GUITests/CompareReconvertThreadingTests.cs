@@ -12,7 +12,7 @@ namespace RAWtoJXL.Tests.GUITests;
 public class CompareReconvertThreadingTests
 {
     [AvaloniaFact]
-    public async Task InitialLoad_SplitsThreadsAcrossBothConversionPanes()
+    public async Task InitialLoad_UsesAllThreadsForBothConversionPanes()
     {
         var context = CreateContext();
         try
@@ -20,7 +20,7 @@ public class CompareReconvertThreadingTests
             await context.ViewModel.InitializeAsync();
             await Task.Delay(100, TestContext.Current.CancellationToken);
 
-            int expected = CompareDefaults.GetJobThreads(2);
+            int expected = CompareDefaults.JxlThreads;
             Assert.Contains(context.CapturedThreads, entry => entry.Format == OutputFormat.Jxl && entry.Threads == expected);
             Assert.Contains(context.CapturedThreads, entry => entry.Format == OutputFormat.Avif && entry.Threads == expected);
         }
@@ -55,7 +55,7 @@ public class CompareReconvertThreadingTests
     }
 
     [AvaloniaFact]
-    public async Task QualityReconvert_SplitsThreadsBetweenJxlAndAvifPanes()
+    public async Task QualityReconvert_UsesAllThreadsForBothPanes()
     {
         var context = CreateContext();
         try
@@ -68,7 +68,7 @@ public class CompareReconvertThreadingTests
             context.ViewModel.TriggerReconvertTick();
             await Task.Delay(200, TestContext.Current.CancellationToken);
 
-            int expected = CompareDefaults.GetJobThreads(2);
+            int expected = CompareDefaults.JxlThreads;
             Assert.Contains(context.CapturedThreads, entry => entry.Format == OutputFormat.Jxl && entry.Threads == expected);
             Assert.Contains(context.CapturedThreads, entry => entry.Format == OutputFormat.Avif && entry.Threads == expected);
         }
