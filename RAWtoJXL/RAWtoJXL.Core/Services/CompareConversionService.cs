@@ -331,28 +331,11 @@ public class CompareConversionService : ICompareConversionService
         int? threads)
     {
         Directory.CreateDirectory(dir);
-        string? decodedTemp = null;
         try
         {
-            string effectiveSource = sourcePath;
-            if (decodeJxlTarget && format == OutputFormat.Jxl)
-            {
-                decodedTemp = Path.Combine(dir, $"djxl_{Guid.NewGuid():N}.png");
-                try
-                {
-                    await _jxlDecoder.DecodeToPngAsync(sourcePath, decodedTemp, cancellationToken, numThreads: threads).ConfigureAwait(false);
-                }
-                catch (Exception ex) when (IsMissingTool(ex, "djxl"))
-                {
-                    await _imageConverterService.ConvertToPngAsync(sourcePath, decodedTemp, cancellationToken).ConfigureAwait(false);
-                }
-
-                effectiveSource = decodedTemp;
-            }
-
             var result = await Task.Run(() =>
             {
-                (int Width, int Height) size = WriteDisplayPreview(effectiveSource, previewPath);
+                (int Width, int Height) size = WriteDisplayPreview(sourcePath, previewPath);
                 return new CompareDisplayPngs(previewPath, previewPath, size.Width, size.Height);
             }, cancellationToken).ConfigureAwait(false);
 
@@ -363,13 +346,6 @@ public class CompareConversionService : ICompareConversionService
         {
             TryDeleteDirectory(dir);
             throw;
-        }
-        finally
-        {
-            if (decodedTemp != null)
-            {
-                _fileService.DeleteFile(decodedTemp);
-            }
         }
     }
 
@@ -386,7 +362,8 @@ public class CompareConversionService : ICompareConversionService
         image.Settings.SetDefines(new PngWriteDefines
         {
             BitDepth = 8,
-            ColorType = ColorType.TrueColor
+            ColorType = ColorType.TrueColor,
+            CompressionLevel = 1
         });
         image.Format = MagickFormat.Png;
         image.Write(previewPath);
@@ -1022,39 +999,7 @@ public class CompareConversionService : ICompareConversionService
 
         string targetPath = await EnsureTargetFileAsync(
             inputPath, format.Value, quality, effort, cancellationToken, threads).ConfigureAwait(false);
-        if (format != OutputFormat.Jxl)
-        {
-            return (targetPath, null);
-        }
-
-        string decodedPath = Path.Combine(Path.GetDirectoryName(targetPath)!, "decoded.png");
-        string? owned = null;
-        try
-        {
-            if (!File.Exists(decodedPath) || new FileInfo(decodedPath).Length == 0)
-            {
-                owned = decodedPath;
-                try
-                {
-                    await _jxlDecoder.DecodeToPngAsync(targetPath, decodedPath, cancellationToken, numThreads: threads ?? CompareDefaults.JxlThreads).ConfigureAwait(false);
-                }
-                catch (Exception ex) when (IsMissingTool(ex, "djxl"))
-                {
-                    await _imageConverterService.ConvertToPngAsync(targetPath, decodedPath, cancellationToken).ConfigureAwait(false);
-                }
-            }
-
-            return (decodedPath, owned);
-        }
-        catch
-        {
-            if (owned != null)
-            {
-                _fileService.DeleteFile(owned);
-            }
-
-            throw;
-        }
+        return (targetPath, null);
     }
 
     private static SourceFingerprint ReadFingerprint(string inputPath)
