@@ -77,6 +77,25 @@ public class CompareConversionService : ICompareConversionService
         });
     }
 
+    public void ClearCompareCache()
+    {
+        ClearCache(CompareDefaults.CacheRoot);
+    }
+
+    internal static void ClearCache(string root)
+    {
+        try
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, true);
+            }
+        }
+        catch
+        {
+        }
+    }
+
     public async Task<MasterRenderLease> EnsureMasterRenderLeaseAsync(
         string inputPath,
         CancellationToken cancellationToken = default,

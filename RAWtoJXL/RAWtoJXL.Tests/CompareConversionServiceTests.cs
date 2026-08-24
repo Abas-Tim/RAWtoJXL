@@ -102,6 +102,17 @@ public class CompareConversionServiceTests
     }
 
     [Fact]
+    public void ClearCache_RemovesGivenRoot()
+    {
+        var dir = CreateTempDir();
+        File.WriteAllText(Path.Combine(dir, "leftover.txt"), "stale");
+
+        CompareConversionService.ClearCache(dir);
+
+        Assert.False(Directory.Exists(dir));
+    }
+
+    [Fact]
     public async Task EnsureMasterPngAsync_RawInput_UsesRawRenderer()
     {
         var dir = CreateTempDir();

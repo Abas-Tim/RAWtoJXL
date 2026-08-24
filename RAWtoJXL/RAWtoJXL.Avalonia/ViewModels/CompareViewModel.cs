@@ -200,6 +200,8 @@ namespace RAWtoJXL.Avalonia.ViewModels
                 return;
             }
 
+            await Task.Run(() => _conversionService.ClearCompareCache()).ConfigureAwait(false);
+
             AssignDefaultFormats();
             RecomputeAvailableFormats();
             _initializing = false;
@@ -313,6 +315,8 @@ namespace RAWtoJXL.Avalonia.ViewModels
             _reconvertTimer = null;
             _lifetimeCts.Cancel();
             _lifetimeCts.Dispose();
+
+            _ = Task.Run(() => _conversionService.ClearCompareCache());
 
             foreach (var cts in _paneCts.Values)
             {

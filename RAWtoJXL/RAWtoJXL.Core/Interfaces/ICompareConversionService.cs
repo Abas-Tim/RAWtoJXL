@@ -71,6 +71,8 @@ namespace RAWtoJXL.Core.Interfaces
             CancellationToken cancellationToken = default);
 
         void PurgeStaleEntries();
+
+        void ClearCompareCache();
     }
 
     public sealed record CompareDisplayPngs(string PreviewPath, string FullPath, int Width, int Height);
