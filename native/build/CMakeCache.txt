@@ -311,15 +311,6 @@ GOOGLEBENCHMARK_PATH:PATH=/usr/src/googlebenchmark
 // of these subdirs
 GOOGLETEST_PATH:PATH=/usr/src/googletest
 
-//Path to a file.
-JPEG_INCLUDE_DIR:PATH=JPEG_INCLUDE_DIR-NOTFOUND
-
-//Path to a library.
-JPEG_LIBRARY_DEBUG:FILEPATH=JPEG_LIBRARY_DEBUG-NOTFOUND
-
-//Path to a library.
-JPEG_LIBRARY_RELEASE:FILEPATH=JPEG_LIBRARY_RELEASE-NOTFOUND
-
 //Either OFF, or overrides the fuzzing engine library (e.g. libFuzzer)
 // that needs to be linked with all fuzz targets.
 LIB_FUZZING_ENGINE:STRING=OFF
@@ -333,20 +324,8 @@ OpenMP_CXX_FLAGS:STRING=-openmp
 //CXX compiler libraries for OpenMP parallelization
 OpenMP_CXX_LIB_NAMES:STRING=
 
-//Arguments to supply to pkg-config
-PKG_CONFIG_ARGN:STRING=
-
-//pkg-config executable
-PKG_CONFIG_EXECUTABLE:FILEPATH=PKG_CONFIG_EXECUTABLE-NOTFOUND
-
 //Path to the pugixml root tree.
 PUGIXML_PATH:PATH=/usr/src/pugixml
-
-//Path to a file.
-Pugixml_INCLUDE_DIR:PATH=Pugixml_INCLUDE_DIR-NOTFOUND
-
-//Path to a library.
-Pugixml_LIBRARY:FILEPATH=Pugixml_LIBRARY-NOTFOUND
 
 RAWSPEED_BINARY_DIR:PATH=H:/Playground/RAWtoJXL/native/build/rawspeed
 
@@ -388,10 +367,10 @@ RAWSPEED_USE_LIBCXX:BOOL=OFF
 USE_BUNDLED_LLVMOPENMP:BOOL=OFF
 
 //Build and use pugixml in-tree
-USE_BUNDLED_PUGIXML:BOOL=OFF
+USE_BUNDLED_PUGIXML:BOOL=ON
 
 //Build and use zlib in-tree
-USE_BUNDLED_ZLIB:BOOL=OFF
+USE_BUNDLED_ZLIB:BOOL=ON
 
 //Run clang-tidy tool when compiling sources
 USE_CLANG_TIDY:BOOL=OFF
@@ -406,7 +385,7 @@ USE_RAWSPEED_CLANG_TIDY_MODULE:BOOL=OFF
 USE_XMLLINT:BOOL=ON
 
 //Enable JPEG support for DNG Lossy JPEG support
-WITH_JPEG:BOOL=ON
+WITH_JPEG:BOOL=OFF
 
 //Enable OpenMP support.
 WITH_OPENMP:BOOL=ON
@@ -419,18 +398,6 @@ WITH_SSE2:BOOL=ON
 
 //Enable ZLIB support for DNG deflate support
 WITH_ZLIB:BOOL=ON
-
-//The xmllint executable
-XMLLINT_EXECUTABLE:FILEPATH=XMLLINT_EXECUTABLE-NOTFOUND
-
-//Path to a file.
-ZLIB_INCLUDE_DIR:PATH=ZLIB_INCLUDE_DIR-NOTFOUND
-
-//Path to a library.
-ZLIB_LIBRARY_DEBUG:FILEPATH=ZLIB_LIBRARY_DEBUG-NOTFOUND
-
-//Path to a library.
-ZLIB_LIBRARY_RELEASE:FILEPATH=ZLIB_LIBRARY_RELEASE-NOTFOUND
 
 //Path to the zlib root tree.
 ZLIB_PATH:PATH=/usr/src/zlib
@@ -458,7 +425,6 @@ rawtojxl-rawspeed-cli_SOURCE_DIR:STATIC=H:/Playground/RAWtoJXL/native
 # INTERNAL cache entries
 ########################
 
-ALL_FUZZERS:INTERNAL=BitVacuumerRoundtripFuzzer;PrefixCodeTreeDecoderFuzzer;PrefixCodeLUTWithTreeDecoderFuzzer;PrefixCodeVectorDecoderFuzzer;PrefixCodeLUTWithVectorDecoderFuzzer;PrefixCodeLookupDecoderFuzzer;PrefixCodeLUTWithLookupDecoderFuzzer;PrefixCodeDecoderFuzzer-LUTWithTreeVsTree;PrefixCodeDecoderFuzzer-TreeVsVector;PrefixCodeDecoderFuzzer-LUTWithVectorVsTree;PrefixCodeDecoderFuzzer-LookupVsTree;PrefixCodeDecoderFuzzer-LUTWithLookupVsTree;PrefixCodeDecoderFuzzer-LUTWithTreeVsVector;PrefixCodeDecoderFuzzer-LUTWithTreeVsLUTWithVector;PrefixCodeDecoderFuzzer-LUTWithTreeVsLookup;PrefixCodeDecoderFuzzer-LUTWithLookupVsLUTWithTree;PrefixCodeDecoderFuzzer-LUTWithVectorVsVector;PrefixCodeDecoderFuzzer-LookupVsVector;PrefixCodeDecoderFuzzer-LUTWithLookupVsVector;PrefixCodeDecoderFuzzer-LUTWithVectorVsLookup;PrefixCodeDecoderFuzzer-LUTWithLookupVsLUTWithVector;PrefixCodeDecoderFuzzer-LUTWithLookupVsLookup;PrefixCodeEncoderFuzzer;DngOpcodesFuzzer;TiffDecoderFuzzer-ArwDecoder;TiffDecoderFuzzer-Cr2Decoder;TiffDecoderFuzzer-DcrDecoder;TiffDecoderFuzzer-DcsDecoder;TiffDecoderFuzzer-DngDecoder;TiffDecoderFuzzer-ErfDecoder;TiffDecoderFuzzer-IiqDecoder;TiffDecoderFuzzer-KdcDecoder;TiffDecoderFuzzer-MefDecoder;TiffDecoderFuzzer-MosDecoder;TiffDecoderFuzzer-NefDecoder;TiffDecoderFuzzer-OrfDecoder;TiffDecoderFuzzer-PefDecoder;TiffDecoderFuzzer-Rw2Decoder;TiffDecoderFuzzer-SrwDecoder;TiffDecoderFuzzer-StiDecoder;TiffDecoderFuzzer-ThreefrDecoder;Cr2LJpegDecoderFuzzer;CrwDecompressorFuzzer;DummyLJpegDecoderFuzzer;FujiDecompressorFuzzer;HasselbladDecompressorFuzzer;HasselbladLJpegDecoderFuzzer;KodakDecompressorFuzzer;LJpegDecoderFuzzer;LJpegDecompressorFuzzer;NikonDecompressorFuzzer;OlympusDecompressorFuzzer;PanasonicV4DecompressorFuzzer;PanasonicV5DecompressorFuzzer;PanasonicV6DecompressorFuzzer;PanasonicV7DecompressorFuzzer;PanasonicV8DecompressorFuzzer;PentaxDecompressorFuzzer;PhaseOneDecompressorFuzzer;SamsungV0DecompressorFuzzer;SamsungV1DecompressorFuzzer;SamsungV2DecompressorFuzzer;SonyArw1DecompressorFuzzer;SonyArw2DecompressorFuzzer;UncompressedDecompressorFuzzer;VC5DecompressorFuzzer;Cr2DecompressorFuzzer-PrefixCodeDecoder;Cr2DecompressorFuzzer-DummyPrefixCodeDecoder;CiffParserFuzzer-GetDecoder;CiffParserFuzzer-GetDecoder-Decode;FiffParserFuzzer-GetDecoder;FiffParserFuzzer-GetDecoder-Decode;RawParserFuzzer-GetDecoder;RawParserFuzzer-GetDecoder-Decode;TiffParserFuzzer-GetDecoder;TiffParserFuzzer-GetDecoder-Decode;RawSpeedFuzzer
 //Result of TRY_COMPILE
 BASIC_TYPE_CHECKS:INTERNAL=TRUE
 //ADVANCED property for variable: CMAKE_AR
@@ -587,7 +553,7 @@ CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_MT
 CMAKE_MT-ADVANCED:INTERNAL=1
 //number of local generators
-CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=33
+CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=2
 //Platform information initialized
 CMAKE_PLATFORM_INFO_INITIALIZED:INTERNAL=1
 //noop for ranlib
@@ -647,14 +613,6 @@ COMPILER_SUPPORTS_SPLIT_DEBUG_INFO:INTERNAL=
 FIND_PACKAGE_MESSAGE_DETAILS_OpenMP:INTERNAL=[TRUE][ ][v2.0()]
 //Details about finding OpenMP_CXX
 FIND_PACKAGE_MESSAGE_DETAILS_OpenMP_CXX:INTERNAL=[-openmp][v2.0()]
-//Test HAVE_CXX_THREAD_LOCAL
-HAVE_CXX_THREAD_LOCAL:INTERNAL=1
-//ADVANCED property for variable: JPEG_INCLUDE_DIR
-JPEG_INCLUDE_DIR-ADVANCED:INTERNAL=1
-//ADVANCED property for variable: JPEG_LIBRARY_DEBUG
-JPEG_LIBRARY_DEBUG-ADVANCED:INTERNAL=1
-//ADVANCED property for variable: JPEG_LIBRARY_RELEASE
-JPEG_LIBRARY_RELEASE-ADVANCED:INTERNAL=1
 //Test LINKER_SUPPORTS_GDB_INDEX
 LINKER_SUPPORTS_GDB_INDEX:INTERNAL=
 //Result of TRY_COMPILE
@@ -667,38 +625,16 @@ OpenMP_CXX_LIB_NAMES-ADVANCED:INTERNAL=1
 OpenMP_CXX_SPEC_DATE:INTERNAL=200203
 //Result of TRY_COMPILE
 OpenMP_SPECTEST_CXX_:INTERNAL=TRUE
-//ADVANCED property for variable: PKG_CONFIG_ARGN
-PKG_CONFIG_ARGN-ADVANCED:INTERNAL=1
-//ADVANCED property for variable: PKG_CONFIG_EXECUTABLE
-PKG_CONFIG_EXECUTABLE-ADVANCED:INTERNAL=1
-//ADVANCED property for variable: Pugixml_INCLUDE_DIR
-Pugixml_INCLUDE_DIR-ADVANCED:INTERNAL=0
-//ADVANCED property for variable: Pugixml_LIBRARY
-Pugixml_LIBRARY-ADVANCED:INTERNAL=0
-RAWSPEED_CACHELINESIZE:INTERNAL=64
-//Result of TRY_COMPILE
-RAWSPEED_CACHELINESIZE_COMPILED:INTERNAL=TRUE
-//Result of try_run()
-RAWSPEED_CACHELINESIZE_EXITCODE:INTERNAL=0
 //Test RAWSPEED_HAVE_CXX_FLAG_WERROR
 RAWSPEED_HAVE_CXX_FLAG_WERROR:INTERNAL=
 //Test RAWSPEED_HAVE_CXX_FLAG_WFRAME_LARGER_THAN_4096
 RAWSPEED_HAVE_CXX_FLAG_WFRAME_LARGER_THAN_4096:INTERNAL=
 //Test RAWSPEED_HAVE_CXX_FLAG_WLARGER_THAN_32768
 RAWSPEED_HAVE_CXX_FLAG_WLARGER_THAN_32768:INTERNAL=
-//Test RAWSPEED_HAVE_CXX_FLAG_WNO_EXIT_TIME_DESTRUCTORS
-RAWSPEED_HAVE_CXX_FLAG_WNO_EXIT_TIME_DESTRUCTORS:INTERNAL=
 //Test RAWSPEED_HAVE_CXX_FLAG_WNO_FORMAT
 RAWSPEED_HAVE_CXX_FLAG_WNO_FORMAT:INTERNAL=
-//Test RAWSPEED_HAVE_CXX_FLAG_WNO_GLOBAL_CONSTRUCTORS
-RAWSPEED_HAVE_CXX_FLAG_WNO_GLOBAL_CONSTRUCTORS:INTERNAL=
 //Test RAWSPEED_HAVE_CXX_FLAG_WSTACK_USAGE_4096
 RAWSPEED_HAVE_CXX_FLAG_WSTACK_USAGE_4096:INTERNAL=
-RAWSPEED_LARGEPAGESIZE:INTERNAL=4096
-//Result of TRY_COMPILE
-RAWSPEED_LARGEPAGESIZE_COMPILED:INTERNAL=TRUE
-//Result of try_run()
-RAWSPEED_LARGEPAGESIZE_EXITCODE:INTERNAL=0
 //Result of TRY_COMPILE
 RAWSPEED_LIBCXX_MIN:INTERNAL=TRUE
 //Result of TRY_COMPILE
@@ -710,17 +646,6 @@ RAWSPEED_MARCHNATIVE:INTERNAL=
 RAWSPEED_MTUNEGENERIC:INTERNAL=
 //Test RAWSPEED_MTUNENATIVE
 RAWSPEED_MTUNENATIVE:INTERNAL=
-RAWSPEED_PAGESIZE:INTERNAL=4096
-//Result of TRY_COMPILE
-RAWSPEED_PAGESIZE_COMPILED:INTERNAL=TRUE
-//Result of try_run()
-RAWSPEED_PAGESIZE_EXITCODE:INTERNAL=0
-//ADVANCED property for variable: ZLIB_INCLUDE_DIR
-ZLIB_INCLUDE_DIR-ADVANCED:INTERNAL=1
-//ADVANCED property for variable: ZLIB_LIBRARY_DEBUG
-ZLIB_LIBRARY_DEBUG-ADVANCED:INTERNAL=1
-//ADVANCED property for variable: ZLIB_LIBRARY_RELEASE
-ZLIB_LIBRARY_RELEASE-ADVANCED:INTERNAL=1
 //CMAKE_INSTALL_PREFIX during last run
 _GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX:INTERNAL=C:/Program Files/rawtojxl-rawspeed-cli
 
