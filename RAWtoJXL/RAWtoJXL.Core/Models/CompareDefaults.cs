@@ -6,7 +6,7 @@ namespace RAWtoJXL.Core.Models
 {
     public static class CompareDefaults
     {
-        public const int CacheSchemaVersion = 5;
+        public const int CacheSchemaVersion = 6;
 
         public const int JxlEffort = 5;
 
