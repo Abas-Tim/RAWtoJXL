@@ -43,7 +43,7 @@ public class CompareFormatUniquenessTests
 
     private static CompareViewModel CreateViewModel(Mock<ICompareConversionService> service, string filePath)
     {
-        return new CompareViewModel(filePath, 90, service.Object, CreateDispatcher().Object);
+        return new CompareViewModel(filePath, service.Object, CreateDispatcher().Object);
     }
 
     [AvaloniaFact]
@@ -137,7 +137,8 @@ public class CompareFormatUniquenessTests
             int originalCalls = displayCalls.Count(f => f == null);
             int convertedCalls = displayCalls.Count(f => f != null);
 
-            vm.Quality = 55;
+            vm.JxlQuality = 55;
+            vm.AvifQuality = 55;
             vm.TriggerReconvertTick();
             await WaitUntil(() => displayCalls.Count(f => f != null) >= convertedCalls + 2);
 

@@ -52,9 +52,6 @@ namespace RAWtoJXL.Avalonia.ViewModels
         public IReadOnlyList<int> EffortOptions { get; } = Enumerable.Range(1, 9).ToList();
 
         [ObservableProperty]
-        private int _quality;
-
-        [ObservableProperty]
         private int _jxlQuality = 90;
 
         [ObservableProperty]
@@ -65,22 +62,6 @@ namespace RAWtoJXL.Avalonia.ViewModels
 
         [ObservableProperty]
         private bool _isSettingsPanelOpen = true;
-
-        partial void OnQualityChanged(int value)
-        {
-            if (_initializing || _disposed)
-            {
-                return;
-            }
-
-            JxlQuality = value;
-            AvifQuality = value;
-            JpegQuality = value;
-            _pendingQualityFormats.Add(OutputFormat.Jxl);
-            _pendingQualityFormats.Add(OutputFormat.Avif);
-            _pendingQualityFormats.Add(OutputFormat.Jpeg);
-            ScheduleReconvert();
-        }
 
         partial void OnJxlQualityChanged(int value) => MarkQualityPending(OutputFormat.Jxl);
 
@@ -106,7 +87,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
                 OutputFormat.Jxl => JxlQuality,
                 OutputFormat.Avif => AvifQuality,
                 OutputFormat.Jpeg => JpegQuality,
-                _ => Quality
+                _ => JxlQuality
             };
         }
 
@@ -183,7 +164,6 @@ namespace RAWtoJXL.Avalonia.ViewModels
 
         public CompareViewModel(
             string filePath,
-            int quality,
             ICompareConversionService conversionService,
             IDispatcherService dispatcherService)
         {
@@ -192,10 +172,6 @@ namespace RAWtoJXL.Avalonia.ViewModels
             _conversionService = conversionService ?? throw new ArgumentNullException(nameof(conversionService));
             _dispatcherService = dispatcherService ?? throw new ArgumentNullException(nameof(dispatcherService));
             _orchestrator = new ComparePipelineOrchestrator(_conversionService);
-            _quality = quality;
-            JxlQuality = quality;
-            AvifQuality = quality;
-            JpegQuality = quality;
             SourceFileName = Path.GetFileName(filePath);
             OriginalFormat = GetOriginalFormat(filePath);
 

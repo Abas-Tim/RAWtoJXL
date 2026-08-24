@@ -216,8 +216,7 @@ namespace RAWtoJXL.Avalonia
                 return;
             }
 
-            int quality = (DataContext as MainViewModel)?.QualityPreset ?? 90;
-            var viewModel = new CompareViewModel(filePath, quality, conversionService, dispatcherService);
+            var viewModel = new CompareViewModel(filePath, conversionService, dispatcherService);
             _compareWindow = new CompareWindow
             {
                 DataContext = viewModel

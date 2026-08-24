@@ -153,7 +153,7 @@ public class CompareAnalysisTests
                 return Task.CompletedTask;
             });
 
-        var viewModel = new CompareViewModel(sourcePath, 90, service.Object, dispatcher.Object);
+        var viewModel = new CompareViewModel(sourcePath, service.Object, dispatcher.Object);
         return new TestContextData(directory, sourcePath, service, viewModel);
     }
 

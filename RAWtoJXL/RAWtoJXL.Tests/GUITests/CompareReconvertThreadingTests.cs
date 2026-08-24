@@ -64,7 +64,8 @@ public class CompareReconvertThreadingTests
             await Task.Delay(100, TestContext.Current.CancellationToken);
             context.CapturedThreads.Clear();
 
-            context.ViewModel.Quality = 80;
+            context.ViewModel.JxlQuality = 80;
+            context.ViewModel.AvifQuality = 80;
             context.ViewModel.TriggerReconvertTick();
             await Task.Delay(200, TestContext.Current.CancellationToken);
 
@@ -119,7 +120,7 @@ public class CompareReconvertThreadingTests
                 return Task.CompletedTask;
             });
 
-        var viewModel = new CompareViewModel(sourcePath, 90, service.Object, dispatcher.Object);
+        var viewModel = new CompareViewModel(sourcePath, service.Object, dispatcher.Object);
         return new TestContextData(directory, sourcePath, captured, viewModel);
     }
 

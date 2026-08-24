@@ -18,7 +18,6 @@ public class CompareMirroringTests
             .Returns<Action>(a => { a(); return Task.CompletedTask; });
         return new CompareViewModel(
             Path.Combine(Path.GetTempPath(), "photo.dng"),
-            90,
             mock.Object,
             dispatcher.Object);
     }

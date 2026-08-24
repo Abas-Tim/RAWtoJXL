@@ -99,7 +99,6 @@ public class GpuPrototypeControlTests
             });
         var viewModel = new RAWtoJXL.Avalonia.ViewModels.CompareViewModel(
             Path.Combine(Path.GetTempPath(), "gpu-prototype.dng"),
-            90,
             service.Object,
             dispatcher.Object);
         Assert.True(viewModel.IsGpuPrototypeVisible);
@@ -129,7 +128,6 @@ public class GpuPrototypeControlTests
         var dispatcher = new Moq.Mock<RAWtoJXL.Avalonia.Services.IDispatcherService>();
         var viewModel = new RAWtoJXL.Avalonia.ViewModels.CompareViewModel(
             Path.Combine(Path.GetTempPath(), "gpu-prototype.dng"),
-            90,
             service.Object,
             dispatcher.Object);
 
