@@ -30,6 +30,7 @@ public class CompareConversionService : ICompareConversionService
     private readonly ConcurrentDictionary<string, Task<string>> _inflightVariants = new();
     private readonly ConcurrentDictionary<string, Task<CompareDisplayPngs>> _inflightDisplays = new();
     private readonly ConcurrentDictionary<string, Task<string>> _inflightFullDisplays = new();
+    private readonly ConcurrentDictionary<string, MasterLeaseState> _masterLeaseStates = new();
     private readonly SemaphoreSlim _analysisGate = new(1, 1);
 
     public CompareConversionService(
@@ -74,6 +75,331 @@ public class CompareConversionService : ICompareConversionService
             _ = task.ContinueWith(t => _inflightMasters.TryRemove(key, out var ignored), TaskScheduler.Default);
             return task;
         });
+    }
+
+    public async Task<MasterRenderLease> EnsureMasterRenderLeaseAsync(
+        string inputPath,
+        CancellationToken cancellationToken = default,
+        int? renderThreads = null)
+    {
+        var fp = ReadFingerprint(inputPath);
+        string dir = Path.Combine(CompareDefaults.CacheRoot, "master", $"m-{ComputeHash(fp, null, 0, 0)}");
+        string masterPath = Path.Combine(dir, "master.png");
+        string metaPath = Path.Combine(dir, "meta.json");
+
+        if (IsCacheValid(metaPath, fp) && File.Exists(masterPath))
+        {
+            return MasterRenderLease.ForMaster(masterPath);
+        }
+
+        string ext = Path.GetExtension(inputPath).ToLowerInvariant();
+        if (!SupportedFormats.IsRawFile(ext))
+        {
+            string master = await EnsureMasterPngAsync(inputPath, cancellationToken).ConfigureAwait(false);
+            return MasterRenderLease.ForMaster(master);
+        }
+
+        if (_inflightMasters.TryGetValue(masterPath, out var runningMaster))
+        {
+            string promotedByLegacy = await runningMaster.ConfigureAwait(false);
+            return MasterRenderLease.ForMaster(promotedByLegacy);
+        }
+
+        var state = _masterLeaseStates.GetOrAdd(dir, _ => new MasterLeaseState());
+        bool takeSlot = false;
+
+        await state.Gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            if (IsCacheValid(metaPath, fp) && File.Exists(masterPath))
+            {
+                return MasterRenderLease.ForMaster(masterPath);
+            }
+
+            if (state.PromotedTask.Task.IsCompleted)
+            {
+                await state.PromotedTask.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
+                return MasterRenderLease.ForMaster(masterPath);
+            }
+
+            if (state.ActiveSlots < CompareDefaults.MaxConcurrentMasterRenders)
+            {
+                state.ActiveSlots++;
+                takeSlot = true;
+            }
+        }
+        finally
+        {
+            state.Gate.Release();
+        }
+
+        if (!takeSlot)
+        {
+            await state.PromotedTask.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
+            return MasterRenderLease.ForMaster(masterPath);
+        }
+
+        string tempPath = Path.Combine(dir, $"master.slot-{Guid.NewGuid():N}.png");
+        Directory.CreateDirectory(dir);
+        try
+        {
+            try
+            {
+                await _rawRenderer.RenderToPngAsync(
+                    inputPath,
+                    tempPath,
+                    Math.Max(1, renderThreads ?? CompareDefaults.JxlThreads),
+                    cancellationToken).ConfigureAwait(false);
+            }
+            catch (FileNotFoundException)
+            {
+                await DecodeRawWithMagickAsync(inputPath, tempPath, cancellationToken).ConfigureAwait(false);
+            }
+
+            bool promotedHere = false;
+            await state.Gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                if (!state.Promoted && !(IsCacheValid(metaPath, fp) && File.Exists(masterPath)))
+                {
+                    File.Move(tempPath, masterPath);
+                    WriteMeta(metaPath, fp, 0, 0);
+                    state.Promoted = true;
+                    promotedHere = true;
+                }
+                else
+                {
+                    state.Promoted = true;
+                }
+            }
+            finally
+            {
+                state.Gate.Release();
+            }
+
+            if (promotedHere)
+            {
+                state.PromotedTask.TrySetResult(true);
+                ReleaseSlot(state, dir);
+                return MasterRenderLease.ForMaster(masterPath);
+            }
+
+            ReleaseSlot(state, dir);
+            return MasterRenderLease.ForTemp(tempPath);
+        }
+        catch (Exception ex)
+        {
+            bool isLast = ReleaseSlot(state, dir);
+            if (isLast && !state.Promoted)
+            {
+                state.PromotedTask.TrySetException(ex);
+            }
+
+            try
+            {
+                if (File.Exists(tempPath))
+                {
+                    File.Delete(tempPath);
+                }
+            }
+            catch
+            {
+            }
+
+            throw;
+        }
+    }
+
+    public async Task<string> EnsureTargetFileFromRenderAsync(
+        string inputPath,
+        string renderedSourcePath,
+        OutputFormat format,
+        int quality,
+        int? effort,
+        CancellationToken cancellationToken = default,
+        int? threads = null)
+    {
+        var fp = ReadFingerprint(inputPath);
+        string dir = Path.Combine(CompareDefaults.CacheRoot, "variant", $"v-{ComputeHash(fp, format, quality, effort)}");
+        string targetPath = Path.Combine(dir, $"target.{GetExtension(format)}");
+        string metaPath = Path.Combine(dir, "meta.json");
+
+        if (IsCacheValid(metaPath, fp) && File.Exists(targetPath) && new FileInfo(targetPath).Length > 0)
+        {
+            return targetPath;
+        }
+
+        if (_inflightVariants.TryGetValue(targetPath, out var running))
+        {
+            return await running.ConfigureAwait(false);
+        }
+
+        TryDeleteDirectory(dir);
+
+        var task = ConvertTargetAsync(renderedSourcePath, targetPath, metaPath, fp, format, quality, effort, cancellationToken, threads);
+        if (!_inflightVariants.TryAdd(targetPath, task))
+        {
+            return await _inflightVariants[targetPath].ConfigureAwait(false);
+        }
+
+        try
+        {
+            return await task.ConfigureAwait(false);
+        }
+        finally
+        {
+            _inflightVariants.TryRemove(targetPath, out _);
+        }
+    }
+
+    public async Task<CompareDisplayPngs> EnsureDisplayPreviewFromRenderAsync(
+        string inputPath,
+        string sourcePath,
+        bool decodeJxlTarget,
+        OutputFormat? format,
+        int quality,
+        int? effort,
+        CancellationToken cancellationToken = default,
+        int? threads = null)
+    {
+        var fp = ReadFingerprint(inputPath);
+        string dir = Path.Combine(CompareDefaults.CacheRoot, "display", $"d-{ComputeHash(fp, format, format == null ? 0 : quality, format == null ? null : effort)}");
+        string previewPath = Path.Combine(dir, "display-preview.png");
+        string metaPath = Path.Combine(dir, "meta.json");
+
+        var cached = ReadMeta(metaPath);
+        if (IsCacheValid(metaPath, fp) && cached != null && cached.Width > 0 && File.Exists(previewPath))
+        {
+            return new CompareDisplayPngs(previewPath, string.Empty, cached.Width, cached.Height);
+        }
+
+        if (_inflightDisplays.TryGetValue(dir, out var running))
+        {
+            return await running.ConfigureAwait(false);
+        }
+
+        TryDeleteDirectory(dir);
+
+        var task = GenerateRenderedDisplayPngsAsync(
+            inputPath, dir, previewPath, metaPath, fp, sourcePath, decodeJxlTarget, format, quality, effort, cancellationToken, threads);
+        if (!_inflightDisplays.TryAdd(dir, task))
+        {
+            return await _inflightDisplays[dir].ConfigureAwait(false);
+        }
+
+        try
+        {
+            return await task.ConfigureAwait(false);
+        }
+        finally
+        {
+            _inflightDisplays.TryRemove(dir, out _);
+        }
+    }
+
+    private async Task<CompareDisplayPngs> GenerateRenderedDisplayPngsAsync(
+        string inputPath,
+        string dir,
+        string previewPath,
+        string metaPath,
+        SourceFingerprint fp,
+        string sourcePath,
+        bool decodeJxlTarget,
+        OutputFormat? format,
+        int quality,
+        int? effort,
+        CancellationToken cancellationToken,
+        int? threads)
+    {
+        Directory.CreateDirectory(dir);
+        string? decodedTemp = null;
+        try
+        {
+            string effectiveSource = sourcePath;
+            if (decodeJxlTarget && format == OutputFormat.Jxl)
+            {
+                decodedTemp = Path.Combine(dir, $"djxl_{Guid.NewGuid():N}.png");
+                try
+                {
+                    await _jxlDecoder.DecodeToPngAsync(sourcePath, decodedTemp, cancellationToken, numThreads: threads).ConfigureAwait(false);
+                }
+                catch (Exception ex) when (IsMissingTool(ex, "djxl"))
+                {
+                    await _imageConverterService.ConvertToPngAsync(sourcePath, decodedTemp, cancellationToken).ConfigureAwait(false);
+                }
+
+                effectiveSource = decodedTemp;
+            }
+
+            var result = await Task.Run(() =>
+            {
+                (int Width, int Height) size = WriteDisplayPreview(effectiveSource, previewPath);
+                return new CompareDisplayPngs(previewPath, string.Empty, size.Width, size.Height);
+            }, cancellationToken).ConfigureAwait(false);
+
+            WriteMeta(metaPath, fp, result.Width, result.Height);
+            return result;
+        }
+        catch
+        {
+            TryDeleteDirectory(dir);
+            throw;
+        }
+        finally
+        {
+            if (decodedTemp != null)
+            {
+                _fileService.DeleteFile(decodedTemp);
+            }
+        }
+    }
+
+    private static (int Width, int Height) WriteDisplayPreview(string sourcePath, string previewPath)
+    {
+        using var image = new MagickImage(sourcePath);
+        int width = (int)image.Width;
+        int height = (int)image.Height;
+        image.ColorSpace = ColorSpace.sRGB;
+        image.ColorType = ColorType.TrueColor;
+        image.SetBitDepth(8);
+        image.Density = new Density(96, 96);
+        image.Strip();
+        image.Settings.SetDefines(new PngWriteDefines
+        {
+            BitDepth = 8,
+            ColorType = ColorType.TrueColor
+        });
+        image.Format = MagickFormat.Png;
+
+        if (image.Width > CompareDefaults.PreviewMaxDimension || image.Height > CompareDefaults.PreviewMaxDimension)
+        {
+            image.Thumbnail(CompareDefaults.PreviewMaxDimension, CompareDefaults.PreviewMaxDimension);
+        }
+        image.Write(previewPath);
+
+        return (width, height);
+    }
+
+    private bool ReleaseSlot(MasterLeaseState state, string dir)
+    {
+        lock (state)
+        {
+            state.ActiveSlots--;
+            if (state.ActiveSlots == 0 && state.PromotedTask.Task.IsCompleted)
+            {
+                _masterLeaseStates.TryRemove(dir, out _);
+            }
+
+            return state.ActiveSlots == 0;
+        }
+    }
+
+    private sealed class MasterLeaseState
+    {
+        public readonly SemaphoreSlim Gate = new(1, 1);
+        public int ActiveSlots;
+        public bool Promoted;
+        public readonly TaskCompletionSource<bool> PromotedTask = new(TaskCreationOptions.RunContinuationsAsynchronously);
     }
 
     public async Task<string?> EnsureQuickPreviewAsync(string inputPath, CancellationToken cancellationToken = default)
@@ -404,6 +730,7 @@ public class CompareConversionService : ICompareConversionService
                         continue;
                     }
 
+                    SweepAbandonedSlotTemps(dir);
                     survivors.Add((dir, meta.CreatedUtc));
                 }
             }
@@ -605,28 +932,8 @@ public class CompareConversionService : ICompareConversionService
         {
             var result = await Task.Run(() =>
             {
-                using var image = new MagickImage(source.SourcePath);
-                int width = (int)image.Width;
-                int height = (int)image.Height;
-                image.ColorSpace = ColorSpace.sRGB;
-                image.ColorType = ColorType.TrueColor;
-                image.SetBitDepth(8);
-                image.Density = new Density(96, 96);
-                image.Strip();
-                image.Settings.SetDefines(new PngWriteDefines
-                {
-                    BitDepth = 8,
-                    ColorType = ColorType.TrueColor
-                });
-                image.Format = MagickFormat.Png;
-
-                if (image.Width > CompareDefaults.PreviewMaxDimension || image.Height > CompareDefaults.PreviewMaxDimension)
-                {
-                    image.Thumbnail(CompareDefaults.PreviewMaxDimension, CompareDefaults.PreviewMaxDimension);
-                }
-                image.Write(previewPath);
-
-                return new CompareDisplayPngs(previewPath, string.Empty, width, height);
+                (int Width, int Height) size = WriteDisplayPreview(source.SourcePath, previewPath);
+                return new CompareDisplayPngs(previewPath, string.Empty, size.Width, size.Height);
             }, cancellationToken).ConfigureAwait(false);
 
             WriteMeta(metaPath, fp, result.Width, result.Height);
@@ -834,6 +1141,30 @@ public class CompareConversionService : ICompareConversionService
         catch
         {
             return null;
+        }
+    }
+
+    private static void SweepAbandonedSlotTemps(string dir)
+    {
+        try
+        {
+            foreach (string temp in Directory.EnumerateFiles(dir, "master.slot-*.png"))
+            {
+                try
+                {
+                    var info = new FileInfo(temp);
+                    if ((DateTime.UtcNow - info.LastWriteTimeUtc).TotalHours >= 24)
+                    {
+                        info.Delete();
+                    }
+                }
+                catch
+                {
+                }
+            }
+        }
+        catch
+        {
         }
     }
 

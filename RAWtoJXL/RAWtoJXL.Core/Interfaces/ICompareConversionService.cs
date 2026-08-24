@@ -1,12 +1,37 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using RAWtoJXL.Core.Models;
 
 namespace RAWtoJXL.Core.Interfaces
 {
     public interface ICompareConversionService
     {
         Task<string> EnsureMasterPngAsync(string inputPath, CancellationToken cancellationToken = default);
+
+        Task<MasterRenderLease> EnsureMasterRenderLeaseAsync(
+            string inputPath,
+            CancellationToken cancellationToken = default,
+            int? renderThreads = null);
+
+        Task<string> EnsureTargetFileFromRenderAsync(
+            string inputPath,
+            string renderedSourcePath,
+            OutputFormat format,
+            int quality,
+            int? effort,
+            CancellationToken cancellationToken = default,
+            int? threads = null);
+
+        Task<CompareDisplayPngs> EnsureDisplayPreviewFromRenderAsync(
+            string inputPath,
+            string sourcePath,
+            bool decodeJxlTarget,
+            OutputFormat? format,
+            int quality,
+            int? effort,
+            CancellationToken cancellationToken = default,
+            int? threads = null);
 
         Task<string?> EnsureQuickPreviewAsync(string inputPath, CancellationToken cancellationToken = default);
 

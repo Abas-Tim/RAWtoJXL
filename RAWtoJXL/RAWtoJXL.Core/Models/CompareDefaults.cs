@@ -10,6 +10,8 @@ namespace RAWtoJXL.Core.Models
 
         public const int JxlEffort = 5;
 
+        public const int MaxConcurrentMasterRenders = 2;
+
         public static int JxlThreads => GetLogicalProcessorCount();
 
         public static int GetJobThreads(int jobs) => Math.Max(1, JxlThreads / Math.Max(1, jobs));
