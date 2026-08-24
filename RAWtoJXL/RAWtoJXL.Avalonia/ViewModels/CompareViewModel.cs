@@ -33,7 +33,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
 
         private bool _initializing = true;
         private bool _applyingMirror;
-        private bool _qualityPending;
+        private readonly HashSet<OutputFormat> _pendingQualityFormats = new();
         private bool _effortPending;
         private bool _disposed;
         private bool _recomputingFormats;
@@ -54,6 +54,18 @@ namespace RAWtoJXL.Avalonia.ViewModels
         [ObservableProperty]
         private int _quality;
 
+        [ObservableProperty]
+        private int _jxlQuality = 90;
+
+        [ObservableProperty]
+        private int _avifQuality = 90;
+
+        [ObservableProperty]
+        private int _jpegQuality = 90;
+
+        [ObservableProperty]
+        private bool _isSettingsPanelOpen = true;
+
         partial void OnQualityChanged(int value)
         {
             if (_initializing || _disposed)
@@ -61,8 +73,41 @@ namespace RAWtoJXL.Avalonia.ViewModels
                 return;
             }
 
-            _qualityPending = true;
+            JxlQuality = value;
+            AvifQuality = value;
+            JpegQuality = value;
+            _pendingQualityFormats.Add(OutputFormat.Jxl);
+            _pendingQualityFormats.Add(OutputFormat.Avif);
+            _pendingQualityFormats.Add(OutputFormat.Jpeg);
             ScheduleReconvert();
+        }
+
+        partial void OnJxlQualityChanged(int value) => MarkQualityPending(OutputFormat.Jxl);
+
+        partial void OnAvifQualityChanged(int value) => MarkQualityPending(OutputFormat.Avif);
+
+        partial void OnJpegQualityChanged(int value) => MarkQualityPending(OutputFormat.Jpeg);
+
+        private void MarkQualityPending(OutputFormat format)
+        {
+            if (_initializing || _disposed)
+            {
+                return;
+            }
+
+            _pendingQualityFormats.Add(format);
+            ScheduleReconvert();
+        }
+
+        public int QualityFor(OutputFormat? format)
+        {
+            return format switch
+            {
+                OutputFormat.Jxl => JxlQuality,
+                OutputFormat.Avif => AvifQuality,
+                OutputFormat.Jpeg => JpegQuality,
+                _ => Quality
+            };
         }
 
         [ObservableProperty]
@@ -116,9 +161,6 @@ namespace RAWtoJXL.Avalonia.ViewModels
         }
 
         [ObservableProperty]
-        private bool _isDifferenceOverlayEnabled;
-
-        [ObservableProperty]
         private bool _isGpuPrototypeVisible = true;
 
         [ObservableProperty]
@@ -130,21 +172,6 @@ namespace RAWtoJXL.Avalonia.ViewModels
             if (!available)
             {
                 IsGpuPrototypeVisible = false;
-            }
-        }
-
-        partial void OnIsDifferenceOverlayEnabledChanged(bool value)
-        {
-            if (_disposed)
-            {
-                return;
-            }
-
-            foreach (var pane in Panes.Where(p => !p.IsOriginal))
-            {
-                CancelAnalysis(pane);
-                pane.RaiseSetDifferenceOverlay(null, default);
-                ScheduleAnalysis(pane);
             }
         }
 
@@ -166,6 +193,9 @@ namespace RAWtoJXL.Avalonia.ViewModels
             _dispatcherService = dispatcherService ?? throw new ArgumentNullException(nameof(dispatcherService));
             _orchestrator = new ComparePipelineOrchestrator(_conversionService);
             _quality = quality;
+            JxlQuality = quality;
+            AvifQuality = quality;
+            JpegQuality = quality;
             SourceFileName = Path.GetFileName(filePath);
             OriginalFormat = GetOriginalFormat(filePath);
 
@@ -213,7 +243,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
             return _conversionService.EnsureDisplayFullPngAsync(
                 SourceFilePath,
                 pane.Format,
-                Quality,
+                QualityFor(pane.Format),
                 JxlEffort,
                 _lifetimeCts.Token);
         }
@@ -243,7 +273,6 @@ namespace RAWtoJXL.Avalonia.ViewModels
             if (!source.IsOriginal)
             {
                 CancelAnalysis(source);
-                source.RaiseSetDifferenceOverlay(null, default);
                 ScheduleAnalysis(source);
             }
 
@@ -288,7 +317,6 @@ namespace RAWtoJXL.Avalonia.ViewModels
             if (!pane.IsOriginal)
             {
                 CancelAnalysis(pane);
-                pane.RaiseSetDifferenceOverlay(null, default);
                 ScheduleAnalysis(pane);
             }
         }
@@ -409,7 +437,6 @@ namespace RAWtoJXL.Avalonia.ViewModels
             {
                 pane.ViewportSsim = null;
                 pane.IsAnalyzing = false;
-                pane.RaiseSetDifferenceOverlay(null, default);
                 pane.ErrorMessage = null;
                 pane.Status = pane.IsOriginal ? PaneStatus.Rendering : PaneStatus.Converting;
             });
@@ -427,7 +454,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
                     var result = await _orchestrator.RunPaneAsync(
                         SourceFilePath,
                         pipelineFormat,
-                        Quality,
+                        QualityFor(pipelineFormat),
                         JxlEffort,
                         allowParallelRender: true,
                         ct,
@@ -443,13 +470,13 @@ namespace RAWtoJXL.Avalonia.ViewModels
                 else
                 {
                     display = await _conversionService.EnsureDisplayPngsAsync(
-                        SourceFilePath, pane.Format, Quality, JxlEffort, ct, threads).ConfigureAwait(false);
+                        SourceFilePath, pane.Format, QualityFor(pane.Format), JxlEffort, ct, threads).ConfigureAwait(false);
                     ct.ThrowIfCancellationRequested();
 
                     if (!pane.IsOriginal && pane.Format != null)
                     {
                         var target = await _conversionService.EnsureTargetFileAsync(
-                            SourceFilePath, pane.Format.Value, Quality, JxlEffort, ct, threads).ConfigureAwait(false);
+                            SourceFilePath, pane.Format.Value, QualityFor(pane.Format.Value), JxlEffort, ct, threads).ConfigureAwait(false);
                         ct.ThrowIfCancellationRequested();
                         fileBytes = GetFileSize(target);
                     }
@@ -607,16 +634,13 @@ namespace RAWtoJXL.Avalonia.ViewModels
             CancelAnalysis(pane);
             pane.ViewportSsim = null;
             pane.IsAnalyzing = true;
-            pane.RaiseSetDifferenceOverlay(null, default);
-
             var cts = CancellationTokenSource.CreateLinkedTokenSource(_lifetimeCts.Token);
             _analysisCts[pane] = cts;
             var request = new AnalysisRequest(
                 pane.Format.Value,
-                Quality,
+                QualityFor(pane.Format.Value),
                 JxlEffort,
                 pane.DisplayState == CompareDisplayState.Full,
-                IsDifferenceOverlayEnabled,
                 snapshot);
             _ = AnalyzeAfterDelayAsync(pane, request, cts);
         }
@@ -626,7 +650,6 @@ namespace RAWtoJXL.Avalonia.ViewModels
             AnalysisRequest request,
             CancellationTokenSource requestCts)
         {
-            Bitmap? overlay = null;
             CancellationToken cancellationToken = requestCts.Token;
             try
             {
@@ -640,46 +663,31 @@ namespace RAWtoJXL.Avalonia.ViewModels
                     request.UseFullResolution,
                     request.Snapshot.PixelWidth,
                     request.Snapshot.PixelHeight,
-                    request.IncludeDifference,
+                    false,
                     cancellationToken).ConfigureAwait(false);
                 cancellationToken.ThrowIfCancellationRequested();
-
-                if (request.IncludeDifference && result.DifferencePng is { Length: > 0 })
-                {
-                    overlay = await Task.Run(() =>
-                    {
-                        using var stream = new MemoryStream(result.DifferencePng, writable: false);
-                        return new Bitmap(stream);
-                    }, cancellationToken).ConfigureAwait(false);
-                }
 
                 await _dispatcherService.InvokeAsync(() =>
                 {
                     if (_disposed || !_analysisCts.TryGetValue(pane, out var current) ||
                         !ReferenceEquals(current, requestCts) || cancellationToken.IsCancellationRequested)
                     {
-                        overlay?.Dispose();
-                        overlay = null;
                         return;
                     }
 
                     pane.ViewportSsim = result.Ssim;
                     pane.IsAnalyzing = false;
-                    pane.RaiseSetDifferenceOverlay(overlay, result.Region);
-                    overlay = null;
                     _analysisCts.Remove(pane);
                     requestCts.Dispose();
                 }).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
-                overlay?.Dispose();
                 await _dispatcherService.InvokeAsync(() =>
                 {
                     if (_analysisCts.TryGetValue(pane, out var current) && ReferenceEquals(current, requestCts))
                     {
                         pane.IsAnalyzing = false;
-                        pane.RaiseSetDifferenceOverlay(null, default);
                         _analysisCts.Remove(pane);
                         requestCts.Dispose();
                     }
@@ -687,14 +695,12 @@ namespace RAWtoJXL.Avalonia.ViewModels
             }
             catch
             {
-                overlay?.Dispose();
                 await _dispatcherService.InvokeAsync(() =>
                 {
                     if (_analysisCts.TryGetValue(pane, out var current) && ReferenceEquals(current, requestCts))
                     {
                         pane.ViewportSsim = null;
                         pane.IsAnalyzing = false;
-                        pane.RaiseSetDifferenceOverlay(null, default);
                         _analysisCts.Remove(pane);
                         requestCts.Dispose();
                     }
@@ -733,13 +739,15 @@ namespace RAWtoJXL.Avalonia.ViewModels
         private void OnReconvertTick(object? sender, EventArgs e)
         {
             _reconvertTimer?.Stop();
-            bool quality = _qualityPending;
             bool effort = _effortPending;
-            _qualityPending = false;
             _effortPending = false;
+            var pendingFormats = new HashSet<OutputFormat>(_pendingQualityFormats);
+            _pendingQualityFormats.Clear();
 
             var affected = Panes
-                .Where(pane => !pane.IsOriginal && (quality || (effort && pane.Format == OutputFormat.Jxl)))
+                .Where(pane => !pane.IsOriginal &&
+                               ((effort && pane.Format == OutputFormat.Jxl) ||
+                                pane.Format is { } format && pendingFormats.Contains(format)))
                 .ToList();
             int threadsPerJob = CompareDefaults.JxlThreads;
             foreach (var pane in affected)
@@ -818,7 +826,6 @@ namespace RAWtoJXL.Avalonia.ViewModels
             int Quality,
             int Effort,
             bool UseFullResolution,
-            bool IncludeDifference,
             ViewportSnapshot Snapshot);
     }
 }

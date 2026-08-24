@@ -61,7 +61,7 @@ public class CompareAnalysisTests
     }
 
     [AvaloniaFact]
-    public async Task FullDisplayWithDifferences_RequestsFullDifferenceAnalysis()
+    public async Task FullDisplay_RequestsFullResolutionAnalysis()
     {
         var context = CreateContext();
         try
@@ -77,7 +77,6 @@ public class CompareAnalysisTests
                 420,
                 9556,
                 6366);
-            context.ViewModel.IsDifferenceOverlayEnabled = true;
             context.ViewModel.OnPaneDisplayStateChanged(
                 context.ViewModel.MiddlePane,
                 CompareDisplayState.Full);
@@ -93,7 +92,7 @@ public class CompareAnalysisTests
                 true,
                 520,
                 420,
-                true,
+                false,
                 It.IsAny<CancellationToken>()), Times.Once);
             Assert.Equal(CompareDisplayState.Full, context.ViewModel.MiddlePane.DisplayState);
             Assert.Equal("Full", context.ViewModel.MiddlePane.DisplayStateText);
