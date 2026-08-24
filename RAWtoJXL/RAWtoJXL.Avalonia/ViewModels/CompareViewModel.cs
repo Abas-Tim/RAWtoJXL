@@ -232,21 +232,6 @@ namespace RAWtoJXL.Avalonia.ViewModels
         }
 
         [ObservableProperty]
-        private bool _isGpuPrototypeVisible = true;
-
-        [ObservableProperty]
-        private bool _isGpuPrototypeAvailable = true;
-
-        internal void SetGpuPrototypeAvailability(bool available)
-        {
-            IsGpuPrototypeAvailable = available;
-            if (!available)
-            {
-                IsGpuPrototypeVisible = false;
-            }
-        }
-
-        [ObservableProperty]
         private string _sourceFileName = string.Empty;
 
         [ObservableProperty]

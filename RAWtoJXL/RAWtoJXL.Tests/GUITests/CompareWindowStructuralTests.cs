@@ -81,7 +81,6 @@ public class CompareWindowStructuralTests
 
         var checkBoxes = GUITestHelpers.GetAllControls<CheckBox>(window).ToList();
         Assert.Contains(checkBoxes, checkBox => checkBox.Content?.ToString() == "Mirror");
-        Assert.Contains(checkBoxes, checkBox => checkBox.Content?.ToString() == "Show GPU prototype");
 
         var textBlocks = GUITestHelpers.GetAllControls<TextBlock>(window).ToList();
         Assert.Equal(3, textBlocks.Count(text => text.Text == "Preview"));

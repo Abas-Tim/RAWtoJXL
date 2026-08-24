@@ -356,25 +356,10 @@
 
                         <Separator/>
 
-                        <TextBlock Text="GPU prototype" FontSize="11" FontWeight="SemiBold" Foreground="#44515C"/>
-                        <CheckBox Content="Show GPU prototype"
-                                  IsChecked="{Binding IsGpuPrototypeVisible, Mode=TwoWay}"
-                                  IsEnabled="{Binding IsGpuPrototypeAvailable}"
-                                  FontSize="11"/>
-                        <Border Background="#0B0D0F"
-                                BorderBrush="#394149"
-                                BorderThickness="1"
-                                CornerRadius="3"
-                                Height="64"
-                                IsVisible="{Binding IsGpuPrototypeVisible}">
-                            <controls:GpuPrototypeControl x:Name="GpuPrototypeSurface"
-                                                          ImageSource="{Binding Panes[0].Preview}"/>
-                        </Border>
-                        <TextBlock Text="{Binding StatusText, ElementName=GpuPrototypeSurface}"
-                                   FontSize="9"
-                                   Foreground="#B6BEC6"
-                                   TextWrapping="Wrap"
-                                   IsVisible="{Binding IsGpuPrototypeVisible}"/>
+                        <TextBlock Text="GPU disabled"
+                                   FontSize="11"
+                                   FontWeight="SemiBold"
+                                   Foreground="#8A939C"/>
                     </StackPanel>
                 </ScrollViewer>
             </Border>
