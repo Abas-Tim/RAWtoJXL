@@ -60,7 +60,6 @@ namespace RAWtoJXL.Avalonia
                     NormalizeViewport(viewer, viewport, sourcePixelWidth),
                     raiseEvent: true);
                 pane.RequestFit += viewer.FitToView;
-                pane.RequestSetDifferenceOverlay += viewer.SetDifferenceOverlay;
             }
 
             Closed += (_, _) =>

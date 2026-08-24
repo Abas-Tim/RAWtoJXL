@@ -25,11 +25,9 @@ namespace RAWtoJXL.Avalonia.ViewModels
     private readonly IDispatcherService _dispatcherService;
         private readonly CancellationTokenSource _lifetimeCts = new();
         private readonly Dictionary<ComparePaneViewModel, CancellationTokenSource> _paneCts = new();
-        private readonly Dictionary<ComparePaneViewModel, CancellationTokenSource> _analysisCts = new();
         private readonly Dictionary<ComparePaneViewModel, ViewportSnapshot> _viewportSnapshots = new();
     private ComparePaneViewModel? _lastViewportSource;
         private readonly object _mirrorGuard = new();
-        private const int AnalysisDebounceMs = 300;
 
         private bool _initializing = true;
         private bool _applyingMirror;
@@ -322,11 +320,6 @@ namespace RAWtoJXL.Avalonia.ViewModels
                 Math.Max(1, pixelHeight),
                 Math.Max(1, imagePixelWidth),
                 Math.Max(1, imagePixelHeight));
-            if (!source.IsOriginal)
-            {
-                CancelAnalysis(source);
-                ScheduleAnalysis(source);
-            }
 
             if (!IsMirroring || _applyingMirror)
             {
@@ -366,11 +359,6 @@ namespace RAWtoJXL.Avalonia.ViewModels
             }
 
             pane.DisplayState = state;
-            if (!pane.IsOriginal)
-            {
-                CancelAnalysis(pane);
-                ScheduleAnalysis(pane);
-            }
         }
 
         public void Dispose()
@@ -395,17 +383,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
             }
             _paneCts.Clear();
 
-            foreach (var cts in _analysisCts.Values)
-            {
-                cts.Cancel();
-                cts.Dispose();
-            }
-            _analysisCts.Clear();
             _viewportSnapshots.Clear();
-            foreach (var pane in Panes)
-            {
-                pane.IsAnalyzing = false;
-            }
         }
 
         private void OnPaneFormatChanged(object? sender, OutputFormat? format)
@@ -494,12 +472,9 @@ namespace RAWtoJXL.Avalonia.ViewModels
         {
             var cts = CreatePaneCts(pane);
             var ct = cts.Token;
-            CancelAnalysis(pane);
 
             await _dispatcherService.InvokeAsync(() =>
             {
-                pane.ViewportSsim = null;
-                pane.IsAnalyzing = false;
                 pane.ErrorMessage = null;
                 pane.Status = pane.IsOriginal ? PaneStatus.Rendering : PaneStatus.Converting;
             });
@@ -571,8 +546,6 @@ namespace RAWtoJXL.Avalonia.ViewModels
                             pane.RaiseSetViewport(mirrorSnapshot.Viewport, mirrorSnapshot.ImagePixelWidth);
                         }
                     }
-
-                    ScheduleAnalysis(pane);
                 }).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
@@ -686,102 +659,6 @@ namespace RAWtoJXL.Avalonia.ViewModels
             return linked;
         }
 
-        private void ScheduleAnalysis(ComparePaneViewModel pane)
-        {
-            if (_disposed || pane.IsOriginal || pane.Status != PaneStatus.Ready || pane.Format == null ||
-                !_viewportSnapshots.TryGetValue(pane, out var snapshot))
-            {
-                return;
-            }
-
-            CancelAnalysis(pane);
-            pane.ViewportSsim = null;
-            pane.IsAnalyzing = true;
-            var cts = CancellationTokenSource.CreateLinkedTokenSource(_lifetimeCts.Token);
-            _analysisCts[pane] = cts;
-            var request = new AnalysisRequest(
-                pane.Format.Value,
-                QualityFor(pane.Format.Value),
-                JxlEffort,
-                pane.DisplayState == CompareDisplayState.Full,
-                snapshot);
-            _ = AnalyzeAfterDelayAsync(pane, request, cts);
-        }
-
-        private async Task AnalyzeAfterDelayAsync(
-            ComparePaneViewModel pane,
-            AnalysisRequest request,
-            CancellationTokenSource requestCts)
-        {
-            CancellationToken cancellationToken = requestCts.Token;
-            try
-            {
-                await Task.Delay(AnalysisDebounceMs, cancellationToken).ConfigureAwait(false);
-                var result = await _conversionService.AnalyzeViewportAsync(
-                    SourceFilePath,
-                    request.Format,
-                    request.Quality,
-                    request.Effort,
-                    request.Snapshot.Region,
-                    request.UseFullResolution,
-                    request.Snapshot.PixelWidth,
-                    request.Snapshot.PixelHeight,
-                    false,
-                    cancellationToken).ConfigureAwait(false);
-                cancellationToken.ThrowIfCancellationRequested();
-
-                await _dispatcherService.InvokeAsync(() =>
-                {
-                    if (_disposed || !_analysisCts.TryGetValue(pane, out var current) ||
-                        !ReferenceEquals(current, requestCts) || cancellationToken.IsCancellationRequested)
-                    {
-                        return;
-                    }
-
-                    pane.ViewportSsim = result.Ssim;
-                    pane.IsAnalyzing = false;
-                    _analysisCts.Remove(pane);
-                    requestCts.Dispose();
-                }).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
-                await _dispatcherService.InvokeAsync(() =>
-                {
-                    if (_analysisCts.TryGetValue(pane, out var current) && ReferenceEquals(current, requestCts))
-                    {
-                        pane.IsAnalyzing = false;
-                        _analysisCts.Remove(pane);
-                        requestCts.Dispose();
-                    }
-                }).ConfigureAwait(false);
-            }
-            catch
-            {
-                await _dispatcherService.InvokeAsync(() =>
-                {
-                    if (_analysisCts.TryGetValue(pane, out var current) && ReferenceEquals(current, requestCts))
-                    {
-                        pane.ViewportSsim = null;
-                        pane.IsAnalyzing = false;
-                        _analysisCts.Remove(pane);
-                        requestCts.Dispose();
-                    }
-                }).ConfigureAwait(false);
-            }
-        }
-
-        private void CancelAnalysis(ComparePaneViewModel pane)
-        {
-            if (_analysisCts.Remove(pane, out var cts))
-            {
-                cts.Cancel();
-                cts.Dispose();
-            }
-
-            pane.IsAnalyzing = false;
-        }
-
         private void ScheduleReconvert()
         {
             if (_reconvertTimer == null)
@@ -883,12 +760,5 @@ namespace RAWtoJXL.Avalonia.ViewModels
             int PixelHeight,
             int ImagePixelWidth,
             int ImagePixelHeight);
-
-        private readonly record struct AnalysisRequest(
-            OutputFormat Format,
-            int Quality,
-            int Effort,
-            bool UseFullResolution,
-            ViewportSnapshot Snapshot);
     }
 }

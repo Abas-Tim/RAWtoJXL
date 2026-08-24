@@ -66,11 +66,6 @@
                                 <TextBlock Text="{Binding Panes[1].DisplayStateText}"
                                            FontSize="10"
                                            Foreground="#44515C"/>
-                                <TextBlock Text="{Binding Panes[1].SsimText}"
-                                           FontSize="10"
-                                           FontWeight="SemiBold"
-                                           Foreground="#4C3A72"
-                                           ToolTip.Tip="SSIM for the currently visible image region"/>
                             </StackPanel>
                         </StackPanel>
                     </Border>
@@ -91,11 +86,6 @@
                                 <TextBlock Text="{Binding Panes[2].DisplayStateText}"
                                            FontSize="10"
                                            Foreground="#44515C"/>
-                                <TextBlock Text="{Binding Panes[2].SsimText}"
-                                           FontSize="10"
-                                           FontWeight="SemiBold"
-                                           Foreground="#4C3A72"
-                                           ToolTip.Tip="SSIM for the currently visible image region"/>
                             </StackPanel>
                         </StackPanel>
                     </Border>

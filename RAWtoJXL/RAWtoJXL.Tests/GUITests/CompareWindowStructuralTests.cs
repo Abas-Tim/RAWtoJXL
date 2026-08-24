@@ -84,7 +84,6 @@ public class CompareWindowStructuralTests
 
         var textBlocks = GUITestHelpers.GetAllControls<TextBlock>(window).ToList();
         Assert.Equal(3, textBlocks.Count(text => text.Text == "Preview"));
-        Assert.Equal(2, textBlocks.Count(text => text.Text == "SSIM --"));
 
         window.Close();
         vm.Dispose();
