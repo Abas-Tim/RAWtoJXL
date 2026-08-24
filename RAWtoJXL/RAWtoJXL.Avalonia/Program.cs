@@ -1,5 +1,6 @@
 using System;
 using Avalonia;
+using RAWtoJXL.Core.Services;
 
 namespace RAWtoJXL.Avalonia
 {
@@ -10,6 +11,7 @@ namespace RAWtoJXL.Avalonia
         [STAThread]
         public static void Main(string[] args)
         {
+            ProcessorAffinityService.TryExpandToAllLogicalProcessors();
             BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
         }
 

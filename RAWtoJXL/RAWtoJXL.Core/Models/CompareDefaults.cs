@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using RAWtoJXL.Core.Services;
 
 namespace RAWtoJXL.Core.Models
 {
@@ -10,6 +11,8 @@ namespace RAWtoJXL.Core.Models
         public const int JxlEffort = 5;
 
         public static int JxlThreads => GetLogicalProcessorCount();
+
+        public static int GetJobThreads(int jobs) => Math.Max(1, JxlThreads / Math.Max(1, jobs));
 
         public const uint PreviewMaxDimension = 4096;
 
@@ -25,10 +28,21 @@ namespace RAWtoJXL.Core.Models
 
         private static int GetLogicalProcessorCount()
         {
+            int affinityCount = ProcessorAffinityService.GetCurrentAffinityProcessorCount();
+            if (affinityCount > 0)
+            {
+                return affinityCount;
+            }
+
+            if (Environment.ProcessorCount > 0)
+            {
+                return Environment.ProcessorCount;
+            }
+
             string? configuredCount = Environment.GetEnvironmentVariable("NUMBER_OF_PROCESSORS");
             return int.TryParse(configuredCount, out int processorCount) && processorCount > 0
                 ? processorCount
-                : Math.Max(1, Environment.ProcessorCount);
+                : 1;
         }
     }
 }
