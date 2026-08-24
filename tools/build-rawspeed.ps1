@@ -11,7 +11,7 @@ $out = Join-Path $root "RawSpeedTools"
 
 New-Item -ItemType Directory -Force -Path $build, $out | Out-Null
 
-cmake -S (Join-Path $root "native") -B $build -A x64 -DBUILD_TESTING=OFF -DBUILD_BENCHMARKING=OFF -DCMAKE_BUILD_TYPE=Release
+cmake -S (Join-Path $root "native") -B $build -A x64 -DBUILD_TESTING=OFF -DBUILD_BENCHMARKING=OFF -DUSE_BUNDLED_PUGIXML=ON -DWITH_JPEG=OFF -DUSE_BUNDLED_ZLIB=ON -DCMAKE_BUILD_TYPE=Release
 cmake --build $build --config Release --target rawspeed-cli
 
 $stage = Join-Path $build "Release"
