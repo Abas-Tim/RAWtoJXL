@@ -22,7 +22,7 @@ public class DjxlDecoderService : IJxlDecoder
         _processRunner = processRunner ?? throw new ArgumentNullException(nameof(processRunner));
     }
 
-    public async Task DecodeToPngAsync(string inputPath, string outputPath, CancellationToken cancellationToken = default, int timeoutSeconds = 300)
+    public async Task DecodeToPngAsync(string inputPath, string outputPath, CancellationToken cancellationToken = default, int timeoutSeconds = 300, int? numThreads = null)
     {
         if (string.IsNullOrWhiteSpace(inputPath))
         {
@@ -49,9 +49,10 @@ public class DjxlDecoderService : IJxlDecoder
 
         string djxlPath = await ResolveDjxlExecutableAsync(cancellationToken);
 
-        string arguments = $"{Quote(inputPath)} {Quote(outputPath)}";
+        string threadOption = numThreads is > 0 ? $"--num_threads={numThreads.Value} " : string.Empty;
+        string arguments = $"{threadOption}{Quote(inputPath)} {Quote(outputPath)}";
 
-        _logger.Write($"[DjxlDecoder] Decoding {Path.GetFileName(inputPath)} to {Path.GetFileName(outputPath)}");
+        _logger.Write($"[DjxlDecoder] Decoding {Path.GetFileName(inputPath)} to {Path.GetFileName(outputPath)}{(numThreads is > 0 ? $" with {numThreads.Value} threads" : string.Empty)}");
         _logger.Write($"[DjxlDecoder] Full djxl command: {djxlPath} {arguments}");
 
         var (exitCode, stdout, stderr, timedOut) = await _processRunner.RunProcessWithTimeoutAsync(

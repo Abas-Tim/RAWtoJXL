@@ -81,8 +81,8 @@ public class CompareConversionServiceTests
         var input = Path.Combine(dir, "input.jxl");
         File.WriteAllText(input, "fake jxl");
         var djxl = new Mock<IJxlDecoder>();
-        djxl.Setup(x => x.DecodeToPngAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<int>()))
-            .Callback<string, string, CancellationToken, int>((_, output, _, _) => File.WriteAllText(output, "png"))
+        djxl.Setup(x => x.DecodeToPngAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<int>(), It.IsAny<int?>()))
+            .Callback<string, string, CancellationToken, int, int?>((_, output, _, _, _) => File.WriteAllText(output, "png"))
             .Returns(Task.CompletedTask);
         var service = CreateService(djxl: djxl);
 
@@ -93,7 +93,7 @@ public class CompareConversionServiceTests
 
             await service.EnsureMasterPngAsync(input);
 
-            djxl.Verify(x => x.DecodeToPngAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<int>()), Times.Once);
+            djxl.Verify(x => x.DecodeToPngAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<int>(), It.IsAny<int?>()), Times.Once);
         }
         finally
         {
@@ -275,7 +275,7 @@ public class CompareConversionServiceTests
             .ThrowsAsync(new FileNotFoundException("cjxl executable not found"));
         var djxl = new Mock<IJxlDecoder>();
         djxl.Setup(x => x.DecodeToPngAsync(
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<int>()))
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<int>(), It.IsAny<int?>()))
             .ThrowsAsync(new FileNotFoundException("djxl executable not found"));
         var service = CreateService(cjxl, djxl);
 

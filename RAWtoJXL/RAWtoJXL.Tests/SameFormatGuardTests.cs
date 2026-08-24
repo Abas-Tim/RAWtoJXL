@@ -117,7 +117,7 @@ public class SameFormatGuardTests
         {
             string? decodedTemp = null;
             var decoder = new Mock<IJxlDecoder>();
-            decoder.Setup(x => x.DecodeToPngAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<int>()))
+            decoder.Setup(x => x.DecodeToPngAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<int>(), It.IsAny<int?>()))
                 .Callback<string, string, CancellationToken, int>((_, outPath, _, _) =>
                 {
                     decodedTemp = outPath;

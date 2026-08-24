@@ -725,7 +725,7 @@ public class CompareConversionService : ICompareConversionService
         {
             try
             {
-                await _jxlDecoder.DecodeToPngAsync(targetPath, tempPng, cancellationToken).ConfigureAwait(false);
+                await _jxlDecoder.DecodeToPngAsync(targetPath, tempPng, cancellationToken, numThreads: threads).ConfigureAwait(false);
             }
             catch (Exception ex) when (IsMissingTool(ex, "djxl"))
             {
