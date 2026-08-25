@@ -1,1 +1,0 @@
-H:\Playground\RAWtoJXL\native\build\rawspeed\src\librawspeed\parsers\rawspeed_parsers.dir\Release\rawspeed_parsers.lib

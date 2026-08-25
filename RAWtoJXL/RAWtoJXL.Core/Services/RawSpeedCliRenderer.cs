@@ -81,6 +81,7 @@ public sealed class RawSpeedCliRenderer : IRawRenderer
             };
             startInfo.ArgumentList.Add(inputPath);
             startInfo.ArgumentList.Add(tempPpm);
+            startInfo.ArgumentList.Add("8");
 
             using var process = Process.Start(startInfo)
                 ?? throw new InvalidOperationException("Failed to start rawspeed-cli.");
@@ -106,10 +107,7 @@ public sealed class RawSpeedCliRenderer : IRawRenderer
             {
                 using var image = new MagickImage(tempPpm);
                 image.ColorSpace = ColorSpace.sRGB;
-                if (image.Depth > 8)
-                {
-                    image.Depth = 16;
-                }
+                image.Settings.SetDefine(MagickFormat.Png, "compression-level", "1");
                 image.Format = MagickFormat.Png;
                 image.Write(outputPath);
             }, cancellationToken).ConfigureAwait(false);

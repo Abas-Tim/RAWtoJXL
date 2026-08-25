@@ -93,6 +93,9 @@ static void demosaicBand(const DemosaicJob &j, uint32_t yStart, uint32_t yEnd)
 
 static bool render(rawspeed::RawImage raw, std::vector<uint16_t> &rgbOut, uint32_t &outW, uint32_t &outH)
 {
+    raw->cfa.setCFA(rawspeed::iPoint2D(2, 2), CFAColor::RED, CFAColor::GREEN,
+                    CFAColor::GREEN, CFAColor::BLUE);
+
     const auto c00 = raw->cfa.getColorAt(0, 0);
     const auto c01 = raw->cfa.getColorAt(1, 0);
     const auto c10 = raw->cfa.getColorAt(0, 1);
@@ -185,8 +188,12 @@ int main(int argc, char **argv)
             fprintf(stderr, "rawspeed: cannot write output\n");
             return 1;
         }
-        fprintf(f, "P6\n%u %u\n65535\n", w, h);
-        std::vector<uint8_t> row((size_t)w * 6);
+        bool eightBit = (argc > 3 && argv[3][0] == '8');
+        if (eightBit)
+            fprintf(f, "P6\n%u %u\n255\n", w, h);
+        else
+            fprintf(f, "P6\n%u %u\n65535\n", w, h);
+        std::vector<uint8_t> row((size_t)w * (eightBit ? 3 : 6));
         for (uint32_t y = 0; y < h; ++y)
         {
             size_t o = 0;
@@ -196,12 +203,21 @@ int main(int argc, char **argv)
                 uint16_t r = src[x * 3 + 0];
                 uint16_t g = src[x * 3 + 1];
                 uint16_t b = src[x * 3 + 2];
-                row[o++] = (uint8_t)(r >> 8);
-                row[o++] = (uint8_t)(r & 0xFF);
-                row[o++] = (uint8_t)(g >> 8);
-                row[o++] = (uint8_t)(g & 0xFF);
-                row[o++] = (uint8_t)(b >> 8);
-                row[o++] = (uint8_t)(b & 0xFF);
+                if (eightBit)
+                {
+                    row[o++] = (uint8_t)(r >> 8);
+                    row[o++] = (uint8_t)(g >> 8);
+                    row[o++] = (uint8_t)(b >> 8);
+                }
+                else
+                {
+                    row[o++] = (uint8_t)(r >> 8);
+                    row[o++] = (uint8_t)(r & 0xFF);
+                    row[o++] = (uint8_t)(g >> 8);
+                    row[o++] = (uint8_t)(g & 0xFF);
+                    row[o++] = (uint8_t)(b >> 8);
+                    row[o++] = (uint8_t)(b & 0xFF);
+                }
             }
             if (fwrite(row.data(), 1, o, f) != o) { fclose(f); return 1; }
         }

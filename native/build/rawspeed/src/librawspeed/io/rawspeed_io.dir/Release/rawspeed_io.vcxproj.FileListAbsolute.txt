@@ -1,1 +1,0 @@
-H:\Playground\RAWtoJXL\native\build\rawspeed\src\librawspeed\io\rawspeed_io.dir\Release\rawspeed_io.lib

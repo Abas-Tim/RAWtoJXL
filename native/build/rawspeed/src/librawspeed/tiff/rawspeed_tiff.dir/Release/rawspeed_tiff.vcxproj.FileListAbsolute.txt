@@ -1,1 +1,0 @@
-H:\Playground\RAWtoJXL\native\build\rawspeed\src\librawspeed\tiff\rawspeed_tiff.dir\Release\rawspeed_tiff.lib
