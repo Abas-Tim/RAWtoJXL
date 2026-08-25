@@ -101,6 +101,13 @@ public class DjxlDecoderService : IJxlDecoder
                 "djxl.exe");
         }
 
+        if (!Path.IsPathRooted(djxlPath))
+        {
+            throw new FileNotFoundException(
+                $"djxl executable path must be absolute but was: {djxlPath}.",
+                djxlPath);
+        }
+
         if (!File.Exists(djxlPath))
         {
             throw new FileNotFoundException(
