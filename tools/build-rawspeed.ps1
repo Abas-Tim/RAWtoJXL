@@ -1,5 +1,5 @@
 # Builds native/rawspeed + native/rawspeed-cli and stages the result into
-# RAWtoJXL\RawSpeedTools\ (bundled by the csproj like cjxl.exe / Darktable).
+# RAWtoJXL\RawSpeedTools\ (bundled by the csproj like cjxl.exe).
 # Requires MSVC (Visual Studio Build Tools or VS 2022 with "Desktop C++").
 #   winget install Microsoft.VisualStudio.2022.BuildTools --override "--wait --quiet --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
 # Usage:  pwsh -File tools\build-rawspeed.ps1

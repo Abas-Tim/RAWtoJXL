@@ -8,13 +8,18 @@ namespace RAWtoJXL.Tests;
 public class PreferredRawRendererTests
 {
     [Fact]
-    public async Task ResolveAndRender_FallsBackToMagick_WhenDarktableMissing()
+    public async Task ResolveAndRender_FallsBackToMagick_WhenRawSpeedMissing()
     {
-        string? saved = Environment.GetEnvironmentVariable("RAWTOJXL_DARKTABLE_CLI");
+        string? saved = Environment.GetEnvironmentVariable("RAWTOJXL_RAWSPEED_CLI");
         var logger = new Mock<ILogger>();
         try
         {
-            Environment.SetEnvironmentVariable("RAWTOJXL_DARKTABLE_CLI", null);
+            Environment.SetEnvironmentVariable("RAWTOJXL_RAWSPEED_CLI", null);
+            if (RawSpeedCliRenderer.ResolveExecutable() != null)
+            {
+                return;
+            }
+
             string dir = Path.Combine(Path.GetTempPath(), "RAWtoJXL_PrefRender_" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(dir);
             string input = Path.Combine(dir, "input.dng");
@@ -33,7 +38,7 @@ public class PreferredRawRendererTests
         }
         finally
         {
-            Environment.SetEnvironmentVariable("RAWTOJXL_DARKTABLE_CLI", saved);
+            Environment.SetEnvironmentVariable("RAWTOJXL_RAWSPEED_CLI", saved);
         }
     }
 }

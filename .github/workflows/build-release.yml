@@ -37,7 +37,6 @@ env:
   DOTNET_VERSION: "8.0.x"
   CJXL_VERSION: "0.11.2"
   EXIFTOOL_VERSION: "13.57"
-  DARKTABLE_VERSION: "5.6.0"
 
 # ── Concurrency ─────────────────────────────────────────────────────────────
 concurrency:
@@ -160,29 +159,6 @@ jobs:
           pwsh -File tools/build-rawspeed.ps1
           if ($LASTEXITCODE -ne 0) { Write-Error "rawspeed build failed"; exit 1 }
           Write-Output "rawspeed-cli bundled."
-
-      # Download darktable (accelerated raw rendering) - release builds only
-      - name: Download darktable
-        if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
-        shell: pwsh
-        run: |
-          $version = "${{ env.DARKTABLE_VERSION }}"
-          $url = "https://github.com/darktable-org/darktable/releases/download/release-$version/darktable-$version-win64.exe"
-          $exe = Join-Path $env:TEMP "darktable-installer.exe"
-          curl.exe -L -s -o $exe $url
-          if ($LASTEXITCODE -ne 0) { Write-Error "darktable download failed (curl exit $LASTEXITCODE)"; exit 1 }
-
-          $dest = Join-Path $env:TEMP "darktable-install"
-          Start-Process -FilePath $exe -ArgumentList "/S", "/D=$dest" -Wait
-          $cli = Join-Path $dest "darktable-cli.exe"
-          if (-not (Test-Path $cli)) { Write-Error "darktable-cli.exe missing after install"; exit 1 }
-          & $cli --version | Out-Null
-          if ($LASTEXITCODE -ne 0) { Write-Error "darktable-cli version check failed (exit $LASTEXITCODE)"; exit 1 }
-
-          Get-ChildItem $dest -Directory -Filter ".cache" -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force
-          Copy-Item $dest "${{ github.workspace }}/RAWtoJXL/Darktable" -Recurse -Force
-          Remove-Item $exe, $dest -Recurse -Force -ErrorAction SilentlyContinue
-          Write-Output "darktable 5.6.0 bundled ($([math]::Round((Get-ChildItem "${{ github.workspace }}/RAWtoJXL/Darktable" -Recurse -File | Measure-Object Length -Sum).Sum/1MB,1)) MB)."
 
       # ── Restore ────────────────────────────────────────────────────────
       - name: Restore dependencies

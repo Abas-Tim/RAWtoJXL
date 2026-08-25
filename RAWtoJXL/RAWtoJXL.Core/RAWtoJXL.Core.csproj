@@ -25,10 +25,6 @@
     <None Include="..\cjxl.exe" Condition="Exists('..\cjxl.exe')" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\djxl.exe" Condition="Exists('..\djxl.exe')" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\exiftool.exe" Condition="Exists('..\exiftool.exe')" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\Darktable\**\*.*" Condition="Exists('..\Darktable')">
-      <Link>Darktable\%(RecursiveDir)%(Filename)%(Extension)</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="..\RawSpeedTools\**\*.*" Condition="Exists('..\RawSpeedTools')">
       <Link>RawSpeedTools\%(RecursiveDir)%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
