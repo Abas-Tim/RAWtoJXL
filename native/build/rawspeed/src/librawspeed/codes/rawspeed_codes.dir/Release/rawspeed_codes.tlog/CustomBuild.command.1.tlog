@@ -1,0 +1,10 @@
+^H:\PLAYGROUND\RAWTOJXL\NATIVE\RAWSPEED\SRC\LIBRAWSPEED\CODES\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SH:/Playground/RAWtoJXL/native -BH:/Playground/RAWtoJXL/native/build --check-stamp-file H:/Playground/RAWtoJXL/native/build/rawspeed/src/librawspeed/codes/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

@@ -1,0 +1,1 @@
+H:\Playground\RAWtoJXL\native\build\rawspeed\src\librawspeed\decoders\rawspeed_decoders.dir\Release\rawspeed_decoders.lib

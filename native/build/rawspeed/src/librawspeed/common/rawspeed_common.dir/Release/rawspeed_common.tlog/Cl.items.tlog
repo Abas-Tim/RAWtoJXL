@@ -1,0 +1,11 @@
+H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\common\ChecksumFile.cpp;H:\Playground\RAWtoJXL\native\build\rawspeed\src\librawspeed\common\rawspeed_common.dir\Release\ChecksumFile.obj
+H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\common\Common.cpp;H:\Playground\RAWtoJXL\native\build\rawspeed\src\librawspeed\common\rawspeed_common.dir\Release\Common.obj
+H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\common\CpuFeatures.cpp;H:\Playground\RAWtoJXL\native\build\rawspeed\src\librawspeed\common\rawspeed_common.dir\Release\CpuFeatures.obj
+H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\common\DngOpcodes.cpp;H:\Playground\RAWtoJXL\native\build\rawspeed\src\librawspeed\common\rawspeed_common.dir\Release\DngOpcodes.obj
+H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\common\ErrorLog.cpp;H:\Playground\RAWtoJXL\native\build\rawspeed\src\librawspeed\common\rawspeed_common.dir\Release\ErrorLog.obj
+H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\common\GetNumberOfProcessorCores.cpp;H:\Playground\RAWtoJXL\native\build\rawspeed\src\librawspeed\common\rawspeed_common.dir\Release\GetNumberOfProcessorCores.obj
+H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\common\RawImage.cpp;H:\Playground\RAWtoJXL\native\build\rawspeed\src\librawspeed\common\rawspeed_common.dir\Release\RawImage.obj
+H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\common\RawImageDataFloat.cpp;H:\Playground\RAWtoJXL\native\build\rawspeed\src\librawspeed\common\rawspeed_common.dir\Release\RawImageDataFloat.obj
+H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\common\RawImageDataU16.cpp;H:\Playground\RAWtoJXL\native\build\rawspeed\src\librawspeed\common\rawspeed_common.dir\Release\RawImageDataU16.obj
+H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\common\RawspeedException.cpp;H:\Playground\RAWtoJXL\native\build\rawspeed\src\librawspeed\common\rawspeed_common.dir\Release\RawspeedException.obj
+H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\common\TableLookUp.cpp;H:\Playground\RAWtoJXL\native\build\rawspeed\src\librawspeed\common\rawspeed_common.dir\Release\TableLookUp.obj

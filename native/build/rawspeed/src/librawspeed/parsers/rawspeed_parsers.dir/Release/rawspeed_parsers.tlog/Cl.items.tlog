@@ -1,0 +1,8 @@
+H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\parsers\CiffParser.cpp;H:\Playground\RAWtoJXL\native\build\rawspeed\src\librawspeed\parsers\rawspeed_parsers.dir\Release\CiffParser.obj
+H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\parsers\CiffParserException.cpp;H:\Playground\RAWtoJXL\native\build\rawspeed\src\librawspeed\parsers\rawspeed_parsers.dir\Release\CiffParserException.obj
+H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\parsers\FiffParser.cpp;H:\Playground\RAWtoJXL\native\build\rawspeed\src\librawspeed\parsers\rawspeed_parsers.dir\Release\FiffParser.obj
+H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\parsers\FiffParserException.cpp;H:\Playground\RAWtoJXL\native\build\rawspeed\src\librawspeed\parsers\rawspeed_parsers.dir\Release\FiffParserException.obj
+H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\parsers\RawParser.cpp;H:\Playground\RAWtoJXL\native\build\rawspeed\src\librawspeed\parsers\rawspeed_parsers.dir\Release\RawParser.obj
+H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\parsers\RawParserException.cpp;H:\Playground\RAWtoJXL\native\build\rawspeed\src\librawspeed\parsers\rawspeed_parsers.dir\Release\RawParserException.obj
+H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\parsers\TiffParser.cpp;H:\Playground\RAWtoJXL\native\build\rawspeed\src\librawspeed\parsers\rawspeed_parsers.dir\Release\TiffParser.obj
+H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\parsers\TiffParserException.cpp;H:\Playground\RAWtoJXL\native\build\rawspeed\src\librawspeed\parsers\rawspeed_parsers.dir\Release\TiffParserException.obj

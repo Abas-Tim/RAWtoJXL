@@ -1,0 +1,73 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\adt\AlignedAllocator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\adt\Array1DRef.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\adt\Array2DRef.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\adt\Bit.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\adt\BitIterator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\adt\Casts.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\adt\CoalescingOutputIterator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\adt\CroppedArray1DRef.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\adt\CroppedArray2DRef.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\adt\DefaultInitAllocatorAdaptor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\adt\Invariant.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\adt\Mutex.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\adt\NORangesSet.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\adt\NotARational.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\adt\PartitioningOutputIterator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\adt\Point.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\adt\Range.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\adt\TiledArray2DRef.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\adt\VariableLengthLoad.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\adt\iterator_range.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="H:\Playground\RAWtoJXL\native\rawspeed\src\librawspeed\adt\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{BEAF4AFF-C111-3341-953A-AEFB780C7F55}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

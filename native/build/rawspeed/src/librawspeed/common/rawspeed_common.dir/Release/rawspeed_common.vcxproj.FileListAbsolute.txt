@@ -1,0 +1,1 @@
+H:\Playground\RAWtoJXL\native\build\rawspeed\src\librawspeed\common\rawspeed_common.dir\Release\rawspeed_common.lib

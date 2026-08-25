@@ -8,16 +8,15 @@
 #include <thread>
 #include <vector>
 
-#include "RawSpeed/RawSpeed.h"
+#include "librawspeed/RawSpeed-API.h"
 
 using std::uint8_t;
 using std::uint16_t;
+using rawspeed::CFAColor;
 
 struct DemosaicJob
 {
-    const uint16_t *mosaic;
-    uint32_t mosaicWidth;
-    uint32_t mosaicHeight;
+    rawspeed::Array2DRef<uint16_t> mosaic;
     uint32_t scaleTop;    // 0
     uint32_t scaleLeft;   // 0
     uint16_t *rgb;
@@ -25,6 +24,12 @@ struct DemosaicJob
     uint32_t rgbHeight;
     int patternCode;
     float wb[3];
+
+    explicit DemosaicJob(rawspeed::Array2DRef<uint16_t> m)
+        : mosaic(m), scaleTop(0), scaleLeft(0), rgb(nullptr), rgbWidth(0),
+          rgbHeight(0), patternCode(0), wb{1, 1, 1}
+    {
+    }
 };
 
 static int cfaIndexOf(int patternCode, uint32_t row, uint32_t col)
@@ -54,13 +59,13 @@ static void demosaicBand(const DemosaicJob &j, uint32_t yStart, uint32_t yEnd)
             for (int dy = -2; dy <= 2; ++dy)
             {
                 int yy = (int)sy + dy;
-                if (yy < 0 || yy >= (int)j.mosaicHeight) continue;
+                if (yy < 0 || yy >= j.mosaic.height()) continue;
                 for (int dx = -2; dx <= 2; ++dx)
                 {
                     int xx = (int)sx + dx;
-                    if (xx < 0 || xx >= (int)j.mosaicWidth) continue;
-                    int c = cfaIndexOf(j.patternCode, yy, xx);
-                    float v = j.mosaic[yy * j.mosaicWidth + xx];
+                    if (xx < 0 || xx >= j.mosaic.width()) continue;
+                    int c = cfaIndexOf(j.patternCode, (uint32_t)yy, (uint32_t)xx);
+                    float v = (float)j.mosaic(yy, xx);
                     float w = (dx == 0 && dy == 0) ? 4.0f
                              : (std::abs(dx) + std::abs(dy) == 1) ? 1.0f
                              : 0.25f;
@@ -86,42 +91,31 @@ static void demosaicBand(const DemosaicJob &j, uint32_t yStart, uint32_t yEnd)
     }
 }
 
-static bool render(rawspeed::RawDecoder *decoder, std::vector<uint16_t> &rgbOut, uint32_t &outW, uint32_t &outH)
+static bool render(rawspeed::RawImage raw, std::vector<uint16_t> &rgbOut, uint32_t &outW, uint32_t &outH)
 {
-    auto raw = decoder->decodeRaw();
-    if (!raw) return false;
+    const auto c00 = raw->cfa.getColorAt(0, 0);
+    const auto c01 = raw->cfa.getColorAt(1, 0);
+    const auto c10 = raw->cfa.getColorAt(0, 1);
+    const auto c11 = raw->cfa.getColorAt(1, 1);
 
-    int cfa[4] = {
-        raw->cfa->getColorAt(0, 0), raw->cfa->getColorAt(0, 1),
-        raw->cfa->getColorAt(1, 0), raw->cfa->getColorAt(1, 1)
-    };
     int pattern = -1;
-    if (cfa[3] == 1 && cfa[0] == 1 && cfa[1] == 0 && cfa[2] == 2) pattern = 0;            // RGGB
-    else if (cfa[3] == 2 && cfa[0] == 1 && cfa[1] == 1 && cfa[2] == 0) pattern = 1;      // GRBG
-    else if (cfa[3] == 0 && cfa[0] == 1 && cfa[1] == 1 && cfa[2] == 2) pattern = 2;      // BGGR
-    else if (cfa[3] == 1 && cfa[0] == 2 && cfa[1] == 0 && cfa[2] == 3) pattern = 3;      // skip
-    // fall back pattern detection by unique positions
+    if (c00 == CFAColor::GREEN && c11 == CFAColor::GREEN && c01 == CFAColor::RED && c10 == CFAColor::BLUE) pattern = 0;   // RGGB
+    else if (c00 == CFAColor::GREEN && c11 == CFAColor::GREEN && c01 == CFAColor::BLUE && c10 == CFAColor::RED) pattern = 2; // BGGR
+    else if (c00 == CFAColor::RED && c11 == CFAColor::BLUE && c01 == CFAColor::GREEN && c10 == CFAColor::GREEN) pattern = 1;   // GRBG
+    else if (c00 == CFAColor::BLUE && c11 == CFAColor::RED && c01 == CFAColor::GREEN && c10 == CFAColor::GREEN) pattern = 3;   // GBRG
+
     if (pattern < 0)
     {
-        // determine which 2x2 arrangement: find color at (0,0) and (0,1)
-        int c00 = cfa[0]; int c01 = cfa[1]; int c10 = cfa[2]; int c11 = cfa[3];
-        if (c00 == c11 && c01 == c10 && (c01 + c00) == 2)
-            pattern = (c00 == 1) ? (c01 == 0 ? 0 : 2) : (c01 == 0 ? 1 : 3);
-        else if (c00 == c01 && c10 == c11)
-            pattern = (c00 == 1 && c10 == 2) ? 0 : 2; // approx
-    }
-    if (pattern < 0)
-    {
-        // count: green-only pairs accepted as 2x2; else unsupported
         fprintf(stderr, "rawspeed: unsupported CFA pattern\n");
         return false;
     }
 
-    const uint32_t mosaicW = raw->getUncroppedDim().width;
-    const uint32_t mosaicH = raw->getUncroppedDim().height;
-    const uint32_t w = raw->getDim().width;
-    const uint32_t h = raw->getDim().height;
-    const uint16_t *mosaic = raw->getDataAsU16Array();
+    const uint32_t mosaicW = (uint32_t)raw->getUncroppedDim().x;
+    const uint32_t mosaicH = (uint32_t)raw->getUncroppedDim().y;
+    const uint32_t w = (uint32_t)raw->dim.x;
+    const uint32_t h = (uint32_t)raw->dim.y;
+
+    auto mosaicRef = raw->getU16DataAsUncroppedArray2DRef();
 
     double sum[3] = {0, 0, 0};
     uint64_t cnt[3] = {0, 0, 0};
@@ -129,7 +123,8 @@ static bool render(rawspeed::RawDecoder *decoder, std::vector<uint16_t> &rgbOut,
         for (uint32_t x = 0; x < mosaicW; ++x)
         {
             int c = cfaIndexOf(pattern, y, x);
-            sum[c] += mosaic[y * mosaicW + x];
+            float v = (float)mosaicRef(y, x);
+            sum[c] += v;
             cnt[c]++;
         }
     float wb[3] = {1, 1, 1};
@@ -139,10 +134,8 @@ static bool render(rawspeed::RawDecoder *decoder, std::vector<uint16_t> &rgbOut,
     wb[1] = 1.0f;
 
     rgbOut.assign((size_t)w * h * 3, 0);
-    DemosaicJob job;
-    job.mosaic = mosaic;
-    job.mosaicWidth = mosaicW;
-    job.mosaicHeight = mosaicH;
+    DemosaicJob job(mosaicRef);
+    job.rgb = rgbOut.data();
     job.rgb = rgbOut.data();
     job.rgbWidth = w;
     job.rgbHeight = h;
@@ -173,18 +166,17 @@ int main(int argc, char **argv)
 
     try
     {
-        rawspeed::RawParser parser(argv[1]);
+        rawspeed::FileReader reader(argv[1]);
+        auto [storage, buffer] = reader.readFile();
+        rawspeed::RawParser parser(std::move(buffer));
         auto decoder = parser.getDecoder();
-        if (!decoder)
-        {
-            fprintf(stderr, "rawspeed: unsupported file\n");
-            return 1;
-        }
         decoder->failOnUnknown = false;
+
+        rawspeed::RawImage raw = decoder->decodeRaw();
 
         std::vector<uint16_t> rgb;
         uint32_t w = 0, h = 0;
-        if (!render(decoder.get(), rgb, w, h))
+        if (!render(raw, rgb, w, h))
             return 1;
 
         FILE *f = fopen(argv[2], "wb");

@@ -1,0 +1,23 @@
+# CMake generation dependency list for this directory.
+C:/Program Files/CMake/share/cmake-4.3/Modules/CMakeCheckCompilerFlagCommonPatterns.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/CheckCXXCompilerFlag.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/CheckCXXSourceCompiles.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/CheckCompilerFlag.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/CheckLinkerFlag.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/FeatureSummary.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/GNUInstallDirs.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Internal/CheckCompilerFlag.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Internal/CheckFlagCommonConfig.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Internal/CheckLinkerFlag.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Internal/CheckSourceCompiles.cmake
+H:/Playground/RAWtoJXL/native/build/rawspeed/byte.cpp
+H:/Playground/RAWtoJXL/native/rawspeed/CMakeLists.txt
+H:/Playground/RAWtoJXL/native/rawspeed/cmake/Modules/CheckCXXCompilerFlagAndEnableIt.cmake
+H:/Playground/RAWtoJXL/native/rawspeed/cmake/Modules/CpuMarch.cmake
+H:/Playground/RAWtoJXL/native/rawspeed/cmake/build-type.cmake
+H:/Playground/RAWtoJXL/native/rawspeed/cmake/cmake-command-wrappers.cmake
+H:/Playground/RAWtoJXL/native/rawspeed/cmake/compiler-flags.cmake
+H:/Playground/RAWtoJXL/native/rawspeed/cmake/compiler-versions.cmake
+H:/Playground/RAWtoJXL/native/rawspeed/cmake/compiler-warnings.cmake
+H:/Playground/RAWtoJXL/native/rawspeed/cmake/debug-info.cmake
+H:/Playground/RAWtoJXL/native/rawspeed/cmake/src-dependencies.cmake

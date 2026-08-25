@@ -1,0 +1,1 @@
+H:\Playground\RAWtoJXL\native\build\rawspeed\src\librawspeed\metadata\rawspeed_metadata.dir\Release\rawspeed_metadata.lib
