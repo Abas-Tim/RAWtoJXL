@@ -24,7 +24,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
     private readonly ComparePipelineOrchestrator _orchestrator;
     private readonly IDispatcherService _dispatcherService;
         private readonly CancellationTokenSource _lifetimeCts = new();
-        private readonly Dictionary<ComparePaneViewModel, CancellationTokenSource> _paneCts = new();
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<ComparePaneViewModel, CancellationTokenSource> _paneCts = new();
         private readonly Dictionary<ComparePaneViewModel, ViewportSnapshot> _viewportSnapshots = new();
     private ComparePaneViewModel? _lastViewportSource;
         private readonly object _mirrorGuard = new();
@@ -577,7 +577,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
                     }
                     if (_paneCts.TryGetValue(pane, out var current) && ReferenceEquals(current, cts))
                     {
-                        _paneCts.Remove(pane);
+                        _paneCts.TryRemove(new KeyValuePair<ComparePaneViewModel, CancellationTokenSource>(pane, cts));
                         cts.Dispose();
                     }
                 }).ConfigureAwait(false);
