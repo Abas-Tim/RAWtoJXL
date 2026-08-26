@@ -14,9 +14,11 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IPathResolver, PathResolverService>();
         services.AddTransient<IExiftoolService, ExiftoolService>();
         services.AddTransient<IJxlDecoder, DjxlDecoderService>();
+        services.AddTransient<IRawRenderer, PreferredRawRenderer>();
         services.AddTransient<IImageConverterService, ImageConverterService>();
         services.AddTransient<ICjxlEncoder, CjxlEncoderService>();
         services.AddTransient<IImageService, ImageProcessingService>();
+        services.AddTransient<ICompareConversionService, CompareConversionService>();
 
         return services;
     }

@@ -14,6 +14,12 @@ public class ImageProcessingServiceCleanupTests
             File.WriteAllText(outputPath, "partial");
             return Task.FromException(new IOException("simulated encoding failure"));
         }
+
+        public Task EncodeFromFileAsync(string inputPath, string outputPath, int quality, CancellationToken cancellationToken, int timeoutSeconds = 300, Action<double>? progress = null, int? effort = null, int? threads = null)
+        {
+            File.WriteAllText(outputPath, "partial");
+            return Task.FromException(new IOException("simulated encoding failure"));
+        }
     }
 
     private static ImageProcessingService CreateService(
@@ -85,8 +91,8 @@ public class ImageProcessingServiceCleanupTests
         try
         {
             var converter = new Mock<IImageConverterService>();
-            converter.Setup(x => x.ConvertToJpegAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .Callback<string, string, int, CancellationToken>((_, outPath, _, _) => File.WriteAllText(outPath, "partial"))
+            converter.Setup(x => x.ConvertToJpegAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>(), It.IsAny<int?>()))
+                .Callback<string, string, int, CancellationToken, int?>((_, outPath, _, _, _) => File.WriteAllText(outPath, "partial"))
                 .ThrowsAsync(new IOException("simulated JPEG failure"));
             var svc = CreateService(converter: converter.Object);
 
@@ -110,8 +116,8 @@ public class ImageProcessingServiceCleanupTests
         try
         {
             var converter = new Mock<IImageConverterService>();
-            converter.Setup(x => x.ConvertToAvifAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .Callback<string, string, int, CancellationToken>((_, outPath, _, _) => File.WriteAllText(outPath, "partial"))
+            converter.Setup(x => x.ConvertToAvifAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>(), It.IsAny<int?>()))
+                .Callback<string, string, int, CancellationToken, int?>((_, outPath, _, _, _) => File.WriteAllText(outPath, "partial"))
                 .ThrowsAsync(new IOException("simulated AVIF failure"));
             var svc = CreateService(converter: converter.Object);
 
@@ -135,8 +141,8 @@ public class ImageProcessingServiceCleanupTests
         try
         {
             var decoder = new Mock<IJxlDecoder>();
-            decoder.Setup(x => x.DecodeToPngAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<int>()))
-                .Callback<string, string, CancellationToken, int>((_, outPath, _, _) => File.WriteAllText(outPath, "partial"))
+            decoder.Setup(x => x.DecodeToPngAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<int>(), It.IsAny<int?>()))
+                .Callback<string, string, CancellationToken, int, int?>((_, outPath, _, _, _) => File.WriteAllText(outPath, "partial"))
                 .ThrowsAsync(new IOException("simulated djxl failure"));
             var svc = CreateService(jxlDecoder: decoder.Object);
 
@@ -161,8 +167,8 @@ public class ImageProcessingServiceCleanupTests
         {
             string? decodedTemp = null;
             var decoder = new Mock<IJxlDecoder>();
-            decoder.Setup(x => x.DecodeToPngAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<int>()))
-                .Callback<string, string, CancellationToken, int>((_, outPath, _, _) =>
+            decoder.Setup(x => x.DecodeToPngAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<int>(), It.IsAny<int?>()))
+                .Callback<string, string, CancellationToken, int, int?>((_, outPath, _, _, _) =>
                 {
                     decodedTemp = outPath;
                     File.WriteAllText(outPath, "png");
@@ -171,8 +177,8 @@ public class ImageProcessingServiceCleanupTests
 
             string? converterInput = null;
             var converter = new Mock<IImageConverterService>();
-            converter.Setup(x => x.ConvertToJpegAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .Callback<string, string, int, CancellationToken>((inPath, outPath, _, _) =>
+            converter.Setup(x => x.ConvertToJpegAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>(), It.IsAny<int?>()))
+                .Callback<string, string, int, CancellationToken, int?>((inPath, outPath, _, _, _) =>
                 {
                     converterInput = inPath;
                     File.WriteAllText(outPath, "jpg");

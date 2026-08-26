@@ -15,6 +15,7 @@ namespace RAWtoJXL.Core.Interfaces
         /// <param name="outputPath">Path for the output PNG file.</param>
         /// <param name="cancellationToken">Token to cancel the operation.</param>
         /// <param name="timeoutSeconds">Optional timeout in seconds (default: 300).</param>
-        Task DecodeToPngAsync(string inputPath, string outputPath, CancellationToken cancellationToken = default, int timeoutSeconds = 300);
+        /// <param name="numThreads">Optional worker thread count passed as --num_threads to djxl.</param>
+        Task DecodeToPngAsync(string inputPath, string outputPath, CancellationToken cancellationToken = default, int timeoutSeconds = 300, int? numThreads = null);
     }
 }

@@ -77,6 +77,87 @@ public class CjxlEncoderService : ICjxlEncoder
         VerifyOutputFile(outputPath);
     }
 
+    public async Task EncodeFromFileAsync(
+        string inputPath,
+        string outputPath,
+        int quality,
+        CancellationToken cancellationToken,
+        int timeoutSeconds = 300,
+        Action<double>? progress = null,
+        int? effort = null,
+        int? threads = null)
+    {
+        if (string.IsNullOrWhiteSpace(inputPath))
+        {
+            throw new ArgumentException("Input path cannot be null or empty.", nameof(inputPath));
+        }
+
+        if (!File.Exists(inputPath))
+        {
+            throw new FileNotFoundException($"Input file not found: {inputPath}");
+        }
+
+        if (string.IsNullOrWhiteSpace(outputPath))
+        {
+            throw new ArgumentNullException(nameof(outputPath), "Output path cannot be null or empty.");
+        }
+
+        if (quality < 0 || quality > 100)
+        {
+            throw new ArgumentOutOfRangeException(nameof(quality), "Quality must be between 0 and 100.");
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        EnsureOutputDirectoryExists(outputPath);
+
+        string cjxlPath = await ResolveCjxlExecutableAsync(cancellationToken);
+
+        var args = BuildFileEncodingArguments(quality, inputPath, outputPath, effort, threads);
+
+        await ExecuteEncodingProcessAsync(
+            cjxlPath, args, usesStdin: false, cancellationToken, timeoutSeconds, progress, streamingPhase: null,
+            argumentsString => _processRunner.RunProcessWithTimeoutAsync(cjxlPath, argumentsString, timeoutSeconds, cancellationToken));
+
+        VerifyOutputFile(outputPath);
+    }
+
+    protected internal List<string> BuildFileEncodingArguments(
+        int quality,
+        string inputPath,
+        string outputPath,
+        int? effortOverride = null,
+        int? threadsOverride = null)
+    {
+        var args = new List<string>(10);
+
+        float distance = QualityCalculator.CalculateDistance(quality);
+        int effort = effortOverride ?? QualityCalculator.CalculateEffort(quality);
+        bool isLossless = QualityCalculator.IsLossless(quality);
+        int threads = threadsOverride ?? CompareDefaults.JxlThreads;
+
+        args.Add(isLossless ? "--distance=0" : $"--distance={distance:F2}");
+        args.Add($"--effort={effort}");
+        args.Add($"--num_threads={threads}");
+        args.Add("--container=1");
+
+        if (isLossless)
+        {
+            args.Add("--modular=1");
+        }
+        else
+        {
+            args.Add("--progressive_dc=1");
+        }
+
+        _logger.Write($"[CjxlEncoder] Building file args: quality={quality}, effort={effort}, distance={distance:F2}, threads={threads}");
+
+        args.Add(inputPath);
+        args.Add(outputPath);
+
+        return args;
+    }
+
     private static void EnsureOutputDirectoryExists(string outputPath)
     {
         string? outputDirectory = Path.GetDirectoryName(outputPath);
@@ -121,7 +202,7 @@ public class CjxlEncoderService : ICjxlEncoder
         float distance = QualityCalculator.CalculateDistance(quality);
         int effort = effortOverride ?? QualityCalculator.CalculateEffort(quality);
         bool isLossless = QualityCalculator.IsLossless(quality);
-        int threads = threadsOverride ?? Environment.ProcessorCount;
+        int threads = threadsOverride ?? CompareDefaults.JxlThreads;
 
         args.Add(isLossless ? "--distance=0" : $"--distance={distance:F2}");
         args.Add($"--effort={effort}");
@@ -137,7 +218,7 @@ public class CjxlEncoderService : ICjxlEncoder
             args.Add("--progressive_dc=1");
         }
 
-        _logger.Write($"[CjxlEncoder] Building stream args: quality={quality}, effort={effort}, distance={distance:F2}");
+        _logger.Write($"[CjxlEncoder] Building stream args: quality={quality}, effort={effort}, distance={distance:F2}, threads={threads}");
 
         args.Add("-");
         args.Add(outputPath);
@@ -178,6 +259,8 @@ public class CjxlEncoderService : ICjxlEncoder
 
         _logger.Write($"cjxl stdout: {result.Stdout}");
         _logger.Write($"cjxl stderr: {result.Stderr}");
+
+        cancellationToken.ThrowIfCancellationRequested();
 
         if (result.TimedOut)
         {

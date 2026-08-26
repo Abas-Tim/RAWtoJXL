@@ -1,0 +1,354 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:RAWtoJXL.Avalonia.ViewModels"
+        xmlns:controls="using:RAWtoJXL.Avalonia.Controls"
+        xmlns:conv="using:RAWtoJXL.Avalonia.Converters"
+        x:Class="RAWtoJXL.Avalonia.CompareWindow"
+        x:DataType="vm:CompareViewModel"
+        Title="Compare Formats"
+        Width="1400"
+        Height="820"
+        MinWidth="1000"
+        MinHeight="620"
+        Background="#101214"
+        WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <conv:OutputFormatToTextConverter x:Key="OutputFormatToTextConverter"/>
+    </Window.Resources>
+
+    <Grid>
+        <Grid Background="#101214" RowDefinitions="Auto,Auto,*,Auto">
+            <Border Grid.Row="0"
+                    Background="#F5F7F9"
+                    BorderBrush="#D6DCE2"
+                    BorderThickness="0,0,0,1"
+                    Padding="10,5">
+                <Grid ColumnDefinitions="*,*,*">
+                    <Border Grid.Column="0"
+                            BorderBrush="#D6DCE2"
+                            BorderThickness="0,0,1,0"
+                            Padding="0,0,12,0">
+                        <StackPanel Orientation="Vertical" Spacing="1">
+                            <TextBlock Text="{Binding Panes[0].Label}"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       Foreground="#20252A"/>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="{Binding Panes[0].DimensionsText}"
+                                           FontSize="11"
+                                           Foreground="#626A72"/>
+                                <TextBlock Text="{Binding Panes[0].FileSizeText}"
+                                           FontSize="11"
+                                           Foreground="#626A72"/>
+                                <TextBlock Text="{Binding Panes[0].DisplayStateText}"
+                                           FontSize="10"
+                                           Foreground="#44515C"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="1"
+                            BorderBrush="#D6DCE2"
+                            BorderThickness="0,0,1,0"
+                            Padding="12,0">
+                        <StackPanel Orientation="Vertical" Spacing="2">
+                            <TextBlock Text="{Binding Panes[1].Label}"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       Foreground="#20252A"/>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="{Binding Panes[1].FileSizeText}"
+                                           FontSize="11"
+                                           Foreground="#626A72"/>
+                                <TextBlock Text="{Binding Panes[1].SavingsText}"
+                                           FontSize="11"
+                                           Foreground="#2E7D4F"/>
+                                <TextBlock Text="{Binding Panes[1].DisplayStateText}"
+                                           FontSize="10"
+                                           Foreground="#44515C"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="2" Padding="12,0,0,0">
+                        <StackPanel Orientation="Vertical" Spacing="2">
+                            <TextBlock Text="{Binding Panes[2].Label}"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       Foreground="#20252A"/>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="{Binding Panes[2].FileSizeText}"
+                                           FontSize="11"
+                                           Foreground="#626A72"/>
+                                <TextBlock Text="{Binding Panes[2].SavingsText}"
+                                           FontSize="11"
+                                           Foreground="#2E7D4F"/>
+                                <TextBlock Text="{Binding Panes[2].DisplayStateText}"
+                                           FontSize="10"
+                                           Foreground="#44515C"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <Border Grid.Row="1"
+                    Background="#E9EDF1"
+                    BorderBrush="#D6DCE2"
+                    BorderThickness="0,0,0,1"
+                    Padding="10,5">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Text="{Binding SourceFileName}"
+                               FontSize="11"
+                               Foreground="#626A72"
+                               VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis"/>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Spacing="14">
+                        <CheckBox Content="Mirror"
+                                  IsChecked="{Binding IsMirroring, Mode=TwoWay}"
+                                  VerticalAlignment="Center"/>
+                        <ToggleButton x:Name="SettingsToggle"
+                                      Content="Settings"
+                                      Padding="10,4"
+                                      FontSize="11"
+                                      IsChecked="{Binding IsSettingsPanelOpen, Mode=TwoWay}"
+                                      VerticalAlignment="Center"
+                                      ToolTip.Tip="Open format and quality settings"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Grid Grid.Row="2" Margin="6,3,6,5" ColumnDefinitions="*,*,*">
+                <Border Grid.Column="0"
+                        Background="#0B0D0F"
+                        BorderBrush="#394149"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Margin="2,0">
+                    <Grid>
+                        <controls:ZoomPanImageViewer x:Name="Viewer0"
+                                                     ImageSource="{Binding Panes[0].Preview}"
+                                                     FullResPath="{Binding Panes[0].FullResPath}"/>
+                        <StackPanel HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    IsVisible="{Binding Panes[0].IsProcessing}">
+                            <ProgressBar Width="150" Height="4" IsIndeterminate="True"/>
+                            <TextBlock Text="{Binding Panes[0].ProcessingText}"
+                                       FontSize="11"
+                                       Foreground="White"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,6,0,0"/>
+                        </StackPanel>
+                        <Border HorizontalAlignment="Center"
+                                VerticalAlignment="Bottom"
+                                Background="#D9000000"
+                                Padding="8,5"
+                                Margin="8"
+                                IsVisible="{Binding Panes[0].IsError}">
+                            <TextBlock Text="{Binding Panes[0].ErrorMessage}"
+                                       FontSize="11"
+                                       Foreground="#FF8A8A"
+                                       TextWrapping="Wrap"
+                                       MaxWidth="360"/>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <Border Grid.Column="1"
+                        Background="#0B0D0F"
+                        BorderBrush="#394149"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Margin="2,0">
+                    <Grid>
+                        <controls:ZoomPanImageViewer x:Name="Viewer1"
+                                                     ImageSource="{Binding Panes[1].Preview}"
+                                                     FullResPath="{Binding Panes[1].FullResPath}"/>
+                        <StackPanel HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    IsVisible="{Binding Panes[1].IsProcessing}">
+                            <ProgressBar Width="150" Height="4" IsIndeterminate="True"/>
+                            <TextBlock Text="{Binding Panes[1].ProcessingText}"
+                                       FontSize="11"
+                                       Foreground="White"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,6,0,0"/>
+                        </StackPanel>
+                        <Border HorizontalAlignment="Center"
+                                VerticalAlignment="Bottom"
+                                Background="#D9000000"
+                                Padding="8,5"
+                                Margin="8"
+                                IsVisible="{Binding Panes[1].IsError}">
+                            <TextBlock Text="{Binding Panes[1].ErrorMessage}"
+                                       FontSize="11"
+                                       Foreground="#FF8A8A"
+                                       TextWrapping="Wrap"
+                                       MaxWidth="360"/>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <Border Grid.Column="2"
+                        Background="#0B0D0F"
+                        BorderBrush="#394149"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Margin="2,0">
+                    <Grid>
+                        <controls:ZoomPanImageViewer x:Name="Viewer2"
+                                                     ImageSource="{Binding Panes[2].Preview}"
+                                                     FullResPath="{Binding Panes[2].FullResPath}"/>
+                        <StackPanel HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    IsVisible="{Binding Panes[2].IsProcessing}">
+                            <ProgressBar Width="150" Height="4" IsIndeterminate="True"/>
+                            <TextBlock Text="{Binding Panes[2].ProcessingText}"
+                                       FontSize="11"
+                                       Foreground="White"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,6,0,0"/>
+                        </StackPanel>
+                        <Border HorizontalAlignment="Center"
+                                VerticalAlignment="Bottom"
+                                Background="#D9000000"
+                                Padding="8,5"
+                                Margin="8"
+                                IsVisible="{Binding Panes[2].IsError}">
+                            <TextBlock Text="{Binding Panes[2].ErrorMessage}"
+                                       FontSize="11"
+                                       Foreground="#FF8A8A"
+                                       TextWrapping="Wrap"
+                                       MaxWidth="360"/>
+                        </Border>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <Border Grid.Row="3"
+                    Background="#E9EDF1"
+                    BorderBrush="#D6DCE2"
+                    BorderThickness="0,1,0,0"
+                    Padding="10,5">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Text="{Binding StatusMessage}"
+                               FontSize="11"
+                               Foreground="#40474E"
+                               VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="1"
+                               Text="Scroll to zoom  |  Drag to pan  |  Double-click to fit"
+                               FontSize="10"
+                               Foreground="#6B737B"/>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Grid IsVisible="{Binding IsSettingsPanelOpen}">
+            <Border x:Name="SettingsBackdrop"
+                    Background="#66000000"
+                    PointerPressed="OnSettingsBackdropPressed"
+                    IsHitTestVisible="True"/>
+            <Border HorizontalAlignment="Right"
+                    VerticalAlignment="Stretch"
+                    Width="320"
+                    Background="#F2F4F6"
+                    BorderBrush="#394149"
+                    BorderThickness="1,0,0,0"
+                    Padding="14">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Orientation="Vertical" Spacing="12">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Text="Settings"
+                                       FontSize="14"
+                                       FontWeight="SemiBold"
+                                       Foreground="#20252A"/>
+                            <Button Grid.Column="1"
+                                    x:Name="CloseSettingsButton"
+                                    Content="✕"
+                                    Padding="8,2"
+                                    Click="OnCloseSettingsClicked"
+                                    ToolTip.Tip="Close settings"/>
+                        </Grid>
+
+                        <Separator/>
+
+                        <TextBlock Text="Pane 1" FontSize="11" FontWeight="SemiBold" Foreground="#44515C"/>
+                        <TextBlock Text="Original RAW render, full quality (16-bit)"
+                                   FontSize="11"
+                                   Foreground="#8A939C"
+                                   TextWrapping="Wrap"/>
+
+                        <Separator/>
+
+                        <TextBlock Text="{Binding Panes[1].Label}" FontSize="11" FontWeight="SemiBold" Foreground="#44515C"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="Format" FontSize="11" Foreground="#626A72" Width="52"/>
+                            <Button Content="◀" Click="OnMiddleFormatPrev" Padding="6,2" FontSize="11"/>
+                            <TextBlock Text="{Binding MiddleFormatText}"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       Foreground="#20252A"
+                                       Width="72"
+                                       TextAlignment="Center"
+                                       VerticalAlignment="Center"/>
+                            <Button Content="▶" Click="OnMiddleFormatNext" Padding="6,2" FontSize="11"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="Quality" FontSize="11" Foreground="#626A72" Width="52"/>
+                            <Slider Minimum="0" Maximum="100"
+                                    Value="{Binding MiddleQuality, Mode=TwoWay}"
+                                    Width="150"
+                                    VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding MiddleQuality}" FontSize="11" Foreground="#626A72" Width="24"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="8"
+                                    Margin="60,0,0,0"
+                                    IsVisible="{Binding MiddleIsJxl}">
+                            <TextBlock Text="Effort" FontSize="11" Foreground="#626A72"/>
+                            <ComboBox ItemsSource="{Binding EffortOptions}"
+                                      SelectedItem="{Binding JxlEffort, Mode=TwoWay}"
+                                      Width="54"
+                                      Height="26"/>
+                        </StackPanel>
+
+                        <Separator/>
+
+                        <TextBlock Text="{Binding Panes[2].Label}" FontSize="11" FontWeight="SemiBold" Foreground="#44515C"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="Format" FontSize="11" Foreground="#626A72" Width="52"/>
+                            <Button Content="◀" Click="OnRightFormatPrev" Padding="6,2" FontSize="11"/>
+                            <TextBlock Text="{Binding RightFormatText}"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       Foreground="#20252A"
+                                       Width="72"
+                                       TextAlignment="Center"
+                                       VerticalAlignment="Center"/>
+                            <Button Content="▶" Click="OnRightFormatNext" Padding="6,2" FontSize="11"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="Quality" FontSize="11" Foreground="#626A72" Width="52"/>
+                            <Slider Minimum="0" Maximum="100"
+                                    Value="{Binding RightQuality, Mode=TwoWay}"
+                                    Width="150"
+                                    VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding RightQuality}" FontSize="11" Foreground="#626A72" Width="24"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="8"
+                                    Margin="60,0,0,0"
+                                    IsVisible="{Binding RightIsJxl}">
+                            <TextBlock Text="Effort" FontSize="11" Foreground="#626A72"/>
+                            <ComboBox ItemsSource="{Binding EffortOptions}"
+                                      SelectedItem="{Binding JxlEffort, Mode=TwoWay}"
+                                      Width="54"
+                                      Height="26"/>
+                        </StackPanel>
+
+                        <Separator/>
+
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

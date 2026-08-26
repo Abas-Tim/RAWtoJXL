@@ -151,6 +151,15 @@ jobs:
           Remove-Item $zip, $dest -Recurse -Force -ErrorAction SilentlyContinue
           Write-Output "exiftool downloaded and verified."
 
+      # Build rawspeed-cli (multithreaded raw engine) - release builds only
+      - name: Build rawspeed-cli
+        if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
+        shell: pwsh
+        run: |
+          pwsh -File tools/build-rawspeed.ps1
+          if ($LASTEXITCODE -ne 0) { Write-Error "rawspeed build failed"; exit 1 }
+          Write-Output "rawspeed-cli bundled."
+
       # ── Restore ────────────────────────────────────────────────────────
       - name: Restore dependencies
         run: dotnet restore RAWtoJXL/RAWtoJXL.sln

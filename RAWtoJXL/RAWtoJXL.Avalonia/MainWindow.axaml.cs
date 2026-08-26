@@ -9,13 +9,18 @@ using Avalonia.Threading;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
+using Microsoft.Extensions.DependencyInjection;
+using RAWtoJXL.Avalonia.Services;
 using RAWtoJXL.Avalonia.ViewModels;
+using RAWtoJXL.Core.Interfaces;
 
 namespace RAWtoJXL.Avalonia
 {
     public partial class MainWindow : Window
     {
         private SettingsWindow? _settingsWindow;
+        private CompareWindow? _compareWindow;
+        private MainViewModel? _wiredViewModel;
         private DispatcherTimer? _recentCloseTimer;
         private bool _isRecentHovered;
         private bool _isPopupHovered;
@@ -24,24 +29,54 @@ namespace RAWtoJXL.Avalonia
         public MainWindow()
         {
             InitializeComponent();
-            if (DataContext is MainViewModel vm)
+        }
+
+        internal CompareWindow? CompareToolWindow => _compareWindow;
+
+        protected override void OnDataContextChanged(EventArgs e)
+        {
+            base.OnDataContextChanged(e);
+            WireViewModel();
+        }
+
+        private void WireViewModel()
+        {
+            var vm = DataContext as MainViewModel;
+            if (ReferenceEquals(vm, _wiredViewModel))
             {
-                vm.RequestRefreshLayout += () =>
-                {
-                    var repeater = this.GetControl<ItemsRepeater>("ImagesRepeater");
-                    repeater.UpdateLayout();
-                    Dispatcher.UIThread.InvokeAsync(() =>
-                    {
-                        repeater.Layout = new UniformGridLayout
-                        {
-                            MinItemWidth = 200,
-                            MinColumnSpacing = 8,
-                            MinRowSpacing = 8
-                        };
-                        repeater.UpdateLayout();
-                    });
-                };
+                return;
             }
+
+            if (_wiredViewModel != null)
+            {
+                _wiredViewModel.RequestOpenCompare -= OpenCompareWindow;
+                _wiredViewModel.RequestRefreshLayout -= RefreshImagesLayout;
+            }
+
+            _wiredViewModel = vm;
+            if (vm == null)
+            {
+                return;
+            }
+
+            vm.RequestOpenCompare += OpenCompareWindow;
+            vm.RequestRefreshLayout += RefreshImagesLayout;
+        }
+
+        private void RefreshImagesLayout()
+        {
+            var repeater = this.GetControl<ItemsRepeater>("ImagesRepeater");
+            repeater.UpdateLayout();
+            Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                repeater.Layout = new UniformGridLayout
+                {
+                    MinItemWidth = 200,
+                    MinColumnSpacing = 8,
+                    MinRowSpacing = 8
+                };
+                repeater.UpdateLayout();
+            });
         }
 
         private void RecentPointerEntered(object? sender, PointerEventArgs e)
@@ -159,6 +194,35 @@ namespace RAWtoJXL.Avalonia
             {
                 _settingsWindow.Activate();
             }
+        }
+
+        public void OpenCompareWindow(string filePath)
+        {
+            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+            {
+                return;
+            }
+
+            if (_compareWindow != null && _compareWindow.IsVisible)
+            {
+                _compareWindow.Activate();
+                return;
+            }
+
+            var conversionService = App.Services?.GetService<ICompareConversionService>();
+            var dispatcherService = App.Services?.GetService<IDispatcherService>();
+            if (conversionService == null || dispatcherService == null)
+            {
+                return;
+            }
+
+            var viewModel = new CompareViewModel(filePath, conversionService, dispatcherService);
+            _compareWindow = new CompareWindow
+            {
+                DataContext = viewModel
+            };
+            _compareWindow.Closed += (_, _) => _compareWindow = null;
+            _compareWindow.Show();
         }
     }
 }

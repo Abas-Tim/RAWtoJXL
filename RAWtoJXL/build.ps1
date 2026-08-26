@@ -11,6 +11,7 @@ $configuration = "Release"
 $cjxlVersion = "0.11.2"
 $cjxlUrl = "https://github.com/libjxl/libjxl/releases/download/v$cjxlVersion/jxl-x64-windows-static.zip"
 $cjxlPath = Join-Path $scriptDir "cjxl.exe"
+$djxlPath = Join-Path $scriptDir "djxl.exe"
 $exiftoolVersion = "13.57"
 $exiftoolUrl = "https://sourceforge.net/projects/exiftool/files/exiftool-$exiftoolVersion_64.zip/download"
 $exiftoolPath = Join-Path $scriptDir "exiftool.exe"
@@ -19,12 +20,39 @@ $cliPublishDir = Join-Path $scriptDir "RAWtoJXL.Cli\bin\$configuration\net8.0\$r
 
 Write-Host "Starting build process from $scriptDir..." -ForegroundColor Cyan
 
-Write-Host "cjxl.exe found at $cjxlPath" -ForegroundColor Cyan
+if (-not (Test-Path $cjxlPath) -or -not (Test-Path $djxlPath)) {
+    Write-Host "Downloading libjxl tools v$cjxlVersion..." -ForegroundColor Cyan
+    $tempZip = Join-Path $env:TEMP "rawtojxl-jxl.zip"
+    $tempExtract = Join-Path $env:TEMP "rawtojxl-jxl"
+    try {
+        curl.exe -L -s -o $tempZip $cjxlUrl
+        if ($LASTEXITCODE -ne 0) {
+            throw "libjxl download failed (curl exit $LASTEXITCODE)."
+        }
+        if (Test-Path $tempExtract) {
+            Remove-Item $tempExtract -Recurse -Force
+        }
+        New-Item -ItemType Directory -Path $tempExtract -Force | Out-Null
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        [System.IO.Compression.ZipFile]::ExtractToDirectory($tempZip, $tempExtract)
 
-if (-not (Test-Path $cjxlPath)) {
-    Write-Host "Error: cjxl.exe not found at $cjxlPath" -ForegroundColor Red
-    Read-Host "Press Enter to exit"
-    exit 1
+        $foundCjxl = Get-ChildItem $tempExtract -Filter "cjxl.exe" -Recurse | Select-Object -First 1
+        $foundDjxl = Get-ChildItem $tempExtract -Filter "djxl.exe" -Recurse | Select-Object -First 1
+        if (-not $foundCjxl -or -not $foundDjxl) {
+            throw "cjxl.exe or djxl.exe was not found in the downloaded archive."
+        }
+        Copy-Item $foundCjxl.FullName $cjxlPath -Force
+        Copy-Item $foundDjxl.FullName $djxlPath -Force
+        Write-Host "cjxl.exe and djxl.exe downloaded successfully." -ForegroundColor Green
+    } catch {
+        Write-Host "Error: Failed to download libjxl tools: $_" -ForegroundColor Red
+        exit 1
+    } finally {
+        Remove-Item $tempZip -Force -ErrorAction SilentlyContinue
+        Remove-Item $tempExtract -Recurse -Force -ErrorAction SilentlyContinue
+    }
+} else {
+    Write-Host "cjxl.exe and djxl.exe found." -ForegroundColor Cyan
 }
 
 Write-Host "Checking exiftool.exe..." -ForegroundColor Cyan
@@ -40,7 +68,8 @@ if (-not (Test-Path $exiftoolPath)) {
             -o $tempZip $exiftoolUrl
         $bytes = [System.IO.File]::ReadAllBytes($tempZip)
         if ($bytes[0] -eq 80 -and $bytes[1] -eq 75) {
-            Expand-Archive -Path $tempZip -DestinationPath $scriptDir -Force
+            Add-Type -AssemblyName System.IO.Compression.FileSystem
+            [System.IO.Compression.ZipFile]::ExtractToDirectory($tempZip, $scriptDir, $true)
             $extracted = Get-ChildItem $scriptDir -Filter "exiftool(-k).exe" -Recurse | Select-Object -First 1
             if ($extracted) {
                 Copy-Item $extracted.FullName $exiftoolPath -Force
@@ -65,13 +94,31 @@ if (-not (Test-Path $exiftoolPath)) {
     Write-Host "exiftool.exe found at $exiftoolPath" -ForegroundColor Cyan
 }
 
+$rawTherapeeCliPath = $env:RAWTOJXL_RAWTHERAPEE_CLI
+if (-not $rawTherapeeCliPath -or -not (Test-Path $rawTherapeeCliPath)) {
+    $rawTherapeeCommand = Get-Command "rawtherapee-cli.exe" -ErrorAction SilentlyContinue
+    $rawTherapeeCliPath = if ($rawTherapeeCommand) { $rawTherapeeCommand.Source } else { $null }
+}
+if (-not $rawTherapeeCliPath) {
+    $rawTherapeeRoot = Join-Path $env:ProgramFiles "RawTherapee"
+    if (Test-Path $rawTherapeeRoot) {
+        $rawTherapeeCliPath = Get-ChildItem $rawTherapeeRoot -Filter "rawtherapee-cli.exe" -Recurse |
+            Select-Object -ExpandProperty FullName -First 1
+    }
+}
+if ($rawTherapeeCliPath) {
+    Write-Host "RawTherapee CLI found at $rawTherapeeCliPath" -ForegroundColor Cyan
+} else {
+    Write-Host "Warning: RawTherapee CLI was not found. RAW previews will use the lower-performance Magick.NET fallback." -ForegroundColor Yellow
+    Write-Host "Install RawTherapee from https://rawtherapee.com/downloads/ or set RAWTOJXL_RAWTHERAPEE_CLI." -ForegroundColor Yellow
+}
+
 Write-Host "Copying cjxl, djxl and exiftool to publish directories..." -ForegroundColor Cyan
 foreach ($dir in @($publishDir, $cliPublishDir)) {
     if (-not (Test-Path $dir)) {
         New-Item -ItemType Directory -Path $dir -Force | Out-Null
     }
     Copy-Item $cjxlPath -Destination (Join-Path $dir "cjxl.exe") -Force
-    $djxlPath = Join-Path $scriptDir "djxl.exe"
     if (Test-Path $djxlPath) {
         Copy-Item $djxlPath -Destination (Join-Path $dir "djxl.exe") -Force
     }

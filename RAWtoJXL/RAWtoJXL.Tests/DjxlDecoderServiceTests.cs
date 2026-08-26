@@ -122,6 +122,25 @@ public class DjxlDecoderServiceTests
     }
 
     [Fact]
+    public async Task DecodeToPngAsync_BareMissingToolName_ThrowsFileNotFoundException()
+    {
+        var (service, pathResolver, _, dir) = CreateService();
+        var input = Path.Combine(dir, "in.jxl");
+        var output = Path.Combine(dir, "out.png");
+        File.WriteAllText(input, "fake jxl");
+        pathResolver.Setup(x => x.ResolveDjxlPath()).Returns("djxl.exe");
+
+        try
+        {
+            await Assert.ThrowsAsync<FileNotFoundException>(() => service.DecodeToPngAsync(input, output));
+        }
+        finally
+        {
+            Directory.Delete(dir, true);
+        }
+    }
+
+    [Fact]
     public async Task DecodeToPngAsync_SuccessButNoOutput_ThrowsIOException()
     {
         var (service, _, runner, dir) = CreateService();
@@ -135,6 +154,68 @@ public class DjxlDecoderServiceTests
         try
         {
             await Assert.ThrowsAsync<IOException>(() => service.DecodeToPngAsync(input, output));
+        }
+        finally
+        {
+            Directory.Delete(dir, true);
+        }
+    }
+
+    [Fact]
+    public async Task DecodeToPngAsync_WithNumThreads_PassesThreadOption()
+    {
+        var (service, _, runner, dir) = CreateService();
+        var input = Path.Combine(dir, "in.jxl");
+        var output = Path.Combine(dir, "out.png");
+        File.WriteAllText(input, "fake jxl");
+
+        string? capturedArgs = null;
+        runner.Setup(x => x.RunProcessWithTimeoutAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .Callback<string, string, int, CancellationToken>((_, args, _, _) =>
+            {
+                capturedArgs = args;
+                File.WriteAllText(output, "decoded");
+            })
+            .ReturnsAsync((0, string.Empty, string.Empty, false));
+
+        try
+        {
+            await service.DecodeToPngAsync(input, output, numThreads: 7);
+
+            Assert.True(File.Exists(output));
+            Assert.NotNull(capturedArgs);
+            Assert.Contains("--num_threads=7", capturedArgs);
+        }
+        finally
+        {
+            Directory.Delete(dir, true);
+        }
+    }
+
+    [Fact]
+    public async Task DecodeToPngAsync_WithoutNumThreads_OmitsThreadOption()
+    {
+        var (service, _, runner, dir) = CreateService();
+        var input = Path.Combine(dir, "in.jxl");
+        var output = Path.Combine(dir, "out.png");
+        File.WriteAllText(input, "fake jxl");
+
+        string? capturedArgs = null;
+        runner.Setup(x => x.RunProcessWithTimeoutAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .Callback<string, string, int, CancellationToken>((_, args, _, _) =>
+            {
+                capturedArgs = args;
+                File.WriteAllText(output, "decoded");
+            })
+            .ReturnsAsync((0, string.Empty, string.Empty, false));
+
+        try
+        {
+            await service.DecodeToPngAsync(input, output);
+
+            Assert.True(File.Exists(output));
+            Assert.NotNull(capturedArgs);
+            Assert.DoesNotContain("--num_threads", capturedArgs);
         }
         finally
         {

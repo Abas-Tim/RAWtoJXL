@@ -36,6 +36,7 @@ MediaCache/
 
 # Bundled binaries — downloaded at build time by build.ps1
 cjxl.exe
+djxl.exe
 exiftool.exe
 exiftool_files/
 
@@ -61,3 +62,9 @@ RELEASE_PROCESS.md
 # Local plan documents
 *PLAN*.md
 *plan*.md
+
+
+RawSpeedTools/
+
+native/build/
+native/third_party/

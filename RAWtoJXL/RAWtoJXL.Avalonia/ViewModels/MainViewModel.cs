@@ -46,6 +46,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
             RemoveSelectedCommand.NotifyCanExecuteChanged();
             SelectAllCommand.NotifyCanExecuteChanged();
             OpenOutputFolderCommand.NotifyCanExecuteChanged();
+            CompareSelectedCommand.NotifyCanExecuteChanged();
         }
 
         [ObservableProperty]
@@ -191,12 +192,28 @@ namespace RAWtoJXL.Avalonia.ViewModels
         private bool _isAnySelected;
 
         [ObservableProperty]
+        private bool _isExactlyOneSelected;
+
+        partial void OnIsExactlyOneSelectedChanged(bool value)
+        {
+            if (Dispatcher.UIThread.CheckAccess())
+            {
+                CompareSelectedCommand.NotifyCanExecuteChanged();
+            }
+            else
+            {
+                Dispatcher.UIThread.Post(CompareSelectedCommand.NotifyCanExecuteChanged);
+            }
+        }
+
+        [ObservableProperty]
         private int _completedCount;
 
         [ObservableProperty]
         private int _totalCount = 0;
 
         public event Action? RequestOpenSettings;
+        public event Action<string>? RequestOpenCompare;
         public event Action? RequestRefreshLayout;
 
         public MainViewModel(IImageService imageService, IDialogService dialogService, IDispatcherService dispatcherService, IFilePickerService filePickerService, bool generateThumbnails = true)
@@ -447,6 +464,19 @@ namespace RAWtoJXL.Avalonia.ViewModels
             RequestOpenSettings?.Invoke();
         }
 
+        [RelayCommand(CanExecute = nameof(CanExecuteCompareSelected))]
+        private void CompareSelected()
+        {
+            if (_selectedImages.Count != 1)
+            {
+                return;
+            }
+
+            RequestOpenCompare?.Invoke(_selectedImages[0].FilePath);
+        }
+
+        private bool CanExecuteCompareSelected() => !IsConverting && _selectedImages.Count == 1;
+
         [RelayCommand(CanExecute = nameof(CanExecuteSelectAll))]
         private async Task OpenFile()
         {
@@ -591,6 +621,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
                 ConvertSelectedCommand.NotifyCanExecuteChanged();
                 RemoveSelectedCommand.NotifyCanExecuteChanged();
                 SelectAllCommand.NotifyCanExecuteChanged();
+                CompareSelectedCommand.NotifyCanExecuteChanged();
             }
             else
             {
@@ -599,6 +630,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
                     ConvertSelectedCommand.NotifyCanExecuteChanged();
                     RemoveSelectedCommand.NotifyCanExecuteChanged();
                     SelectAllCommand.NotifyCanExecuteChanged();
+                    CompareSelectedCommand.NotifyCanExecuteChanged();
                 });
             }
         }
@@ -612,6 +644,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
                 SelectAllCommand.NotifyCanExecuteChanged();
                 CancelCommand.NotifyCanExecuteChanged();
                 OpenOutputFolderCommand.NotifyCanExecuteChanged();
+                CompareSelectedCommand.NotifyCanExecuteChanged();
             }
             else
             {
@@ -622,6 +655,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
                     SelectAllCommand.NotifyCanExecuteChanged();
                     CancelCommand.NotifyCanExecuteChanged();
                     OpenOutputFolderCommand.NotifyCanExecuteChanged();
+                    CompareSelectedCommand.NotifyCanExecuteChanged();
                 });
             }
         }
@@ -635,6 +669,8 @@ namespace RAWtoJXL.Avalonia.ViewModels
                 IsAllSelected = allSelected;
             if (IsAnySelected != anySelected)
                 IsAnySelected = anySelected;
+            if (IsExactlyOneSelected != (_selectedImages.Count == 1))
+                IsExactlyOneSelected = _selectedImages.Count == 1;
         }
 
         private void RefreshRecentFiles()

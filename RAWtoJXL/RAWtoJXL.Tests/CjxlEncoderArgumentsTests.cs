@@ -16,12 +16,22 @@ public class CjxlEncoderArgumentsTests
         float expectedDistance = QualityCalculator.CalculateDistance(50);
         Assert.Contains($"--distance={expectedDistance:F2}", args);
         Assert.Contains("--effort=5", args);
-        Assert.Contains($"--num_threads={Environment.ProcessorCount}", args);
+        Assert.Contains($"--num_threads={CompareDefaults.JxlThreads}", args);
         Assert.Contains("--container=1", args);
         Assert.Contains("--progressive_dc=1", args);
         Assert.DoesNotContain("--modular=1", args);
         Assert.Equal("-", args[^2]);
         Assert.Equal(@"C:\output.jxl", args[^1]);
+    }
+
+    [Fact]
+    public void BuildFileEncodingArguments_UsesAllLogicalProcessorsByDefault()
+    {
+        var service = CreateTestEncoder();
+        var args = service.BuildFileEncodingArguments(90, "in.png", "out.jxl");
+
+        Assert.Contains($"--num_threads={CompareDefaults.JxlThreads}", args);
+        Assert.True(CompareDefaults.JxlThreads >= Environment.ProcessorCount);
     }
 
     [Fact]
