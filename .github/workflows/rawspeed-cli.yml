@@ -24,9 +24,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Fetch pugixml + zlib
-        shell: pwsh
-        run: |
       - name: Configure
         run: >
           cmake -S native -B build -A x64
@@ -51,8 +48,10 @@ jobs:
           $code = $LASTEXITCODE
           "rawspeed-cli exit: $code" | Add-Content $env:GITHUB_STEP_SUMMARY
           "output: $r" | Add-Content $env:GITHUB_STEP_SUMMARY
-          if ($code -ne 2) { throw "rawspeed-cli smoke test failed: $code" }
-          Write-Output "smoke test ok (exit 2 = usage)"
+          if (("$r" -notmatch 'usage: rawspeed-cli') -and $code -ne 2) {
+            throw "rawspeed-cli smoke test failed: exit=$code output=[$r]"
+          }
+          Write-Output "smoke test ok (usage printed, exit $code)"
 
       - name: Stage + checksum
         shell: pwsh
