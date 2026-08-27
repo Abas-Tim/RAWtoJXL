@@ -47,8 +47,11 @@ jobs:
       - name: Smoke test
         shell: pwsh
         run: |
-          & .\build\Release\rawspeed-cli.exe 2>$null
-          if ($LASTEXITCODE -ne 2) { throw "rawspeed-cli smoke test failed: $LASTEXITCODE" }
+          $r = & .\build\Release\rawspeed-cli.exe 2>&1
+          $code = $LASTEXITCODE
+          "rawspeed-cli exit: $code" | Add-Content $env:GITHUB_STEP_SUMMARY
+          "output: $r" | Add-Content $env:GITHUB_STEP_SUMMARY
+          if ($code -ne 2) { throw "rawspeed-cli smoke test failed: $code" }
           Write-Output "smoke test ok (exit 2 = usage)"
 
       - name: Stage + checksum
