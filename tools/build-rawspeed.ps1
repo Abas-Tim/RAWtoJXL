@@ -27,8 +27,8 @@ if ($withPugixml -eq "ON") {
   cmake -S (Join-Path $root "native") -B $build -A x64 `
     -DCMAKE_CXX_FLAGS="/Zc:preprocessor;/utf-8" -DWITH_OPENMP=OFF -DBUILD_TESTING=OFF -DBUILD_BENCHMARKING=OFF `
     -DWITH_JPEG=OFF `
-    -DWITH_PUGIXML=ON -DUSE_BUNDLED_PUGIXML=ON -DPUGIXML_PATH=$pugixmlTree -DALLOW_DOWNLOADING_PUGIXML=OFF `
-    -DWITH_ZLIB=ON -DUSE_BUNDLED_ZLIB=ON -DZLIB_PATH=$zlibTree -DALLOW_DOWNLOADING_ZLIB=OFF `
+    -DWITH_PUGIXML=ON -DUSE_BUNDLED_PUGIXML=ON -DPUGIXML_PATH="$($pugixmlTree.Replace('\','/'))" -DALLOW_DOWNLOADING_PUGIXML=OFF `
+    -DWITH_ZLIB=ON -DUSE_BUNDLED_ZLIB=ON -DZLIB_PATH="$($zlibTree.Replace('\','/'))" -DALLOW_DOWNLOADING_ZLIB=OFF `
     -DCMAKE_BUILD_TYPE=Release
 } else {
   cmake -S (Join-Path $root "native") -B $build -A x64 `

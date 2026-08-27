@@ -37,7 +37,7 @@ jobs:
           -DPUGIXML_PATH=${{ github.workspace }}/native/rawspeed/third_party/pugixml-1.14
           -DALLOW_DOWNLOADING_PUGIXML=OFF
           -DWITH_ZLIB=ON -DUSE_BUNDLED_ZLIB=ON
-          -DZLIB_PATH=${{ github.workspace }}/native/rawspeed/third_party/zlib-ng-2.2.1
+          -DZLIB_PATH=${{ github.workspace }}/native/rawspeed/third_party/zlib-1.3.1
           -DALLOW_DOWNLOADING_ZLIB=OFF
           -DCMAKE_BUILD_TYPE=Release
 
