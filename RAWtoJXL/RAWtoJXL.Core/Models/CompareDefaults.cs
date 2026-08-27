@@ -16,13 +16,7 @@ namespace RAWtoJXL.Core.Models
 
         public static int GetJobThreads(int jobs) => Math.Max(1, JxlThreads / Math.Max(1, jobs));
 
-        public const uint PreviewMaxDimension = 4096;
-
         public const uint QuickPreviewMaxDimension = 1600;
-
-        public const double DifferenceAmplification = 8.0;
-
-        public const int DifferenceMaxDimension = 2048;
 
         public const long CacheMaxBytes = 2L * 1024 * 1024 * 1024;
 

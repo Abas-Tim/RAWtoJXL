@@ -94,25 +94,6 @@ if (-not (Test-Path $exiftoolPath)) {
     Write-Host "exiftool.exe found at $exiftoolPath" -ForegroundColor Cyan
 }
 
-$rawTherapeeCliPath = $env:RAWTOJXL_RAWTHERAPEE_CLI
-if (-not $rawTherapeeCliPath -or -not (Test-Path $rawTherapeeCliPath)) {
-    $rawTherapeeCommand = Get-Command "rawtherapee-cli.exe" -ErrorAction SilentlyContinue
-    $rawTherapeeCliPath = if ($rawTherapeeCommand) { $rawTherapeeCommand.Source } else { $null }
-}
-if (-not $rawTherapeeCliPath) {
-    $rawTherapeeRoot = Join-Path $env:ProgramFiles "RawTherapee"
-    if (Test-Path $rawTherapeeRoot) {
-        $rawTherapeeCliPath = Get-ChildItem $rawTherapeeRoot -Filter "rawtherapee-cli.exe" -Recurse |
-            Select-Object -ExpandProperty FullName -First 1
-    }
-}
-if ($rawTherapeeCliPath) {
-    Write-Host "RawTherapee CLI found at $rawTherapeeCliPath" -ForegroundColor Cyan
-} else {
-    Write-Host "Warning: RawTherapee CLI was not found. RAW previews will use the lower-performance Magick.NET fallback." -ForegroundColor Yellow
-    Write-Host "Install RawTherapee from https://rawtherapee.com/downloads/ or set RAWTOJXL_RAWTHERAPEE_CLI." -ForegroundColor Yellow
-}
-
 Write-Host "Copying cjxl, djxl and exiftool to publish directories..." -ForegroundColor Cyan
 foreach ($dir in @($publishDir, $cliPublishDir)) {
     if (-not (Test-Path $dir)) {

@@ -68,3 +68,6 @@ RawSpeedTools/
 
 native/build/
 native/third_party/
+
+# Local release-zip extraction intermediates
+*-extract/

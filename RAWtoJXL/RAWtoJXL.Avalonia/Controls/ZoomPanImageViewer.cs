@@ -69,13 +69,11 @@ namespace RAWtoJXL.Avalonia.Controls
 
         private readonly Canvas _imageLayer;
         private readonly Image _image;
-        private readonly Image _differenceImage;
         private readonly ScaleTransform _scale;
         private readonly TranslateTransform _translate;
 
         private Bitmap? _preview;
         private Bitmap? _fullRes;
-        private Bitmap? _differenceOverlay;
         private string? _fullResPath;
         private bool _fullResLoaded;
         private bool _fullResRequestAttempted;
@@ -143,17 +141,7 @@ namespace RAWtoJXL.Avalonia.Controls
                 VerticalAlignment = VerticalAlignment.Top
             };
 
-            _differenceImage = new Image
-            {
-                Stretch = Stretch.Fill,
-                HorizontalAlignment = HorizontalAlignment.Left,
-                VerticalAlignment = VerticalAlignment.Top,
-                IsVisible = false
-            };
-            RenderOptions.SetBitmapBlendingMode(_differenceImage, BitmapBlendingMode.SourceOver);
-
             _imageLayer.Children.Add(_image);
-            _imageLayer.Children.Add(_differenceImage);
             Children.Add(_imageLayer);
 
             PointerWheelChanged += OnPointerWheelChanged;
@@ -190,7 +178,6 @@ namespace RAWtoJXL.Avalonia.Controls
         public void DisposeImages()
         {
             _image.Source = null;
-            ClearDifferenceOverlay();
             _preview?.Dispose();
             _preview = null;
             _fullRes?.Dispose();
@@ -204,32 +191,6 @@ namespace RAWtoJXL.Avalonia.Controls
             SetDisplayState(CompareDisplayState.Preview);
         }
 
-        public void SetDifferenceOverlay(Bitmap? bitmap, CompareImageRegion region)
-        {
-            ClearDifferenceOverlay();
-            if (bitmap == null || region.Width <= 0 || region.Height <= 0 || _imageWidth <= 0 || _imageHeight <= 0)
-            {
-                bitmap?.Dispose();
-                return;
-            }
-
-            _differenceOverlay = bitmap;
-            _differenceImage.Source = bitmap;
-            _differenceImage.Width = region.Width * _imageWidth;
-            _differenceImage.Height = region.Height * _imageHeight;
-            Canvas.SetLeft(_differenceImage, region.Left * _imageWidth);
-            Canvas.SetTop(_differenceImage, region.Top * _imageHeight);
-            _differenceImage.IsVisible = true;
-        }
-
-        public void ClearDifferenceOverlay()
-        {
-            _differenceImage.Source = null;
-            _differenceImage.IsVisible = false;
-            _differenceOverlay?.Dispose();
-            _differenceOverlay = null;
-        }
-
         private void OnImageSourceChanged(Bitmap? bitmap)
         {
             _image.Source = null;
@@ -241,7 +202,6 @@ namespace RAWtoJXL.Avalonia.Controls
             _fullResPath = null;
             _fullResRequestAttempted = false;
             _imageGeneration++;
-            ClearDifferenceOverlay();
             SetDisplayState(CompareDisplayState.Preview);
 
             _preview = bitmap;
