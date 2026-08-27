@@ -72,9 +72,15 @@ jobs:
           "VER=$ver" >> $env:GITHUB_ENV
 
       - name: Upload to release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: rawspeed-cli-v${{ env.VER }}
-          name: rawspeed-cli v${{ env.VER }}
-          files: rawspeed-cli-win-x64-v${{ env.VER }}.zip
-          fail_on_unmatched_files: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          $ver = "${{ env.VER }}"
+          $tag = "rawspeed-cli-v$ver"
+          $zip = "rawspeed-cli-win-x64-v$ver.zip"
+          if ($env:GITHUB_REF_TYPE -eq "tag") {
+            gh release create $tag --verify-tag --title "rawspeed-cli v$ver" --notes "Prebuilt rawspeed-cli for RAWtoJXL (rawspeed fork msvc-win)." $zip "$zip.sha256"
+          } else {
+            gh release create $tag --target $env:GITHUB_SHA --title "rawspeed-cli v$ver" --notes "Prebuilt rawspeed-cli for RAWtoJXL (rawspeed fork msvc-win)." $zip "$zip.sha256"
+          }
