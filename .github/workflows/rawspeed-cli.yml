@@ -1,0 +1,80 @@
+name: rawspeed-cli publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version for the release (e.g. 1.0.0)"
+        required: true
+        type: string
+  push:
+    tags:
+      - "rawspeed-cli-v*"
+  schedule:
+    - cron: "23 4 * * 1"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Fetch pugixml + zlib
+        shell: pwsh
+        run: |
+          $third = "$env:RUNNER_TEMP\third_party"
+          New-Item -ItemType Directory -Force -Path $third | Out-Null
+          curl.exe -f -L -s -o "$third\pugixml.tar.gz" "https://github.com/pugixml/pugixml/archive/refs/tags/v1.14.tar.gz"
+          curl.exe -f -L -s -o "$third\zlib.tar.gz" "https://github.com/zlib-ng/zlib-ng/archive/refs/tags/2.2.1.tar.gz"
+          tar.exe -xzf "$third\pugixml.tar.gz" -C $third
+          tar.exe -xzf "$third\zlib.tar.gz" -C $third
+          "PUGIXML_TREE=$third\pugixml-1.14" >> $env:GITHUB_ENV
+          "ZLIB_TREE=$third\zlib-ng-2.2.1" >> $env:GITHUB_ENV
+
+      - name: Configure
+        run: >
+          cmake -S native -B build -A x64
+          -DCMAKE_CXX_FLAGS="/Zc:preprocessor;/utf-8"
+          -DWITH_OPENMP=OFF -DBUILD_TESTING=OFF -DBUILD_BENCHMARKING=OFF
+          -DWITH_JPEG=OFF
+          -DWITH_PUGIXML=ON -DUSE_BUNDLED_PUGIXML=ON
+          -DPUGIXML_PATH=${{ env.PUGIXML_TREE }} -DALLOW_DOWNLOADING_PUGIXML=ON
+          -DWITH_ZLIB=ON -DUSE_BUNDLED_ZLIB=ON
+          -DZLIB_PATH=${{ env.ZLIB_TREE }} -DALLOW_DOWNLOADING_ZLIB=ON
+          -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release --target rawspeed-cli
+
+      - name: Smoke test
+        shell: pwsh
+        run: |
+          & .\build\Release\rawspeed-cli.exe 2>$null
+          if ($LASTEXITCODE -ne 2) { throw "rawspeed-cli smoke test failed: $LASTEXITCODE" }
+          Write-Output "smoke test ok (exit 2 = usage)"
+
+      - name: Stage + checksum
+        shell: pwsh
+        run: |
+          $ver = if ($env:GITHUB_REF_TYPE -eq "tag") { $env:GITHUB_REF_NAME -replace "^rawspeed-cli-v", "" } else { "${{ inputs.version }}" }
+          New-Item -ItemType Directory -Force -Path pkg | Out-Null
+          Copy-Item .\build\Release\rawspeed-cli.exe pkg\ -Force
+          Get-ChildItem .\build\Release -Filter *.dll | Copy-Item -Destination pkg\ -Force
+          $zip = "rawspeed-cli-win-x64-v$ver.zip"
+          Compress-Archive -Path pkg\* -DestinationPath $zip
+          (Get-FileHash $zip -Algorithm SHA256).Hash | Out-File "$zip.sha256" -Encoding ASCII
+          "ZIP=$zip" >> $env:GITHUB_ENV
+          "VER=$ver" >> $env:GITHUB_ENV
+
+      - name: Upload to release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: rawspeed-cli-v${{ env.VER }}
+          name: rawspeed-cli v${{ env.VER }}
+          files: rawspeed-cli-win-x64-v${{ env.VER }}.zip
+          fail_on_unmatched_files: true
