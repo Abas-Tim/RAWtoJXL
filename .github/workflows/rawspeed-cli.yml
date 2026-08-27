@@ -27,15 +27,6 @@ jobs:
       - name: Fetch pugixml + zlib
         shell: pwsh
         run: |
-          $third = "$env:RUNNER_TEMP\third_party"
-          New-Item -ItemType Directory -Force -Path $third | Out-Null
-          curl.exe -f -L -s -o "$third\pugixml.tar.gz" "https://github.com/pugixml/pugixml/archive/refs/tags/v1.14.tar.gz"
-          curl.exe -f -L -s -o "$third\zlib.tar.gz" "https://github.com/zlib-ng/zlib-ng/archive/refs/tags/2.2.1.tar.gz"
-          tar.exe -xzf "$third\pugixml.tar.gz" -C $third
-          tar.exe -xzf "$third\zlib.tar.gz" -C $third
-          "PUGIXML_TREE=$third\pugixml-1.14" >> $env:GITHUB_ENV
-          "ZLIB_TREE=$third\zlib-ng-2.2.1" >> $env:GITHUB_ENV
-
       - name: Configure
         run: >
           cmake -S native -B build -A x64
@@ -43,9 +34,11 @@ jobs:
           -DWITH_OPENMP=OFF -DBUILD_TESTING=OFF -DBUILD_BENCHMARKING=OFF
           -DWITH_JPEG=OFF
           -DWITH_PUGIXML=ON -DUSE_BUNDLED_PUGIXML=ON
-          -DPUGIXML_PATH=${{ env.PUGIXML_TREE }} -DALLOW_DOWNLOADING_PUGIXML=ON
+          -DPUGIXML_PATH=${{ github.workspace }}/native/rawspeed/third_party/pugixml-1.14
+          -DALLOW_DOWNLOADING_PUGIXML=OFF
           -DWITH_ZLIB=ON -DUSE_BUNDLED_ZLIB=ON
-          -DZLIB_PATH=${{ env.ZLIB_TREE }} -DALLOW_DOWNLOADING_ZLIB=ON
+          -DZLIB_PATH=${{ github.workspace }}/native/rawspeed/third_party/zlib-ng-2.2.1
+          -DALLOW_DOWNLOADING_ZLIB=OFF
           -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
