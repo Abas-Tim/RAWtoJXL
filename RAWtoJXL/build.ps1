@@ -94,6 +94,46 @@ if (-not (Test-Path $exiftoolPath)) {
     Write-Host "exiftool.exe found at $exiftoolPath" -ForegroundColor Cyan
 }
 
+$rawspeedCliVersion = "1.0.0"
+$rawspeedCliUrl = "https://github.com/Abas-Tim/RAWtoJXL/releases/download/rawspeed-cli-v$rawspeedCliVersion/rawspeed-cli-win-x64-v$rawspeedCliVersion.zip"
+$rawspeedCliDir = Join-Path $scriptDir "RawSpeedTools"
+$rawspeedCliExe = Join-Path $rawspeedCliDir "rawspeed-cli.exe"
+
+Write-Host "Checking rawspeed-cli.exe..." -ForegroundColor Cyan
+if (-not (Test-Path $rawspeedCliExe)) {
+    Write-Host "Downloading rawspeed-cli v$rawspeedCliVersion..." -ForegroundColor Cyan
+    $tempZip = Join-Path $env:TEMP "rawspeed-cli.zip"
+    try {
+        curl.exe -L -s -o $tempZip $rawspeedCliUrl
+        if ($LASTEXITCODE -ne 0) {
+            throw "rawspeed-cli download failed (curl exit $LASTEXITCODE)."
+        }
+        New-Item -ItemType Directory -Path $rawspeedCliDir -Force | Out-Null
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        [System.IO.Compression.ZipFile]::ExtractToDirectory($tempZip, $rawspeedCliDir, $true)
+        $found = Get-ChildItem $rawspeedCliDir -Filter "rawspeed-cli.exe" -Recurse | Select-Object -First 1
+        if (-not $found) {
+            throw "rawspeed-cli.exe was not found in the downloaded archive."
+        }
+        if ($found.FullName -ne $rawspeedCliExe) {
+            Copy-Item $found.FullName $rawspeedCliExe -Force
+        }
+        Write-Host "rawspeed-cli.exe v$rawspeedCliVersion downloaded successfully." -ForegroundColor Green
+    } catch {
+        Write-Host "Warning: Failed to download rawspeed-cli: $_" -ForegroundColor Yellow
+        $sourceBuild = Join-Path (Split-Path $scriptDir -Parent) "tools\build-rawspeed.ps1"
+        if (Test-Path $sourceBuild) {
+            Write-Host "Falling back to local source build (tools/build-rawspeed.ps1)..." -ForegroundColor Yellow
+            & $sourceBuild
+        } else {
+            Write-Host "RawSpeed CLI will use the Magick.NET fallback until rawspeed-cli is available." -ForegroundColor Yellow
+        }
+    } finally {
+        Remove-Item $tempZip -Force -ErrorAction SilentlyContinue
+    }
+} else {
+    Write-Host "rawspeed-cli.exe found." -ForegroundColor Cyan
+}
 Write-Host "Copying cjxl, djxl and exiftool to publish directories..." -ForegroundColor Cyan
 foreach ($dir in @($publishDir, $cliPublishDir)) {
     if (-not (Test-Path $dir)) {
