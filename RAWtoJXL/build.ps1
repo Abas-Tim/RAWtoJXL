@@ -95,7 +95,7 @@ if (-not (Test-Path $exiftoolPath)) {
 }
 
 $rawspeedCliVersion = "1.0.0"
-$rawspeedCliUrl = "https://github.com/Abas-Tim/RAWtoJXL/releases/download/rawspeed-cli-v$rawspeedCliVersion/rawspeed-cli-win-x64-v$rawspeedCliVersion.zip"
+$rawspeedCliUrl = "https://github.com/Abas-Tim/rawspeed/releases/download/rawspeed-cli-v$rawspeedCliVersion/rawspeed-cli-win-x64-v$rawspeedCliVersion.zip"
 $rawspeedCliDir = Join-Path $scriptDir "RawSpeedTools"
 $rawspeedCliExe = Join-Path $rawspeedCliDir "rawspeed-cli.exe"
 
