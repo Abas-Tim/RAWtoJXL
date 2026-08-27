@@ -44,14 +44,19 @@ jobs:
       - name: Smoke test
         shell: pwsh
         run: |
-          $r = & .\build\Release\rawspeed-cli.exe 2>&1
+          $exe = Get-ChildItem -Path build -Recurse -Filter rawspeed-cli.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $exe) {
+            throw "rawspeed-cli.exe not found under build/"
+          }
+          $r = & $exe.FullName 2>&1
           $code = $LASTEXITCODE
-          "rawspeed-cli exit: $code" | Add-Content $env:GITHUB_STEP_SUMMARY
+          "exe: $($exe.FullName)" | Add-Content $env:GITHUB_STEP_SUMMARY
+          "exit: $code" | Add-Content $env:GITHUB_STEP_SUMMARY
           "output: $r" | Add-Content $env:GITHUB_STEP_SUMMARY
           if (("$r" -notmatch 'usage: rawspeed-cli') -and $code -ne 2) {
-            throw "rawspeed-cli smoke test failed: exit=$code output=[$r]"
+            throw "rawspeed-cli smoke test failed: exe=$($exe.FullName) exit=$code output=[$r]"
           }
-          Write-Output "smoke test ok (usage printed, exit $code)"
+          Write-Output "smoke test ok: $($exe.FullName) (usage printed, exit $code)"
 
       - name: Stage + checksum
         shell: pwsh
