@@ -14,7 +14,7 @@ $compatHeader = Join-Path $root "native\rawspeed-cli\msvc_compat.h"
 New-Item -ItemType Directory -Force -Path $build, $out, $thirdParty | Out-Null
 
 $pugixmlTree = Join-Path $thirdParty "pugixml-1.14"
-$zlibTree    = Join-Path $thirdParty "zlib-ng-2.2.1"
+$zlibTree    = Join-Path $thirdParty "zlib-1.3.1"
 
 $withPugixml = if (Test-Path $pugixmlTree) { "ON" } else { "OFF" }
 $withZlib = if (Test-Path $zlibTree) { "ON" } else { "OFF" }
