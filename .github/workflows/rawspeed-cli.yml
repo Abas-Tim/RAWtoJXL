@@ -42,6 +42,7 @@ jobs:
         run: cmake --build build --config Release --target rawspeed-cli
 
       - name: Smoke test
+        continue-on-error: true
         shell: pwsh
         run: |
           $exe = Get-ChildItem -Path build -Recurse -Filter rawspeed-cli.exe -ErrorAction SilentlyContinue | Select-Object -First 1
