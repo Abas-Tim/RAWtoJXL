@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using RAWtoJXL.Avalonia;
+using RAWtoJXL.Avalonia.Controls;
 using RAWtoJXL.Avalonia.Services;
 using RAWtoJXL.Avalonia.ViewModels;
 using RAWtoJXL.Core.Interfaces;
@@ -180,9 +181,9 @@ public static class GUITestHelpers
         vm.AddFilesAsync(files).Wait();
     }
 
-    public static TabItem SelectTab(SettingsWindow window, string header)
+    public static TabItem SelectTab(SettingsPanelView panel, string header)
     {
-        var tabControl = FindAll<TabControl>(window).First();
+        var tabControl = FindAll<TabControl>(panel).First();
         var tab = tabControl.Items.Cast<TabItem>()
             .First(t => t.Header?.ToString() == header);
         tabControl.SelectedItem = tab;

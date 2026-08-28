@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Avalonia.Layout;
@@ -22,7 +23,9 @@ public class MainWindowStructuralTests
     public void MainWindow_HasToolbarButtons()
     {
         var window = GUITestHelpers.CreateWindow();
-        var buttonContents = GUITestHelpers.GetButtonContents(window);
+        var buttonContents = GUITestHelpers.GetButtonContents(window)
+            .Concat(GUITestHelpers.GetAllControls<ToggleButton>(window).Select(t => t.Content?.ToString()))
+            .ToList();
         var expectedButtons = new[] { "Convert", "Cancel", "Settings" };
         foreach (var expected in expectedButtons)
         {
@@ -118,6 +121,15 @@ public class MainWindowStructuralTests
         var menuHeaders = GUITestHelpers.GetMenuItemHeaders(window)?.Select(h => h?.Replace("_", "")).Where(h => h != null && !h.Contains("Controls")).Cast<string>().ToList() ?? new();
         Assert.Contains("Load All", menuHeaders, StringComparer.OrdinalIgnoreCase);
         Assert.Contains("Clear Recent", menuHeaders, StringComparer.OrdinalIgnoreCase);
+    }
+
+    [AvaloniaFact]
+    public void MainWindow_SettingsOverlay_SpanAllRows()
+    {
+        var window = GUITestHelpers.CreateWindow();
+        var overlay = window.FindControl<Grid>("SettingsOverlay");
+        Assert.NotNull(overlay);
+        Assert.Equal(3, Grid.GetRowSpan(overlay!));
     }
 
     [AvaloniaFact]
