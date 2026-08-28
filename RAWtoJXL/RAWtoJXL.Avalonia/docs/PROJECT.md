@@ -8,8 +8,8 @@ Avalonia UI presentation layer implementing the desktop app with MVVM pattern, d
 RAWtoJXL.Avalonia/
 ├── App.axaml + App.cs                       # Application entry point with DI container setup
 ├── AppStrings.cs                            # Shared string resource constants
-├── MainWindow.axaml + MainWindow.axaml.cs   # Main window with File/List menus, toolbar (Convert, Cancel, Open Output Folder, Settings), virtualized file gallery (ItemsRepeater with UniformGridLayout), per-file quality slider, "Open folder" per-item button, status bar
-├── SettingsWindow.axaml + SettingsWindow.axaml.cs # Resizable tabbed settings dialog (Conversion, Output, Behavior, Hardware, Presets tabs)
+├── MainWindow.axaml + MainWindow.axaml.cs   # Main window with File/List menus, toolbar (Convert, Cancel, Open Output Folder, Settings), virtualized file gallery (ItemsRepeater with UniformGridLayout), per-file quality slider, "Open folder" per-item button, status bar, settings overlay panel (right-side slide-in with backdrop, closable via X or click-outside)
+├── Controls/SettingsPanelView.axaml + .cs   # Tabbed settings panel content (Conversion, Output, Behavior, Hardware, Presets tabs) hosted in MainWindow overlay
 ├── SettingsService.cs                       # Settings persistence (JSON-based), AppSettings/ConversionPreset models, ConflictResolution enum
 ├── ViewLocator.cs                           # IDataTemplate implementation for MVVM view-model to view mapping
 ├── Program.cs                               # App bootstrap with Avalonia app builder
@@ -53,7 +53,7 @@ RAWtoJXL.Avalonia/
 - `IDialogService` → `DialogService` (singleton)
 - `IFilePickerService` → `FilePickerService` (singleton)
 - ViewModels resolved per-instance with injected services
-- `App.Services` exposes the `IServiceProvider` as a static property for runtime resolution (e.g., `SettingsWindow` resolves `IFilePickerService` from it)
+- `App.Services` exposes the `IServiceProvider` as a static property for runtime resolution (e.g., `SettingsPanelView` resolves `IFilePickerService` from it)
 
 **XAML Loading**: Uses `InitializeComponent()` in constructors. `AvaloniaXamlLoader.Load(this)` replaced for Avalonia 12 compatibility.
 
@@ -71,7 +71,7 @@ RAWtoJXL.Avalonia/
 - **Presets**: Named conversion presets with quality, effort, threads settings
 - **Confirmation Dialogs**: Custom `ConfirmDialog` window with `MessageText`/`TitleText` proxy properties delegating to a nested `ConfirmDialogViewModel` (`ObservableObject`). DataContext is the viewmodel. `TitleText` setter also updates `Window.Title` for immediate effect. Yes button (`IsDefault`) closes with `true`, No button (`IsCancel`) closes with `false`.
 - **Settings Persistence**: Both `MainViewModel` and `SettingsViewModel` auto-save to disk on property change via `OnPropertyChanged`. `SettingsViewModel` uses a 500ms debounce timer to batch rapid edits — avoids synchronous I/O on UI thread and race conditions. `Dispose()` flushes pending persist. `MainViewModel` loads all settings from disk on startup. Settings stored in `%APPDATA%\RAWtoJXL\settings.json`. Settings window syncs through shared persistence — `SettingsViewModel` loads current state from disk on open, `MainViewModel.RefreshSettings()` reloads from disk on close.
-- **Quality Scale Segments**: The quality slider in SettingsWindow displays a three-segment color bar below the track: Lossy (0-89, red), Near-lossless (90-99, amber), Lossless (100, green) with labeled captions aligned to each segment.
+- **Quality Scale Segments**: The quality slider in the settings panel displays a three-segment color bar below the track: Lossy (0-89, red), Near-lossless (90-99, amber), Lossless (100, green) with labeled captions aligned to each segment.
 - **HeadlessTestMode**: `MainViewModel.HeadlessTestMode` static flag skips thumbnail generation during GUI tests to avoid file I/O.
 - **Thumbnail generation**: `GenerateThumbnailsAsync` uses `SemaphoreSlim` with concurrency `Math.Max(4, ProcessorCount/2)` — scales with available cores while maintaining minimum parallelism. Thumbnails are generated on background threads; UI updates are dispatched via `OnUiAsync()`. Each thumbnail first tries embedded EXIF preview (zero decode), then falls back to fast decode with camera LUT disabled.
 - **UI Virtualization**: The image gallery uses `ItemsRepeater` with `UniformGridLayout` inside a `ScrollViewer` for efficient rendering of large file lists with wrapping grid layout. Only visible item controls are instantiated, reducing memory usage from O(n) to O(visible items).
@@ -93,12 +93,12 @@ RAWtoJXL.Avalonia/
 
 **Progress tracking:** `UpdateProgressDisplay()` computes overall percentage from completed count + current file progress. `OnFileProgress()` receives per-file progress from `IImageService.ConvertToJxlAsync` callback and updates status message with live percentage. Files convert sequentially (one at a time) to avoid UI dispatcher overload from N parallel progress callbacks.
 
-**Public methods:** `RefreshSettings()` — reloads settings from disk (called when SettingsWindow closes).
+**Public methods:** `RefreshSettings()` — reloads settings from disk (called when the settings panel closes).
 
 **Nested class:** `BoundedFilePathSet` — memory-bounded deduplication set for added file paths (1 MB limit, FIFO eviction via LinkedList + HashSet). Supports `Remove()` to allow re-adding previously removed files.
 
 ### SettingsViewModel
-Implements `IDisposable` — `Dispose()` stops debounce timer, flushes pending persist, and disposes timer resources. Called from `SettingsWindow.Closing`.
+Implements `IDisposable` — `Dispose()` stops debounce timer, flushes pending persist, and disposes timer resources. Called from `MainWindow` when the settings panel closes.
 
 **Properties (all `[ObservableProperty]`):**
 - `UseSubfolder`, `SubfolderName`, `QualityPreset`, `SearchRecursive`, `OutputFormat`, `ConflictResolution`, `ConfirmOverwrite`, `UseCustomOutputDirectory`, `CustomOutputDirectory`, `IsSaving`, `SubfolderNameValidationResult`, `Presets` (ObservableCollection<ConversionPreset>), `SelectedPreset`, `HasSelectedPreset`, `NewPresetName`, `SkipMetadata`, `CjxlEffort`, `SelectedEffortOption`, `CjxlThreads`, `SelectedThreadsOption`

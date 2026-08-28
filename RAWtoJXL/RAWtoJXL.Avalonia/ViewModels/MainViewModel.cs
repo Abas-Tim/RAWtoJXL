@@ -212,7 +212,6 @@ namespace RAWtoJXL.Avalonia.ViewModels
         [ObservableProperty]
         private int _totalCount = 0;
 
-        public event Action? RequestOpenSettings;
         public event Action<string>? RequestOpenCompare;
         public event Action? RequestRefreshLayout;
 
@@ -458,10 +457,15 @@ namespace RAWtoJXL.Avalonia.ViewModels
 
         private bool CanExecuteCancel() => IsConverting;
 
-        [RelayCommand]
-        private void OpenSettings()
+        [ObservableProperty]
+        private bool _isSettingsOpen;
+
+        partial void OnIsSettingsOpenChanged(bool value)
         {
-            RequestOpenSettings?.Invoke();
+            if (!value)
+            {
+                RefreshSettings();
+            }
         }
 
         [RelayCommand(CanExecute = nameof(CanExecuteCompareSelected))]

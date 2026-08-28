@@ -28,8 +28,8 @@ RAWtoJXL.Tests/
 ├── GUITests/                     # Avalonia Headless GUI tests (split by category)
 │   ├── GUITestHelpers.cs         # Shared helpers: CreateViewModel, CreateWindow, GetAllControls, FindAll, SettingsScope, AddTestFiles
 │   ├── MainWindowStructuralTests.cs     # MainWindow structure + functional structural checks: title, buttons, ItemsRepeater binding, ProgressBar binding, drag-drop, min size, layout
-│   ├── MainWindowBehavioralTests.cs     # MainWindow functional behavior: SelectAll toggling, RemoveSelected removal, Settings event, Convert pipeline with mock, StatusMessage→UI binding, Cancel visibility, gallery rendering, drag-drop infrastructure, CheckBox→selection binding, quality slider
-│   ├── SettingsWindowTests.cs          # SettingsWindow structure and behavior: tabs, buttons, Save/Cancel commands, quality slider, output format, subfolder validation, tab switching, cjxl effort, skip metadata
+│   ├── MainWindowBehavioralTests.cs     # MainWindow functional behavior: SelectAll toggling, RemoveSelected removal, Settings toggle panel open/close, Convert pipeline with mock, StatusMessage→UI binding, Cancel visibility, gallery rendering, drag-drop infrastructure, CheckBox→selection binding, quality slider
+│   ├── SettingsPanelTests.cs          # SettingsPanel structure and behavior: tabs, buttons, Save/Cancel commands, quality slider, output format, subfolder validation, tab switching, cjxl effort, skip metadata
 │   ├── SettingsPersistenceTests.cs     # Settings persistence round-trip: quality, format, effort, metadata, subfolder, conflict, presets
 │   └── ConfirmDialogTests.cs           # ConfirmDialog structure and behavior: Yes/No click closes dialog, message binding, data context, title binding
 └── Services/                     # Empty directory (reserved for future service tests)
@@ -94,9 +94,9 @@ Avalonia Headless GUI tests (no DI, mocks services). Split into `GUITests/` fold
 
 **MainWindowStructuralTests** (16 tests): Window opens with expected title, toolbar buttons, File/List menu items, gallery ItemsRepeater with UniformGridLayout, progress bar bound to TotalCount/CompletedCount, status bar, drag-drop enabled, min size 800x600, cancel button hidden by default, Convert button has accent class, SelectAll command bound.
 
-**MainWindowBehavioralTests** (14 tests): SelectAll toggling, RemoveSelected removal, Settings event firing, Convert pipeline with mock IImageService, StatusMessage→UI binding, Cancel visibility during conversion, gallery rendering/data context/updates, Convert disabled without selection, drag-drop behavior on root Grid, CheckBox→selection binding, quality slider→QualityOverride binding, per-item Open Folder button visibility.
+**MainWindowBehavioralTests** (14 tests): SelectAll toggling, RemoveSelected removal, Settings toggle + panel open/close, Convert pipeline with mock IImageService, StatusMessage→UI binding, Cancel visibility during conversion, gallery rendering/data context/updates, Convert disabled without selection, drag-drop behavior on root Grid, CheckBox→selection binding, quality slider→QualityOverride binding, per-item Open Folder button visibility.
 
-**SettingsWindowTests** (16 tests): Window creates with title "Settings", 5 tabs (Conversion/Output/Behavior/Hardware/Presets), Save/Cancel buttons, quality slider updates/clamped 0-100, output format ComboBox with Jxl/Jpeg/Png, subfolder validation (valid/invalid/binding), tab switching, cjxl effort ComboBox (Auto, 1-9), skip metadata toggle.
+**SettingsPanelTests** (17 tests): Panel creates with header "Settings", 5 tabs (Conversion/Output/Behavior/Hardware/Presets), Save/Cancel buttons, quality slider updates/clamped 0-100, output format ComboBox with Jxl/Jpeg/Png, subfolder validation (valid/invalid/binding), tab switching, cjxl effort ComboBox (Auto, 1-9), skip metadata toggle.
 
 **SettingsPersistenceTests** (10 tests): Round-trip persistence via `SettingsScope` isolation. Tests: quality, format, effort, skip metadata, subfolder, recursive search, conflict resolution, confirm overwrite, preset save.
 

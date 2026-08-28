@@ -119,9 +119,10 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <Button Content="Settings"
-                            Command="{Binding OpenSettingsCommand}"
-                            Margin="0,0,12,0"/>
+                    <ToggleButton Content="Settings"
+                                  IsChecked="{Binding IsSettingsOpen, Mode=TwoWay}"
+                                  Margin="0,0,12,0"
+                                  ToolTip.Tip="Open conversion settings"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -226,5 +227,20 @@
                             Margin="0,0,0,4"/>
             </StackPanel>
         </Border>
+
+        <Grid x:Name="SettingsOverlay" Grid.RowSpan="3" IsVisible="{Binding IsSettingsOpen}">
+            <Border x:Name="SettingsBackdrop"
+                    Background="#66000000"
+                    PointerPressed="OnSettingsBackdropPressed"
+                    IsHitTestVisible="True"/>
+            <Border HorizontalAlignment="Right"
+                    VerticalAlignment="Stretch"
+                    Width="440"
+                    Background="#F2F4F6"
+                    BorderBrush="#394149"
+                    BorderThickness="1,0,0,0">
+                <ContentControl x:Name="SettingsHost"/>
+            </Border>
+        </Grid>
     </Grid>
 </Window>

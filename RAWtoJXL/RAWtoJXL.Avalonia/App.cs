@@ -46,7 +46,6 @@ public partial class App : Application
             {
                 DataContext = viewModel
             };
-            viewModel.RequestOpenSettings += () => mainWindow.OpenSettings();
             desktop.MainWindow = mainWindow;
         }
 

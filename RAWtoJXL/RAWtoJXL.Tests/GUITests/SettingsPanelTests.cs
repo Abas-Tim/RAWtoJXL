@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using RAWtoJXL.Avalonia;
+using RAWtoJXL.Avalonia.Controls;
 using RAWtoJXL.Avalonia.Services;
 using RAWtoJXL.Avalonia.ViewModels;
 using RAWtoJXL.Core.Interfaces;
@@ -10,89 +11,95 @@ namespace RAWtoJXL.Tests.GUITests;
 
 [Trait("category", "gui")]
 [Collection("Settings")]
-public class SettingsWindowTests
+public class SettingsPanelTests
 {
     [AvaloniaFact]
-    public void SettingsWindow_CreatesSuccessfully()
+    public void SettingsPanel_CreatesSuccessfully()
     {
         using var _ = new GUITestHelpers.SettingsScope();
-        var sw = new SettingsWindow();
-        Assert.Equal("Settings", sw.Title);
+        var panel = new SettingsPanelView();
+        var headers = GUITestHelpers.GetAllControls<TextBlock>(panel).Select(t => t.Text).ToList();
+        Assert.Contains("Settings", headers);
     }
 
     [AvaloniaFact]
-    public void SettingsWindow_HasFiveTabs()
+    public void SettingsPanel_HasFiveTabs()
     {
         using var _ = new GUITestHelpers.SettingsScope();
-        var sw = new SettingsWindow();
-        var tabControl = GUITestHelpers.FindAll<TabControl>(sw).First();
+        var panel = new SettingsPanelView();
+        var tabControl = GUITestHelpers.FindAll<TabControl>(panel).First();
         var headers = tabControl.Items.Cast<TabItem>().Select(t => t.Header?.ToString()).ToList();
         Assert.Equal(new[] { "Conversion", "Output", "Behavior", "Hardware", "Presets" }, headers);
     }
 
     [AvaloniaFact]
-    public void SettingsWindow_HasSaveAndCancelButton()
+    public void SettingsPanel_HasSaveAndCancelButton()
     {
         using var _ = new GUITestHelpers.SettingsScope();
-        var sw = new SettingsWindow();
-        var buttons = GUITestHelpers.GetAllControls<Button>(sw).Select(b => b.Content?.ToString()).ToList();
+        var panel = new SettingsPanelView();
+        var buttons = GUITestHelpers.GetAllControls<Button>(panel).Select(b => b.Content?.ToString()).ToList();
         Assert.Contains("Save", buttons, StringComparer.OrdinalIgnoreCase);
         Assert.Contains("Cancel", buttons, StringComparer.OrdinalIgnoreCase);
     }
 
     [AvaloniaFact]
-    public void SettingsWindow_SaveCommand_PersistsAndCloses()
+    public void SettingsPanel_HasCloseButton()
     {
         using var _ = new GUITestHelpers.SettingsScope();
-        var sw = new SettingsWindow();
-        sw.Show();
-        sw.UpdateLayout();
-        sw.Settings.QualityPreset = 25;
+        var panel = new SettingsPanelView();
+        var buttons = GUITestHelpers.GetAllControls<Button>(panel).Select(b => b.Content?.ToString()).ToList();
+        Assert.Contains("✕", buttons);
+    }
+
+    [AvaloniaFact]
+    public void SettingsPanel_SaveCommand_PersistsAndRequestsClose()
+    {
+        using var _ = new GUITestHelpers.SettingsScope();
+        var panel = new SettingsPanelView();
+        panel.Settings.QualityPreset = 25;
 
         bool closed = false;
-        sw.Closed += (_, _) => closed = true;
+        panel.RequestClose += (_, _) => closed = true;
 
-        sw.Settings.SaveCommand.Execute(null);
+        panel.Settings.SaveCommand.Execute(null);
 
         Assert.Equal(25, SettingsService.Load().QualityPreset);
-        Assert.True(closed, "Settings window should close after Save");
+        Assert.True(closed, "Settings panel should request close after Save");
     }
 
     [AvaloniaFact]
-    public void SettingsWindow_CancelCommand_ClosesWindow()
+    public void SettingsPanel_CancelCommand_RequestsClose()
     {
         using var _ = new GUITestHelpers.SettingsScope();
-        var sw = new SettingsWindow();
-        sw.Show();
-        sw.UpdateLayout();
+        var panel = new SettingsPanelView();
 
         bool closed = false;
-        sw.Closed += (_, _) => closed = true;
+        panel.RequestClose += (_, _) => closed = true;
 
-        sw.Settings.CancelCommand.Execute(null);
+        panel.Settings.CancelCommand.Execute(null);
 
-        Assert.True(closed, "Settings window should close after Cancel");
+        Assert.True(closed, "Settings panel should request close after Cancel");
     }
 
     [AvaloniaFact]
-    public void SettingsWindow_QualitySlider_UpdatesQualityPreset()
+    public void SettingsPanel_QualitySlider_UpdatesQualityPreset()
     {
         using var _ = new GUITestHelpers.SettingsScope();
-        var sw = new SettingsWindow();
-        var tab = GUITestHelpers.SelectTab(sw, "Conversion");
+        var panel = new SettingsPanelView();
+        var tab = GUITestHelpers.SelectTab(panel, "Conversion");
 
         var slider = GUITestHelpers.GetAllControls<Slider>(tab).First();
         slider.Value = 55;
 
-        Assert.Equal(55, sw.Settings.QualityPreset);
+        Assert.Equal(55, panel.Settings.QualityPreset);
     }
 
     [AvaloniaFact]
-    public void SettingsWindow_QualitySlider_ClampedBySliderRange()
+    public void SettingsPanel_QualitySlider_ClampedBySliderRange()
     {
         using var _ = new GUITestHelpers.SettingsScope();
-        var sw = new SettingsWindow();
-        var tab = GUITestHelpers.SelectTab(sw, "Conversion");
+        var panel = new SettingsPanelView();
+        var tab = GUITestHelpers.SelectTab(panel, "Conversion");
 
         var slider = GUITestHelpers.GetAllControls<Slider>(tab).First();
         Assert.Equal(0, slider.Minimum);
@@ -100,26 +107,26 @@ public class SettingsWindowTests
     }
 
     [AvaloniaFact]
-    public void SettingsWindow_OutputFormat_UpdatesOnSelection()
+    public void SettingsPanel_OutputFormat_UpdatesOnSelection()
     {
         using var _ = new GUITestHelpers.SettingsScope();
-        var sw = new SettingsWindow();
-        var tab = GUITestHelpers.SelectTab(sw, "Conversion");
+        var panel = new SettingsPanelView();
+        var tab = GUITestHelpers.SelectTab(panel, "Conversion");
 
         var formatCombo = GUITestHelpers.GetAllControls<ComboBox>(tab)
             .First(c => c.Items.OfType<OutputFormat>().Any());
 
         formatCombo.SelectedItem = OutputFormat.Avif;
 
-        Assert.Equal(OutputFormat.Avif, sw.Settings.OutputFormat);
+        Assert.Equal(OutputFormat.Avif, panel.Settings.OutputFormat);
     }
 
     [AvaloniaFact]
-    public void SettingsWindow_OutputFormat_HasAllOptions()
+    public void SettingsPanel_OutputFormat_HasAllOptions()
     {
         using var _ = new GUITestHelpers.SettingsScope();
-        var sw = new SettingsWindow();
-        var tab = GUITestHelpers.SelectTab(sw, "Conversion");
+        var panel = new SettingsPanelView();
+        var tab = GUITestHelpers.SelectTab(panel, "Conversion");
 
         var formatCombo = GUITestHelpers.GetAllControls<ComboBox>(tab)
             .First(c => c.Items.OfType<OutputFormat>().Any());
@@ -133,7 +140,7 @@ public class SettingsWindowTests
     }
 
     [AvaloniaFact]
-    public void SettingsWindow_SubfolderValidation_HidesWhenValid()
+    public void SettingsPanel_SubfolderValidation_HidesWhenValid()
     {
         Assert.Null(SettingsViewModel.ValidateSubfolderName("valid_name"));
         Assert.Null(SettingsViewModel.ValidateSubfolderName("my folder"));
@@ -141,7 +148,7 @@ public class SettingsWindowTests
     }
 
     [AvaloniaFact]
-    public void SettingsWindow_SubfolderValidation_ShowsWhenInvalid()
+    public void SettingsPanel_SubfolderValidation_ShowsWhenInvalid()
     {
         Assert.NotNull(SettingsViewModel.ValidateSubfolderName("invalid|name"));
         Assert.NotNull(SettingsViewModel.ValidateSubfolderName("test\x00folder"));
@@ -150,57 +157,55 @@ public class SettingsWindowTests
     }
 
     [AvaloniaFact]
-    public void SettingsWindow_SubfolderValidation_UpdatesThroughBinding()
+    public void SettingsPanel_SubfolderValidation_UpdatesThroughBinding()
     {
         using var _ = new GUITestHelpers.SettingsScope();
-        var sw = new SettingsWindow();
-        var tab = GUITestHelpers.SelectTab(sw, "Output");
+        var panel = new SettingsPanelView();
+        var tab = GUITestHelpers.SelectTab(panel, "Output");
 
         var textBox = GUITestHelpers.GetAllControls<TextBox>(tab).First();
         textBox.Text = "valid_name";
 
-        Assert.Null(sw.Settings.SubfolderNameValidationResult);
+        Assert.Null(panel.Settings.SubfolderNameValidationResult);
     }
 
     [AvaloniaFact]
-    public void SettingsWindow_TabSwitch_LoadsDifferentContent()
+    public void SettingsPanel_TabSwitch_LoadsDifferentContent()
     {
         using var _ = new GUITestHelpers.SettingsScope();
-        var sw = new SettingsWindow();
-        sw.Show();
-        sw.UpdateLayout();
+        var panel = new SettingsPanelView();
 
-        var conversionTab = GUITestHelpers.SelectTab(sw, "Conversion");
+        var conversionTab = GUITestHelpers.SelectTab(panel, "Conversion");
         var sliders = GUITestHelpers.GetAllControls<Slider>(conversionTab).ToList();
         Assert.NotEmpty(sliders);
 
-        var outputTab = GUITestHelpers.SelectTab(sw, "Output");
+        var outputTab = GUITestHelpers.SelectTab(panel, "Output");
         var checkBoxes = GUITestHelpers.GetAllControls<CheckBox>(outputTab).ToList();
         Assert.True(checkBoxes.Count >= 2, "Output tab should have multiple checkboxes");
     }
 
     [AvaloniaFact]
-    public void SettingsWindow_CjxlEffort_UpdatesOnSelection()
+    public void SettingsPanel_CjxlEffort_UpdatesOnSelection()
     {
         using var _ = new GUITestHelpers.SettingsScope();
-        var sw = new SettingsWindow();
-        var tab = GUITestHelpers.SelectTab(sw, "Conversion");
+        var panel = new SettingsPanelView();
+        var tab = GUITestHelpers.SelectTab(panel, "Conversion");
 
         var effortCombo = GUITestHelpers.GetAllControls<ComboBox>(tab)
             .First(c => c.Items.OfType<SettingsViewModel.EffortOption>().Any());
 
-        var option7 = sw.Settings.CjxlEffortOptions.First(e => e.Value == 7);
+        var option7 = panel.Settings.CjxlEffortOptions.First(e => e.Value == 7);
         effortCombo.SelectedItem = option7;
 
-        Assert.Equal(7, sw.Settings.CjxlEffort);
+        Assert.Equal(7, panel.Settings.CjxlEffort);
     }
 
     [AvaloniaFact]
-    public void SettingsWindow_CjxlEffort_HasCorrectOptions()
+    public void SettingsPanel_CjxlEffort_HasCorrectOptions()
     {
         using var _ = new GUITestHelpers.SettingsScope();
-        var sw = new SettingsWindow();
-        var tab = GUITestHelpers.SelectTab(sw, "Conversion");
+        var panel = new SettingsPanelView();
+        var tab = GUITestHelpers.SelectTab(panel, "Conversion");
 
         var effortCombo = GUITestHelpers.GetAllControls<ComboBox>(tab)
             .First(c => c.Items.OfType<SettingsViewModel.EffortOption>().Any());
@@ -212,14 +217,14 @@ public class SettingsWindowTests
     }
 
     [AvaloniaFact]
-    public void SettingsWindow_SkipMetadata_TogglesOnVM()
+    public void SettingsPanel_SkipMetadata_TogglesOnVM()
     {
         using var _ = new GUITestHelpers.SettingsScope();
-        var sw = new SettingsWindow();
-        Assert.False(sw.Settings.SkipMetadata);
+        var panel = new SettingsPanelView();
+        Assert.False(panel.Settings.SkipMetadata);
 
-        sw.Settings.SkipMetadata = true;
+        panel.Settings.SkipMetadata = true;
 
-        Assert.True(sw.Settings.SkipMetadata);
+        Assert.True(panel.Settings.SkipMetadata);
     }
 }
