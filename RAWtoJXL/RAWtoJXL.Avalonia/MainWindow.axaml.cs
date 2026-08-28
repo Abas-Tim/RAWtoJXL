@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using System.IO;
 
 using Avalonia;
@@ -8,8 +9,8 @@ using Avalonia.Threading;
 
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
+using RAWtoJXL.Avalonia.Controls;
 using RAWtoJXL.Avalonia.Services;
 using RAWtoJXL.Avalonia.ViewModels;
 using RAWtoJXL.Core.Interfaces;
@@ -18,7 +19,7 @@ namespace RAWtoJXL.Avalonia
 {
     public partial class MainWindow : Window
     {
-        private SettingsWindow? _settingsWindow;
+        private SettingsPanelView? _settingsPanel;
         private CompareWindow? _compareWindow;
         private MainViewModel? _wiredViewModel;
         private DispatcherTimer? _recentCloseTimer;
@@ -51,6 +52,7 @@ namespace RAWtoJXL.Avalonia
             {
                 _wiredViewModel.RequestOpenCompare -= OpenCompareWindow;
                 _wiredViewModel.RequestRefreshLayout -= RefreshImagesLayout;
+                _wiredViewModel.PropertyChanged -= OnViewModelPropertyChanged;
             }
 
             _wiredViewModel = vm;
@@ -61,6 +63,50 @@ namespace RAWtoJXL.Avalonia
 
             vm.RequestOpenCompare += OpenCompareWindow;
             vm.RequestRefreshLayout += RefreshImagesLayout;
+            vm.PropertyChanged += OnViewModelPropertyChanged;
+        }
+
+        private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(MainViewModel.IsSettingsOpen) && sender is MainViewModel vm)
+            {
+                if (vm.IsSettingsOpen)
+                {
+                    OpenSettingsPanel();
+                }
+                else
+                {
+                    CloseSettingsPanel();
+                }
+            }
+        }
+
+        private void OpenSettingsPanel()
+        {
+            if (_settingsPanel != null)
+            {
+                return;
+            }
+
+            _settingsPanel = new SettingsPanelView();
+            _settingsPanel.RequestClose += (_, _) => CloseSettingsPanel();
+            SettingsHost.Content = _settingsPanel;
+        }
+
+        private void CloseSettingsPanel()
+        {
+            if (_settingsPanel != null)
+            {
+                _settingsPanel.Settings.Dispose();
+                _settingsPanel = null;
+            }
+
+            SettingsHost.Content = null;
+
+            if (DataContext is MainViewModel vm && vm.IsSettingsOpen)
+            {
+                vm.IsSettingsOpen = false;
+            }
         }
 
         private void RefreshImagesLayout()
@@ -174,26 +220,9 @@ namespace RAWtoJXL.Avalonia
             }
         }
 
-        public void OpenSettings()
+        private void OnSettingsBackdropPressed(object? sender, PointerPressedEventArgs e)
         {
-            if (_settingsWindow == null || !_settingsWindow.IsVisible)
-            {
-                var viewModel = DataContext as MainViewModel;
-                if (viewModel == null) return;
-
-                _settingsWindow = new SettingsWindow();
-                _settingsWindow.Closed += (s, args) =>
-                {
-                    viewModel.RefreshSettings();
-                    _settingsWindow = null;
-                };
-
-                _settingsWindow.ShowDialog(this);
-            }
-            else
-            {
-                _settingsWindow.Activate();
-            }
+            CloseSettingsPanel();
         }
 
         public void OpenCompareWindow(string filePath)
