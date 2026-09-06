@@ -7,7 +7,7 @@
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 $build = Join-Path $root "native\build"
-$out = Join-Path $root "RawSpeedTools"
+$out = Join-Path (Join-Path $root "RAWtoJXL") "RawSpeedTools"
 $thirdParty = Join-Path $root "native\third_party"
 $compatHeader = Join-Path $root "native\rawspeed-cli\msvc_compat.h"
 

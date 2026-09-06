@@ -113,6 +113,50 @@ if ($rawTherapeeCliPath) {
     Write-Host "Install RawTherapee from https://rawtherapee.com/downloads/ or set RAWTOJXL_RAWTHERAPEE_CLI." -ForegroundColor Yellow
 }
 
+$rawspeedCliVersion = "1.0.2"
+$rawspeedCliUrl = "https://github.com/Abas-Tim/rawspeed/releases/download/rawspeed-cli-v$rawspeedCliVersion/rawspeed-cli-win-x64-v$rawspeedCliVersion.zip"
+$rawspeedCliDir = Join-Path $scriptDir "RawSpeedTools"
+$rawspeedCliExe = Join-Path $rawspeedCliDir "rawspeed-cli.exe"
+
+Write-Host "Checking rawspeed-cli.exe..." -ForegroundColor Cyan
+if (-not (Test-Path $rawspeedCliExe)) {
+    Write-Host "Downloading rawspeed-cli v$rawspeedCliVersion..." -ForegroundColor Cyan
+    $tempZip = Join-Path $env:TEMP "rawspeed-cli.zip"
+    try {
+        curl.exe -L -s -o $tempZip $rawspeedCliUrl
+        if ($LASTEXITCODE -ne 0) {
+            throw "rawspeed-cli download failed (curl exit $LASTEXITCODE)."
+        }
+        $tempSha = Join-Path $env:TEMP "rawspeed-cli.zip.sha256"
+        curl.exe -L -s -o $tempSha "$rawspeedCliUrl.sha256"
+        $expected = (Get-Content $tempSha -Raw).Trim().ToUpperInvariant()
+        $actual = (Get-FileHash $tempZip -Algorithm SHA256).Hash
+        if ($expected -ne $actual) {
+            throw "rawspeed-cli checksum mismatch: expected $expected, got $actual"
+        }
+        New-Item -ItemType Directory -Path $rawspeedCliDir -Force | Out-Null
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        [System.IO.Compression.ZipFile]::ExtractToDirectory($tempZip, $rawspeedCliDir, $true)
+        $found = Get-ChildItem $rawspeedCliDir -Filter "rawspeed-cli.exe" -Recurse | Select-Object -First 1
+        if (-not $found) {
+            throw "rawspeed-cli.exe was not found in the downloaded archive."
+        }
+        if ($found.FullName -ne $rawspeedCliExe) {
+            Move-Item $found.FullName $rawspeedCliExe -Force
+        }
+        Write-Host "rawspeed-cli.exe v$rawspeedCliVersion downloaded successfully." -ForegroundColor Green
+    } catch {
+        Write-Host "Warning: Failed to download rawspeed-cli: $_" -ForegroundColor Yellow
+        Write-Host "RAW previews will use the lower-performance Magick.NET fallback." -ForegroundColor Yellow
+        Write-Host "Run tools\build-rawspeed.ps1 to build rawspeed-cli from source instead." -ForegroundColor Yellow
+    } finally {
+        Remove-Item $tempZip -Force -ErrorAction SilentlyContinue
+        Remove-Item (Join-Path $env:TEMP "rawspeed-cli.zip.sha256") -Force -ErrorAction SilentlyContinue
+    }
+} else {
+    Write-Host "rawspeed-cli.exe found." -ForegroundColor Cyan
+}
+
 Write-Host "Copying cjxl, djxl and exiftool to publish directories..." -ForegroundColor Cyan
 foreach ($dir in @($publishDir, $cliPublishDir)) {
     if (-not (Test-Path $dir)) {
