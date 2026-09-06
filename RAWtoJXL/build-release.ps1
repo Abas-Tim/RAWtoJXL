@@ -214,9 +214,15 @@ if (-not $SkipDownload) {
                 Move-Item $found.FullName $rawspeedCliExe -Force
             }
 
-            & $rawspeedCliExe 2>$null
-            if ($LASTEXITCODE -ne 2) {
-                Write-Warning "rawspeed-cli staged but sanity check returned $LASTEXITCODE"
+            $sanity = 0
+            try {
+                cmd /c "`"$rawspeedCliExe`" >nul 2>&1"
+                $sanity = $LASTEXITCODE
+            } catch {
+                $sanity = 1
+            }
+            if ($sanity -ne 2) {
+                Write-Warning "rawspeed-cli staged but sanity check returned $sanity"
             }
             Write-Host "rawspeed-cli.exe v$rawspeedCliVersion downloaded successfully." -ForegroundColor Green
         } catch {

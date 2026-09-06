@@ -191,12 +191,19 @@ jobs:
           if ($exe.FullName -ne $staged) {
             Move-Item $exe.FullName $staged -Force
           }
-          & $staged 2>$null
-          if ($LASTEXITCODE -ne 2) {
-            Write-Warning "rawspeed-cli staged but sanity check returned $LASTEXITCODE"
+          $sanity = 0
+          try {
+            cmd /c "`"$staged`" >nul 2>&1"
+            $sanity = $LASTEXITCODE
+          } catch {
+            $sanity = 1
+          }
+          if ($sanity -ne 2) {
+            Write-Warning "rawspeed-cli staged but sanity check returned $sanity"
           }
           Remove-Item $zip, $sha -Force -ErrorAction SilentlyContinue
           Write-Output "rawspeed-cli v$version staged to $outDir"
+          exit 0
 
       # ── Restore ────────────────────────────────────────────────────────
       - name: Restore dependencies
