@@ -59,6 +59,8 @@ $cjxlPath = Join-Path $scriptDir "cjxl.exe"
 $djxlPath = Join-Path $scriptDir "djxl.exe"
 $exiftoolPath = Join-Path $scriptDir "exiftool.exe"
 $exiftoolFilesDir = Join-Path $scriptDir "exiftool_files"
+$rawspeedCliDir = Join-Path $scriptDir "RawSpeedTools"
+$rawspeedCliExe = Join-Path $rawspeedCliDir "rawspeed-cli.exe"
 $publishDir = Join-Path $scriptDir "RAWtoJXL.Avalonia\bin\$Configuration\net8.0\$Runtime\publish"
 
 # ── Version resolution ────────────────────────────────────────────────────
@@ -94,6 +96,7 @@ if (-not (Test-Path $OutputDir)) {
 $cjxlVersion = "0.11.2"
 $cjxlUrl = "https://github.com/libjxl/libjxl/releases/download/v$cjxlVersion/jxl-x64-windows-static.zip"
 $exiftoolVersion = "13.57"
+$rawspeedCliVersion = "1.0.2"
 
 if (-not $SkipDownload) {
     # ── cjxl + djxl ───────────────────────────────────────────────────────
@@ -180,6 +183,52 @@ if (-not $SkipDownload) {
     } else {
         Write-Host "exiftool.exe already exists at $exiftoolPath" -ForegroundColor Gray
     }
+
+    # ── rawspeed-cli ──────────────────────────────────────────────────────
+    if (-not (Test-Path $rawspeedCliExe)) {
+        Write-Host "Downloading rawspeed-cli v$rawspeedCliVersion..." -ForegroundColor Cyan
+        $rawspeedCliUrl = "https://github.com/Abas-Tim/rawspeed/releases/download/rawspeed-cli-v$rawspeedCliVersion/rawspeed-cli-win-x64-v$rawspeedCliVersion.zip"
+        $tempZip = Join-Path $env:TEMP "rawspeed-cli.zip"
+        try {
+            curl.exe -L -s -o $tempZip $rawspeedCliUrl
+            if ($LASTEXITCODE -ne 0) {
+                throw "rawspeed-cli download failed (curl exit $LASTEXITCODE). URL: $rawspeedCliUrl"
+            }
+
+            $tempSha = Join-Path $env:TEMP "rawspeed-cli.zip.sha256"
+            curl.exe -L -s -o $tempSha "$rawspeedCliUrl.sha256"
+            $expected = (Get-Content $tempSha -Raw).Trim().ToUpperInvariant()
+            $actual = (Get-FileHash $tempZip -Algorithm SHA256).Hash
+            if ($expected -ne $actual) {
+                throw "rawspeed-cli checksum mismatch: expected $expected, got $actual"
+            }
+
+            New-Item -ItemType Directory -Path $rawspeedCliDir -Force | Out-Null
+            Expand-Archive -Path $tempZip -DestinationPath $rawspeedCliDir -Force
+
+            $found = Get-ChildItem $rawspeedCliDir -Filter "rawspeed-cli.exe" -Recurse | Select-Object -First 1
+            if (-not $found) {
+                throw "rawspeed-cli.exe not found in downloaded archive."
+            }
+            if ($found.FullName -ne $rawspeedCliExe) {
+                Move-Item $found.FullName $rawspeedCliExe -Force
+            }
+
+            & $rawspeedCliExe 2>$null
+            if ($LASTEXITCODE -ne 2) {
+                Write-Warning "rawspeed-cli staged but sanity check returned $LASTEXITCODE"
+            }
+            Write-Host "rawspeed-cli.exe v$rawspeedCliVersion downloaded successfully." -ForegroundColor Green
+        } catch {
+            Write-Error "Failed to download rawspeed-cli: $_"
+            exit 1
+        } finally {
+            Remove-Item $tempZip -Force -ErrorAction SilentlyContinue
+            Remove-Item (Join-Path $env:TEMP "rawspeed-cli.zip.sha256") -Force -ErrorAction SilentlyContinue
+        }
+    } else {
+        Write-Host "rawspeed-cli.exe already exists at $rawspeedCliExe" -ForegroundColor Gray
+    }
 }
 
 # ── Restore ────────────────────────────────────────────────────────────────
@@ -240,8 +289,9 @@ if (-not $NoPack) {
     if (Test-Path $stagingDir) { Remove-Item $stagingDir -Recurse -Force }
     New-Item -ItemType Directory -Path $stagingDir -Force | Out-Null
 
-    # Copy all publish files into staging root
-    Get-ChildItem $publishDir -File | Copy-Item -Destination $stagingDir -Force
+    # Copy the whole publish tree into staging root so subdirectories
+    # (RawSpeedTools, exiftool_files) are preserved in the ZIP
+    Copy-Item (Join-Path $publishDir "*") -Destination $stagingDir -Recurse -Force
     Write-Host "`nPackaging portable release..." -ForegroundColor Cyan
     Write-Host "  Staging: $stagingDir" -ForegroundColor Gray
 
