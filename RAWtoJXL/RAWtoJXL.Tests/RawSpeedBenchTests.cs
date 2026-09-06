@@ -33,7 +33,7 @@ public class RawSpeedBenchTests
             return;
         }
 
-        var staged = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "RawSpeedTools", "rawspeed-cli.exe"));
+        var staged = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "RawSpeedTools", "rawspeed-cli.exe"));
         Environment.SetEnvironmentVariable("RAWTOJXL_RAWSPEED_CLI", File.Exists(staged) ? staged : null);
 
         Assert.NotNull(RawSpeedCliRenderer.ResolveExecutable());
