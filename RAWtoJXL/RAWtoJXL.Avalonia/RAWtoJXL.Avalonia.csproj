@@ -7,7 +7,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
-    <Version>1.0.1</Version>
+    <Version>1.1.1</Version>
     <Authors>Timur Abasov</Authors>
     <Description>Windows desktop app converting RAW camera files to JPEG-XL, JPEG, or AVIF.</Description>
     <RepositoryUrl>https://github.com/Abas-Tim/RAWtoJXL</RepositoryUrl>

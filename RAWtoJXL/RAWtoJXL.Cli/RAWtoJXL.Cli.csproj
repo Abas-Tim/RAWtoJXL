@@ -7,7 +7,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>rawtojxl-cli</AssemblyName>
     <RootNamespace>RAWtoJXL.Cli</RootNamespace>
-    <Version>1.0.1</Version>
+    <Version>1.1.1</Version>
     <Authors>Timur Abasov</Authors>
     <Description>Command-line interface converting RAW camera files to JPEG-XL, JPEG, or AVIF.</Description>
     <RepositoryUrl>https://github.com/Abas-Tim/RAWtoJXL</RepositoryUrl>

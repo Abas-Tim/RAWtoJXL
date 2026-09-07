@@ -2,7 +2,7 @@
 
 Convert RAW camera files to JPEG-XL, JPEG, or AVIF — with a fast, modern desktop UI. Also converts between the raster formats: JPEG, JPEG-XL and AVIF.
 
-Built on .NET 8 and Avalonia. Uses RawTherapee for high-fidelity RAW rendering, Magick.NET for image conversion, `cjxl` for JPEG-XL encoding, `djxl` for JPEG-XL decoding, and `exiftool` for metadata preservation.
+Built on .NET 8 and Avalonia. Uses rawspeed-cli for high-fidelity RAW rendering (with a Magick.NET fallback), Magick.NET for image conversion, `cjxl` for JPEG-XL encoding, `djxl` for JPEG-XL decoding, and `exiftool` for metadata preservation.
 
 ## Why JPEG-XL?
 
@@ -59,12 +59,13 @@ RAW files are inputs only and can never be produced as output. Converting a file
 - **Advanced cjxl options** — effort (1–9), thread count, near-lossless mode
 - **Cancel anytime** — graceful cancellation mid-batch
 - **Recent files** — quick-access list of last 50 files
-- **Compare tool** — pick one file and open a 3-pane comparison window (original | JXL | AVIF/JPEG, formats switchable) with synchronized zoom and pan, live file sizes, on-the-fly quality and JXL effort controls, Preview/Full indicators, viewport-local SSIM, and an amplified difference overlay
+- **Compare tool** — pick one file and open a 3-pane comparison window (original | JXL | AVIF/JPEG, formats switchable) with synchronized zoom and pan, mirror mode, live file sizes, and a settings panel with on-the-fly per-format quality and JXL effort controls, Preview/Full indicators
 
 ## Screenshot
 
-<img width="1502" height="1165" alt="image" src="https://github.com/user-attachments/assets/fa4e747d-ef40-4554-b1d3-f891be82fa7c" />
-<img width="719" height="614" alt="image" src="https://github.com/user-attachments/assets/6c240378-7da6-4d03-8dfd-7f8753b31ae5" />
+<img width="2400" alt="Main window" src="https://github.com/user-attachments/assets/647469110-d17fc19d-1459-41e5-819c-da8ce037f905" />
+<img width="742" alt="Settings overlay panel" src="https://github.com/user-attachments/assets/647469117-1c4358bd-d459-4e07-ae9a-74f1a123b4c8" />
+<img width="2200" alt="Compare tool" src="https://github.com/user-attachments/assets/647469121-dfc8a790-2536-410a-bfe5-02e9d417ac56" />
 
 
 ## Quick Start
@@ -76,11 +77,11 @@ cd RAWtoJXL
 ./build.ps1
 ```
 
-The build script downloads `cjxl.exe`, `djxl.exe` and `exiftool` if missing, restores NuGet packages, and publishes a self-contained Windows executable.
+The build script downloads `cjxl.exe`, `djxl.exe`, `exiftool` and `rawspeed-cli` if missing, restores NuGet packages, and publishes a self-contained Windows executable.
 
 The Compare tool requires `cjxl.exe` for lossy JXL quality and effort control. If it is unavailable, the Magick.NET fallback uses lossless JXL rather than silently producing low-quality output.
 
-For high-fidelity, multithreaded RAW rendering in Compare, install [RawTherapee](https://rawtherapee.com/downloads/) or set `RAWTOJXL_RAWTHERAPEE_CLI` to `rawtherapee-cli.exe`. The app also checks beside its executable, the `RawTherapee` subdirectory, `PATH`, and the standard Windows installation directory. If RawTherapee is unavailable, Compare falls back to Magick.NET RAW decoding.
+For high-fidelity, multithreaded RAW rendering in Compare, install [rawspeed-cli](https://github.com/Abas-Tim/rawspeed/releases) or set `RAWTOJXL_RAWSPEED_CLI` to `rawspeed-cli.exe`. The app also checks beside its executable, the `RawSpeedTools` subdirectory, and `PATH`. If rawspeed-cli is unavailable, Compare falls back to Magick.NET RAW decoding.
 
 ### Run
 
@@ -132,9 +133,6 @@ RAW file
   │
   ├─ JPEG:       Magick.NET RAW → JPEG at chosen quality
   │              └─ exiftool embeds metadata from source
-  │
-  └─ PNG:        Magick.NET RAW → 16-bit PNG (lossless)
-                 └─ exiftool embeds metadata from source
 ```
 
 The JXL pipeline pipes 16-bit RGB PPM data directly to `cjxl` stdin — no intermediate files, single file open, ~4 MB RAM overhead for a 24 MP image.
@@ -143,11 +141,13 @@ The JXL pipeline pipes 16-bit RGB PPM data directly to `cjxl` stdin — no inter
 
 All settings persist to `%APPDATA%\RAWtoJXL\settings.json`. Configure:
 
-- **Conversion** — quality, output format, skip metadata toggle
-- **Output** — custom directory, subfolder name, conflict resolution
-- **Behavior** — recursive search, overwrite confirmation
-- **Hardware** — cjxl effort (1–9), thread count
+- **Conversion** - quality, output format, cjxl effort (1-9), skip metadata toggle
+- **Output** - custom directory, subfolder name, recursive search
+- **Behavior** - file conflict resolution, overwrite confirmation
+- **Hardware** - cjxl thread count
 - **Presets** — named profiles for one-click conversion
+
+Open the slide-in settings panel with the **Settings** toggle in the toolbar.
 
 ## Architecture
 
@@ -167,7 +167,7 @@ Each project documents its internals in `docs/PROJECT.md`. See `docs/PROJECT_OVE
 | .NET 8 | Runtime | MIT |
 | Avalonia 12 | UI framework | MIT |
 | Magick.NET-Q16-AnyCPU | RAW decoding, image conversion | Apache-2.0 |
-| RawTherapee 5.13 | High-fidelity, multithreaded RAW rendering in Compare | GPL-3.0 |
+| rawspeed-cli 1.0.2 (Abas-Tim/rawspeed) | High-fidelity, multithreaded RAW rendering in Compare | LGPL-2.1-or-later |
 | cjxl (libjxl 0.11.2) | JPEG-XL encoding | BSD-3-Clause |
 | exiftool 13.57 | Metadata extraction & embedding | Artistic-2.0 |
 | CommunityToolkit.Mvvm | MVVM helpers | MIT |

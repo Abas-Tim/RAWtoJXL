@@ -154,8 +154,7 @@ jobs:
       # ── Download rawspeed-cli (multithreaded raw engine) ─────────────
       # Consumes the pinned release artifact from the Abas-Tim/rawspeed
       # fork. Staged into RAWtoJXL\RawSpeedTools so the Core csproj
-      # bundles it into both apps like cjxl.exe. tools\build-rawspeed.ps1
-      # remains the local source-build fallback.
+      # bundles it into both apps like cjxl.exe.
       - name: Download rawspeed-cli
         shell: pwsh
         run: |

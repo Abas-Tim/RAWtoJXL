@@ -1,11 +1,17 @@
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
+using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using RAWtoJXL.Avalonia;
 using RAWtoJXL.Avalonia.Behaviors;
+using RAWtoJXL.Avalonia.Controls;
 using RAWtoJXL.Avalonia.Services;
 using RAWtoJXL.Avalonia.ViewModels;
 using RAWtoJXL.Core.Interfaces;
+using RAWtoJXL.Core.Settings;
 using Moq;
 
 namespace RAWtoJXL.Tests.GUITests;
@@ -48,16 +54,101 @@ public class MainWindowBehavioralTests
     }
 
     [AvaloniaFact]
-    public void MainWindow_SettingsButton_RaisesRequestOpenSettings()
+    public void MainWindow_SettingsToggle_OpensRightPanel()
     {
+        using var _ = new GUITestHelpers.SettingsScope();
         var vm = GUITestHelpers.CreateViewModel();
+        var window = GUITestHelpers.CreateWindow(vm);
 
-        var received = false;
-        vm.RequestOpenSettings += () => received = true;
+        var toggle = GUITestHelpers.GetAllControls<ToggleButton>(window)
+            .First(t => t.Content?.ToString() == "Settings");
 
-        vm.OpenSettingsCommand.Execute(null);
+        toggle.IsChecked = true;
 
-        Assert.True(received, "RequestOpenSettings event should have been raised");
+        Assert.True(vm.IsSettingsOpen, "Settings toggle should open the settings panel");
+        var overlay = window.FindControl<Grid>("SettingsOverlay");
+        Assert.True(overlay!.IsVisible, "Settings overlay should be visible when open");
+        var host = window.FindControl<ContentControl>("SettingsHost");
+        Assert.NotNull(host!.Content);
+        Assert.Contains(
+            GUITestHelpers.GetAllControls<TextBlock>(host),
+            t => t.Text == "Settings");
+    }
+
+    [AvaloniaFact]
+    public void MainWindow_SettingsToggle_ClosesPanelWhenUnchecked()
+    {
+        using var _ = new GUITestHelpers.SettingsScope();
+        var vm = GUITestHelpers.CreateViewModel();
+        var window = GUITestHelpers.CreateWindow(vm);
+
+        var toggle = GUITestHelpers.GetAllControls<ToggleButton>(window)
+            .First(t => t.Content?.ToString() == "Settings");
+
+        toggle.IsChecked = true;
+        Assert.True(vm.IsSettingsOpen);
+
+        toggle.IsChecked = false;
+
+        Assert.False(vm.IsSettingsOpen, "Unchecking the toggle should close the panel");
+        var host = window.FindControl<ContentControl>("SettingsHost");
+        Assert.Null(host!.Content);
+    }
+
+    [AvaloniaFact]
+    public void MainWindow_SettingsPanel_BackdropClickCloses()
+    {
+        using var _ = new GUITestHelpers.SettingsScope();
+        var vm = GUITestHelpers.CreateViewModel();
+        var window = GUITestHelpers.CreateWindow(vm);
+
+        vm.IsSettingsOpen = true;
+        window.UpdateLayout();
+        Assert.True(vm.IsSettingsOpen);
+
+        window.MouseDown(new global::Avalonia.Point(20, 350), MouseButton.Left, RawInputModifiers.None);
+
+        Assert.False(vm.IsSettingsOpen, "Clicking outside the panel should close it");
+    }
+
+    [AvaloniaFact]
+    public void MainWindow_SettingsPanel_CloseButtonCloses()
+    {
+        using var _ = new GUITestHelpers.SettingsScope();
+        var vm = GUITestHelpers.CreateViewModel();
+        var window = GUITestHelpers.CreateWindow(vm);
+
+        vm.IsSettingsOpen = true;
+        window.UpdateLayout();
+
+        var host = window.FindControl<ContentControl>("SettingsHost");
+        var closeButton = GUITestHelpers.GetAllControls<Button>(host!)
+            .First(b => b.Content?.ToString() == "✕");
+        closeButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+
+        Assert.False(vm.IsSettingsOpen, "Close button should close the panel");
+    }
+
+    [AvaloniaFact]
+    public void MainWindow_SettingsPanel_ChangesRefreshMainViewModelOnClose()
+    {
+        using var _ = new GUITestHelpers.SettingsScope();
+        var vm = GUITestHelpers.CreateViewModel();
+        var window = GUITestHelpers.CreateWindow(vm);
+
+        vm.IsSettingsOpen = true;
+        window.UpdateLayout();
+
+        var host = window.FindControl<ContentControl>("SettingsHost");
+        var panelView = host!.Content as SettingsPanelView;
+        Assert.NotNull(panelView);
+
+        panelView!.Settings.QualityPreset = 33;
+        Assert.Equal(33, SettingsService.Load().QualityPreset);
+
+        vm.IsSettingsOpen = false;
+
+        Assert.Equal(33, vm.QualityPreset);
     }
 
     [AvaloniaFact]

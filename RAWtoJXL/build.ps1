@@ -146,9 +146,8 @@ if (-not (Test-Path $rawspeedCliExe)) {
         }
         Write-Host "rawspeed-cli.exe v$rawspeedCliVersion downloaded successfully." -ForegroundColor Green
     } catch {
-        Write-Host "Warning: Failed to download rawspeed-cli: $_" -ForegroundColor Yellow
-        Write-Host "RAW previews will use the lower-performance Magick.NET fallback." -ForegroundColor Yellow
-        Write-Host "Run tools\build-rawspeed.ps1 to build rawspeed-cli from source instead." -ForegroundColor Yellow
+    Write-Host "Warning: Failed to download rawspeed-cli: $_" -ForegroundColor Yellow
+    Write-Host "RAW previews will use the lower-performance Magick.NET fallback." -ForegroundColor Yellow
     } finally {
         Remove-Item $tempZip -Force -ErrorAction SilentlyContinue
         Remove-Item (Join-Path $env:TEMP "rawspeed-cli.zip.sha256") -Force -ErrorAction SilentlyContinue
