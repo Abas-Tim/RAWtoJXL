@@ -63,9 +63,9 @@ RAW files are inputs only and can never be produced as output. Converting a file
 
 ## Screenshot
 
-<img width="2400" alt="Main window" src="https://github.com/user-attachments/assets/647469110-d17fc19d-1459-41e5-819c-da8ce037f905" />
-<img width="742" alt="Settings overlay panel" src="https://github.com/user-attachments/assets/647469117-1c4358bd-d459-4e07-ae9a-74f1a123b4c8" />
-<img width="2200" alt="Compare tool" src="https://github.com/user-attachments/assets/647469121-dfc8a790-2536-410a-bfe5-02e9d417ac56" />
+<img width="2400" alt="Main window" src="docs/img/main-window.png" />
+<img width="742" alt="Settings overlay panel" src="docs/img/settings-panel.png" />
+<img width="2200" alt="Compare tool" src="docs/img/compare-tool.png" />
 
 
 ## Quick Start
