@@ -5,6 +5,7 @@ using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
 using RAWtoJXL.Core;
 using RAWtoJXL.Core.Interfaces;
+using RAWtoJXL.Core.Services;
 using RAWtoJXL.Core.Settings;
 using RAWtoJXL.Avalonia.Services;
 using RAWtoJXL.Avalonia.ViewModels;
@@ -40,7 +41,13 @@ public partial class App : Application
             var dialogService = serviceProvider.GetRequiredService<IDialogService>();
             var dispatcherService = serviceProvider.GetRequiredService<IDispatcherService>();
             var filePickerService = serviceProvider.GetRequiredService<IFilePickerService>();
-            var viewModel = new MainViewModel(imageService, dialogService, dispatcherService, filePickerService);
+            var batchConversionService = serviceProvider.GetRequiredService<IBatchConversionService>();
+            var viewModel = new MainViewModel(
+                imageService,
+                dialogService,
+                dispatcherService,
+                filePickerService,
+                batchConversionService: batchConversionService);
 
             var mainWindow = new MainWindow
             {

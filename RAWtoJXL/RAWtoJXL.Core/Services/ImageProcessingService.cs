@@ -57,12 +57,14 @@ public class ImageProcessingService : IImageService
         else if (outputFormat == OutputFormat.Jpeg)
         {
             await ConvertToRasterInternalAsync(inputPath, outputPath, progress, quality, cancellationToken, skipMetadata,
-                (path, outPath, q, ct) => _imageConverterService.ConvertToJpegAsync(path, outPath, q, ct));
+                threads,
+                (path, outPath, q, ct, jobThreads) => _imageConverterService.ConvertToJpegAsync(path, outPath, q, ct, jobThreads));
         }
         else if (outputFormat == OutputFormat.Avif)
         {
             await ConvertToRasterInternalAsync(inputPath, outputPath, progress, quality, cancellationToken, skipMetadata,
-                (path, outPath, q, ct) => _imageConverterService.ConvertToAvifAsync(path, outPath, q, ct));
+                threads,
+                (path, outPath, q, ct, jobThreads) => _imageConverterService.ConvertToAvifAsync(path, outPath, q, ct, jobThreads));
         }
         else
         {
@@ -116,7 +118,7 @@ public class ImageProcessingService : IImageService
                 inputPath,
                 outputPath,
                 quality,
-                async (stream, ct) => await _imageConverterService.StreamPpmToAsync(inputPath, stream, ct),
+                async (stream, ct) => await _imageConverterService.StreamPpmToAsync(inputPath, stream, ct, threads),
                 cancellationToken,
                 timeoutSeconds: 300,
                 cjxlProgress => ReportProgress(progress, 0.35 + cjxlProgress * 0.63),
@@ -147,7 +149,8 @@ public class ImageProcessingService : IImageService
         int quality,
         CancellationToken cancellationToken,
         bool skipMetadata,
-        Func<string, string, int, CancellationToken, Task> converter)
+        int? threads,
+        Func<string, string, int, CancellationToken, int?, Task> converter)
     {
         bool outputExisted = _fileService.FileExists(outputPath);
         bool isJxlInput = SupportedFormats.IsJxlFile(Path.GetExtension(inputPath));
@@ -167,11 +170,11 @@ public class ImageProcessingService : IImageService
                 tempPng = Path.Combine(Path.GetTempPath(), $"jxl_decode_{Guid.NewGuid():N}.png");
                 await _jxlDecoder.DecodeToPngAsync(inputPath, tempPng, cancellationToken);
                 ReportProgress(progress, 0.4);
-                await converter(tempPng, outputPath, quality, cancellationToken);
+                await converter(tempPng, outputPath, quality, cancellationToken, threads);
             }
             else
             {
-                await converter(inputPath, outputPath, quality, cancellationToken);
+                await converter(inputPath, outputPath, quality, cancellationToken, threads);
             }
 
             ReportProgress(progress, 0.9);

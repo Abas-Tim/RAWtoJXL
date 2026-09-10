@@ -1,36 +1,24 @@
 using System;
+using RAWtoJXL.Core.Services;
 
 namespace RAWtoJXL.Cli
 {
     public static class ParallelismPolicy
     {
-        public const int DefaultJobs = 2;
+        public const int DefaultJobs = BatchParallelismPolicy.DefaultJobs;
 
-        public const int HardCap = 4;
+        public const int HardCap = BatchParallelismPolicy.HardCap;
 
-        public static int SafeMaxJobs { get; } = ComputeSafeMax(
-            Environment.ProcessorCount,
-            GC.GetGCMemoryInfo().TotalAvailableMemoryBytes);
+        public static int SafeMaxJobs => BatchParallelismPolicy.SafeMaxJobs;
 
-        public static int ResolveDefaultJobs() => ResolveDefaultJobs(SafeMaxJobs);
+        public static int ResolveDefaultJobs() => BatchParallelismPolicy.ResolveDefaultJobs();
 
         internal static int ResolveDefaultJobs(int safeMaxJobs) =>
             Math.Min(DefaultJobs, Math.Max(1, safeMaxJobs));
 
         internal static int ComputeSafeMax(int logicalProcessors, long availableMemoryBytes)
-        {
-            var byCpu = Math.Max(1, (int)Math.Round(logicalProcessors / 4.0));
+            => BatchParallelismPolicy.ComputeSafeMax(logicalProcessors, availableMemoryBytes);
 
-            var byMemory = availableMemoryBytes switch
-            {
-                < 4L * 1024 * 1024 * 1024 => 1,
-                < 8L * 1024 * 1024 * 1024 => 2,
-                _ => int.MaxValue
-            };
-
-            return Math.Clamp(Math.Min(byCpu, byMemory), 1, HardCap);
-        }
-
-        public static bool IsAboveSafeMax(int jobs) => jobs > SafeMaxJobs;
+        public static bool IsAboveSafeMax(int jobs) => BatchParallelismPolicy.SafeMaxJobs < jobs;
     }
 }

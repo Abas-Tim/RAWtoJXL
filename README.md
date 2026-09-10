@@ -50,13 +50,13 @@ RAW files are inputs only and can never be produced as output. Converting a file
 
 - **Drag-and-drop** files and folders — recursive folder scanning
 - **Per-file quality override** — global preset with individual sliders
-- **Batch conversion** with live progress and file-level compression ratio
+- **Bounded batch conversion** with live aggregate progress, file-level compression ratio, and 1–4 parallel file jobs
 - **Metadata preservation** — EXIF, XMP, ICC, IPTC copied via `exiftool`
 - **Fast thumbnails** — reads embedded EXIF previews when available (zero decode)
 - **Named presets** — save and load conversion profiles
 - **Custom output directory** — pick any destination, optional subfolder
 - **Conflict resolution** — overwrite, skip, or auto-rename
-- **Advanced cjxl options** — effort (1–9), thread count, near-lossless mode
+- **Advanced conversion options** — effort (1–9), per-file encoder thread count, parallel file jobs, near-lossless mode
 - **Cancel anytime** — graceful cancellation mid-batch
 - **Recent files** — quick-access list of last 50 files
 - **Compare tool** — pick one file and open a 3-pane comparison window (original | JXL | AVIF/JPEG, formats switchable) with synchronized zoom and pan, mirror mode, live file sizes, and a settings panel with on-the-fly per-format quality and JXL effort controls, Preview/Full indicators
@@ -144,7 +144,7 @@ All settings persist to `%APPDATA%\RAWtoJXL\settings.json`. Configure:
 - **Conversion** - quality, output format, cjxl effort (1-9), skip metadata toggle
 - **Output** - custom directory, subfolder name, recursive search
 - **Behavior** - file conflict resolution, overwrite confirmation
-- **Hardware** - cjxl thread count
+- **Hardware** - per-file cjxl thread count and parallel file jobs (Auto starts at two and is capped conservatively)
 - **Presets** — named profiles for one-click conversion
 
 Open the slide-in settings panel with the **Settings** toggle in the toolbar.

@@ -26,10 +26,15 @@ namespace RAWtoJXL.Avalonia.ViewModels
         private readonly IDialogService _dialogService;
         private readonly IDispatcherService _dispatcherService;
         private readonly IFilePickerService _filePickerService;
+        private readonly IBatchConversionService _batchConversionService;
         private readonly bool _generateThumbnails;
         private readonly ObservableCollection<ImageItemViewModel> _selectedImages = new();
         private readonly HashSet<string> _addedFilePaths = new(StringComparer.OrdinalIgnoreCase);
         private CancellationTokenSource? _cancellationTokenSource;
+        private long _batchGeneration;
+        private readonly object _batchProgressGate = new();
+        private (long Generation, BatchConversionProgress Progress)? _pendingBatchProgress;
+        private bool _batchProgressUpdateScheduled;
 
         [ObservableProperty]
         private ObservableCollection<ImageItemViewModel> _images = new();
@@ -171,6 +176,14 @@ namespace RAWtoJXL.Avalonia.ViewModels
             SaveSettings();
         }
 
+        [ObservableProperty]
+        private int _batchJobs = -1;
+
+        partial void OnBatchJobsChanged(int value)
+        {
+            SaveSettings();
+        }
+
          public void RefreshSettings()
         {
             var saved = SettingsService.Load().Clone();
@@ -186,6 +199,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
             SkipMetadata = saved.SkipMetadata;
             CjxlEffort = saved.CjxlEffort;
             CjxlThreads = saved.CjxlThreads;
+            BatchJobs = saved.BatchJobs;
         }
 
         [ObservableProperty]
@@ -215,12 +229,19 @@ namespace RAWtoJXL.Avalonia.ViewModels
         public event Action<string>? RequestOpenCompare;
         public event Action? RequestRefreshLayout;
 
-        public MainViewModel(IImageService imageService, IDialogService dialogService, IDispatcherService dispatcherService, IFilePickerService filePickerService, bool generateThumbnails = true)
+        public MainViewModel(
+            IImageService imageService,
+            IDialogService dialogService,
+            IDispatcherService dispatcherService,
+            IFilePickerService filePickerService,
+            bool generateThumbnails = true,
+            IBatchConversionService? batchConversionService = null)
         {
-            _imageService = imageService;
-            _dialogService = dialogService;
-            _dispatcherService = dispatcherService;
-            _filePickerService = filePickerService;
+            _imageService = imageService ?? throw new ArgumentNullException(nameof(imageService));
+            _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
+            _dispatcherService = dispatcherService ?? throw new ArgumentNullException(nameof(dispatcherService));
+            _filePickerService = filePickerService ?? throw new ArgumentNullException(nameof(filePickerService));
+            _batchConversionService = batchConversionService ?? new BatchConversionService(imageService);
             _generateThumbnails = generateThumbnails;
             SettingsService.ErrorOccurred += OnSettingsError;
             LoadRecentFilesFromSettings();
@@ -248,6 +269,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
             SkipMetadata = saved.SkipMetadata;
             CjxlEffort = saved.CjxlEffort;
             CjxlThreads = saved.CjxlThreads;
+            BatchJobs = saved.BatchJobs;
         }
 
         [RelayCommand(CanExecute = nameof(CanExecuteConvertSelected))]
@@ -256,147 +278,209 @@ namespace RAWtoJXL.Avalonia.ViewModels
             var readySelected = _selectedImages.Where(i => i.Status == ImageStatus.Ready || i.Status == ImageStatus.Converted || i.Status == ImageStatus.Failed).ToList();
             if (!readySelected.Any()) return;
 
-            _cancellationTokenSource = new CancellationTokenSource();
-            _completedCountField = 0;
-            _currentFileProgress = 0;
+            using var cancellationTokenSource = new CancellationTokenSource();
+            _cancellationTokenSource = cancellationTokenSource;
+            var generation = Interlocked.Increment(ref _batchGeneration);
             CompletedCount = 0;
             TotalCount = readySelected.Count;
-            int convertedCount = 0, skippedCount = 0, failedCount = 0, cancelledCount = 0;
             StatusMessage = $"{AppStrings.ConvertingProgress}{0}{AppStrings.OfSuffix}{readySelected.Count} (0%)";
             IsConverting = true;
             RefreshAllCommands();
 
-           foreach (var item in readySelected)
+            BatchConversionBatchResult? batch = null;
+            try
             {
-                if (_cancellationTokenSource.Token.IsCancellationRequested)
+                var settings = new BatchSettingsSnapshot(
+                    QualityPreset,
+                    OutputFormat,
+                    ConflictResolution,
+                    ConfirmOverwrite,
+                    UseCustomOutputDirectory,
+                    CustomOutputDirectory,
+                    UseSubfolder,
+                    SubfolderName,
+                    SkipMetadata,
+                    CjxlEffort >= 1 ? CjxlEffort : null,
+                    CjxlThreads,
+                    BatchJobs);
+
+                var jobs = BatchParallelismPolicy.ResolveJobs(settings.BatchJobs, readySelected.Count);
+                var encoderThreads = BatchParallelismPolicy.ResolveEncoderThreads(settings.CjxlThreads, jobs);
+                var inputs = readySelected.Select((item, index) => new BatchConversionInput(
+                    $"{generation}:{index}",
+                    item.FilePath,
+                    item.EffectiveQuality(settings.QualityPreset))).ToList();
+                var requests = BatchConversionPlanner.CreateRequests(
+                    inputs,
+                    settings.OutputFormat,
+                    settings.Conflict,
+                    settings.UseCustomOutputDirectory,
+                    settings.CustomOutputDirectory,
+                    settings.UseSubfolder,
+                    settings.SubfolderName,
+                    settings.SkipMetadata,
+                    settings.Effort,
+                    encoderThreads).ToList();
+
+                await OnUiAsync(() =>
                 {
-                    break;
-                }
-
-                _currentFileProgress = 0;
-                item.Status = ImageStatus.Converting;
-
-                string? outputPath = ResolveOutputPath(item.FilePath);
-
-                if (outputPath == null)
-                {
-                    await OnUiAsync(() =>
+                    foreach (var item in readySelected)
                     {
-                        item.Status = ImageStatus.Failed;
-                        item.ErrorMessage = AppStrings.FileSkipped;
-                    });
-                    skippedCount++;
-                    UpdateProgress(readySelected.Count);
-                    continue;
-                }
+                        item.Status = ImageStatus.Converting;
+                        item.ErrorMessage = null;
+                    }
+                });
 
-                if (File.Exists(outputPath) && ConfirmOverwrite)
+                // All conflict checks and overwrite prompts happen before any
+                // worker starts, so dialogs are serial and every request keeps
+                // the settings that were selected at batch start.
+                for (var index = 0; index < requests.Count; index++)
                 {
-                    bool confirm = await _dialogService.ShowConfirmAsync(
-                        $"Overwrite existing file?\n\n{Path.GetFileName(outputPath)}",
-                        "Confirm Overwrite");
-                    if (!confirm)
+                    var request = requests[index];
+                    if (cancellationTokenSource.IsCancellationRequested)
                     {
-                        await OnUiAsync(() =>
+                        requests[index] = request with
                         {
-                            item.Status = ImageStatus.Failed;
-                            item.ErrorMessage = AppStrings.FileSkippedByUser;
-                        });
-                        skippedCount++;
-                        UpdateProgress(readySelected.Count);
+                            InitialStatus = BatchConversionStatus.Cancelled,
+                            InitialError = AppStrings.Cancelled
+                        };
                         continue;
+                    }
+
+                    if (request.InitialStatus.HasValue)
+                    {
+                        continue;
+                    }
+
+                    if (request.OutputPath != null &&
+                        request.Conflict == ConflictResolution.Overwrite &&
+                        settings.ConfirmOverwrite &&
+                        File.Exists(request.OutputPath))
+                    {
+                        bool confirm;
+                        try
+                        {
+                            confirm = await _dialogService.ShowConfirmAsync(
+                                $"Overwrite existing file?\n\n{Path.GetFileName(request.OutputPath)}",
+                                "Confirm Overwrite");
+                        }
+                        catch (Exception ex)
+                        {
+                            requests[index] = request with
+                            {
+                                InitialStatus = BatchConversionStatus.Failed,
+                                InitialError = ex.GetBaseException().Message
+                            };
+                            continue;
+                        }
+
+                        if (!confirm)
+                        {
+                            requests[index] = request with
+                            {
+                                InitialStatus = BatchConversionStatus.Skipped,
+                                InitialError = AppStrings.FileSkippedByUser
+                            };
+                        }
                     }
                 }
 
-                int quality = item.EffectiveQuality(QualityPreset);
+                var itemById = inputs.Select((input, index) => (input.Id, Item: readySelected[index]))
+                    .ToDictionary(pair => pair.Id, pair => pair.Item, StringComparer.Ordinal);
 
-                try
-                {
-                    long sourceSize = 0;
-                    try { sourceSize = new FileInfo(item.FilePath).Length; } catch { }
-
-                    await _imageService.ConvertToJxlAsync(
-                        item.FilePath,
-                        outputPath,
-                        p => _ = OnUiAsync(() => OnFileProgress(p)),
-                        quality,
-                        OutputFormat,
-                        _cancellationTokenSource.Token,
-                        SkipMetadata,
-                        CjxlEffort >= 0 ? CjxlEffort : null,
-                        CjxlThreads > 0 ? CjxlThreads : null);
-
-                    long outputSize = 0;
-                    try { outputSize = new FileInfo(outputPath).Length; } catch { }
-
-                    await OnUiAsync(() =>
+                batch = await _batchConversionService.RunAsync(
+                    requests,
+                    jobs,
+                    progress: value => OnBatchProgress(generation, value),
+                    fileCompleted: async (result, _) =>
                     {
-                        item.Status = ImageStatus.Converted;
-                        item.SourceFileSize = sourceSize;
-                        item.OutputFileSize = outputSize;
-                        item.OutputPath = outputPath;
-                        SettingsService.AddRecentFile(item.FilePath);
-                        RefreshRecentFiles();
-
-                        if (string.IsNullOrEmpty(OutputDirectory))
+                        if (!IsCurrentBatch(generation) || !itemById.TryGetValue(result.Id, out var item))
                         {
-                            OutputDirectory = Path.GetDirectoryName(outputPath) ?? string.Empty;
+                            return;
                         }
-                    });
-                    convertedCount++;
-                }
-                catch (OperationCanceledException)
-                {
-                    await OnUiAsync(() =>
-                    {
-                        item.Status = ImageStatus.Pending;
-                        item.ErrorMessage = AppStrings.Cancelled;
-                    });
-                    cancelledCount++;
-                }
-                catch (FileLockedException ex)
-                {
-                    await OnUiAsync(() =>
-                    {
-                        item.Status = ImageStatus.Failed;
-                        item.ErrorMessage = $"{AppStrings.FileLockedPrefix}{ex.Message}";
-                    });
-                    failedCount++;
-                }
-                catch (Exception ex)
-                {
-                    await OnUiAsync(() =>
-                    {
-                        item.Status = ImageStatus.Failed;
-                        item.ErrorMessage = ex.Message;
-                    });
-                    failedCount++;
-                }
+                        await OnUiAsync(() => ApplyBatchResult(item, result));
+                    },
+                    cancellationToken: cancellationTokenSource.Token);
 
-                UpdateProgress(readySelected.Count);
-            }
-
-            string lastOutputDir = string.Empty;
-            if (readySelected.Any())
-            {
-                var resolved = ResolveOutputPath(readySelected.First().FilePath);
-                if (!string.IsNullOrEmpty(resolved))
+                // The service intentionally isolates completion-callback
+                // failures. Reconcile the complete result set once more so a
+                // dispatcher or item callback failure cannot leave an item in
+                // Converting after the batch has finished.
+                await OnUiAsync(() =>
                 {
-                    lastOutputDir = Path.GetDirectoryName(resolved) ?? string.Empty;
+                    foreach (var result in batch.Files)
+                    {
+                        if (itemById.TryGetValue(result.Id, out var item))
+                        {
+                            ApplyBatchResult(item, result);
+                        }
+                    }
+                });
+
+                var recentFiles = batch.Files
+                    .Where(result => result.Status == BatchConversionStatus.Converted)
+                    .Select(result => result.InputPath)
+                    .ToList();
+                if (recentFiles.Count > 0)
+                {
+                    SettingsService.AddRecentFiles(recentFiles);
+                    await OnUiAsync(RefreshRecentFiles);
                 }
             }
-
-            await OnUiAsync(() =>
+            catch (Exception ex)
             {
-                OutputDirectory = lastOutputDir;
-                IsConverting = false;
-                _cancellationTokenSource = null;
-                StatusMessage = BuildCompletionMessage(convertedCount, skippedCount, failedCount, cancelledCount, readySelected.Count);
-                CompletedCount = 0;
-                TotalCount = 0;
-                RefreshAllCommands();
-                RequestRefreshLayout?.Invoke();
-            });
+                await OnUiAsync(() =>
+                {
+                    foreach (var item in readySelected.Where(item => item.Status == ImageStatus.Converting))
+                    {
+                        item.Status = ImageStatus.Failed;
+                        item.ErrorMessage = ex.GetBaseException().Message;
+                    }
+                });
+            }
+            finally
+            {
+                Interlocked.Increment(ref _batchGeneration);
+                lock (_batchProgressGate)
+                {
+                    _pendingBatchProgress = null;
+                }
+                var finalBatch = batch;
+                await OnUiAsync(() =>
+                {
+                    var lastOutput = finalBatch?.Files
+                        .FirstOrDefault(result => result.Status == BatchConversionStatus.Converted && !string.IsNullOrEmpty(result.OutputPath))
+                        ?.OutputPath;
+                    if (!string.IsNullOrEmpty(lastOutput))
+                    {
+                        OutputDirectory = Path.GetDirectoryName(lastOutput) ?? string.Empty;
+                    }
+
+                    IsConverting = false;
+                    if (finalBatch != null)
+                    {
+                        StatusMessage = BuildCompletionMessage(
+                            finalBatch.Converted,
+                            finalBatch.Skipped,
+                            finalBatch.Failed,
+                            finalBatch.Cancelled ? finalBatch.Total - finalBatch.Converted - finalBatch.Skipped - finalBatch.Failed : 0,
+                            finalBatch.Total);
+                    }
+                    else if (cancellationTokenSource.IsCancellationRequested)
+                    {
+                        StatusMessage = AppStrings.ConversionCancelled;
+                    }
+
+                    CompletedCount = 0;
+                    TotalCount = 0;
+                    RefreshAllCommands();
+                    RequestRefreshLayout?.Invoke();
+                });
+                if (ReferenceEquals(_cancellationTokenSource, cancellationTokenSource))
+                {
+                    _cancellationTokenSource = null;
+                }
+            }
         }
 
         private static string BuildCompletionMessage(int converted, int skipped, int failed, int cancelled, int total)
@@ -563,33 +647,101 @@ namespace RAWtoJXL.Avalonia.ViewModels
             RecentFiles = new ObservableCollection<string>();
         }
 
-       private int _completedCountField;
-        private double _currentFileProgress;
-
-        private void UpdateProgress(int total)
+        private void OnBatchProgress(long generation, BatchConversionProgress progress)
         {
-            int completed = Interlocked.Increment(ref _completedCountField);
-            CompletedCount = completed;
-            _currentFileProgress = 0;
-            StatusMessage = FormatProgressMessage(completed, total);
+            if (!IsCurrentBatch(generation))
+            {
+                return;
+            }
+
+            if (Dispatcher.UIThread.CheckAccess())
+            {
+                ApplyBatchProgress(generation, progress);
+                return;
+            }
+
+            lock (_batchProgressGate)
+            {
+                if (!IsCurrentBatch(generation))
+                {
+                    return;
+                }
+
+                _pendingBatchProgress = (generation, progress);
+                if (_batchProgressUpdateScheduled)
+                {
+                    return;
+                }
+
+                _batchProgressUpdateScheduled = true;
+            }
+
+            // Progress callbacks can be much more frequent than the UI can
+            // render. Keep only the newest snapshot per dispatcher turn.
+            Dispatcher.UIThread.Post(FlushPendingBatchProgress);
         }
 
-        private void UpdateProgressDisplay(int total)
+        private void FlushPendingBatchProgress()
         {
-            int completed = Volatile.Read(ref _completedCountField);
-            StatusMessage = FormatProgressMessage(completed, total);
+            (long Generation, BatchConversionProgress Progress)? pending;
+            lock (_batchProgressGate)
+            {
+                pending = _pendingBatchProgress;
+                _pendingBatchProgress = null;
+                _batchProgressUpdateScheduled = false;
+            }
+
+            if (pending.HasValue)
+            {
+                ApplyBatchProgress(pending.Value.Generation, pending.Value.Progress);
+            }
         }
 
-        private string FormatProgressMessage(int completed, int total)
+        private void ApplyBatchProgress(long generation, BatchConversionProgress progress)
         {
-            double overallPercent = total > 0 ? (completed + _currentFileProgress) / total * 100 : 0;
-            return $"{AppStrings.ConvertingProgress}{completed}{AppStrings.OfSuffix}{total} ({overallPercent:F0}%)";
+            if (!IsCurrentBatch(generation))
+            {
+                return;
+            }
+
+            CompletedCount = progress.CompletedCount;
+            TotalCount = progress.TotalCount;
+            var percent = progress.OverallFraction * 100;
+            StatusMessage = $"{AppStrings.ConvertingProgress}{progress.CompletedCount}{AppStrings.OfSuffix}{progress.TotalCount} ({percent:F0}%)";
         }
 
-        private void OnFileProgress(double progress)
+        private bool IsCurrentBatch(long generation) =>
+            IsConverting && Volatile.Read(ref _batchGeneration) == generation;
+
+        private static void ApplyBatchResult(
+            ImageItemViewModel item,
+            BatchConversionFileResult result)
         {
-            _currentFileProgress = progress;
-            UpdateProgressDisplay(TotalCount);
+            switch (result.Status)
+            {
+                case BatchConversionStatus.Converted:
+                    item.Status = ImageStatus.Converted;
+                    item.SourceFileSize = result.InputBytes;
+                    item.OutputFileSize = result.OutputBytes;
+                    item.OutputPath = result.OutputPath ?? string.Empty;
+                    item.ErrorMessage = null;
+                    break;
+
+                case BatchConversionStatus.Cancelled:
+                    item.Status = ImageStatus.Pending;
+                    item.ErrorMessage = AppStrings.Cancelled;
+                    break;
+
+                case BatchConversionStatus.Skipped:
+                    item.Status = ImageStatus.Failed;
+                    item.ErrorMessage = result.Error ?? AppStrings.FileSkipped;
+                    break;
+
+                default:
+                    item.Status = ImageStatus.Failed;
+                    item.ErrorMessage = result.Error ?? "conversion failed";
+                    break;
+            }
         }
 
         private void Item_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -801,8 +953,23 @@ namespace RAWtoJXL.Avalonia.ViewModels
             settings.SkipMetadata = SkipMetadata;
             settings.CjxlEffort = CjxlEffort;
             settings.CjxlThreads = CjxlThreads;
+            settings.BatchJobs = BatchJobs;
             SettingsService.Save();
         }
+
+        private sealed record BatchSettingsSnapshot(
+            int QualityPreset,
+            OutputFormat OutputFormat,
+            ConflictResolution Conflict,
+            bool ConfirmOverwrite,
+            bool UseCustomOutputDirectory,
+            string CustomOutputDirectory,
+            bool UseSubfolder,
+            string SubfolderName,
+            bool SkipMetadata,
+            int? Effort,
+            int CjxlThreads,
+            int BatchJobs);
 
         private static bool IsSupportedFile(string extension)
         {

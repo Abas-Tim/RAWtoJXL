@@ -13,12 +13,14 @@ RAWtoJXL.Core/
 │   ├── IFileService.cs            # File system operations interface
 │   ├── IPathResolver.cs           # Path resolution interface
 │   ├── IExiftoolService.cs        # Metadata operations interface (EXIF extraction, metadata embedding)
+│   ├── IBatchConversionService.cs # Fixed-worker batch execution interface
 │   ├── ILogger.cs                 # Logging interface (replaces static Logger)
 │   └── IProcessRunner.cs          # Process execution interface (replaces static ProcessHelper)
 ├── Models/
 │   ├── FileLockedException.cs     # Custom exception for file-lock errors (IOException wrapper)
 │   ├── MetadataProfiles.cs        # Metadata container (EXIF, XMP, ICC, IPTC profiles) with disposable temp file cleanup and logging
 │   ├── QualityCalculator.cs       # Static helper for quality→distance/effort mapping
+│   ├── BatchConversionModels.cs   # Immutable batch requests, progress, and result models
 │   └── SupportedFormats.cs        # Static list of supported RAW extensions (ARW, CR2, CR3, NEF, RAF, ORF, RW2, DNG, etc.) and helper methods
 ├── Settings/
 │   └── SettingsService.cs         # AppSettings/ConversionPreset/ConflictResolution models + %APPDATA% persistence (shared by GUI and CLI)
@@ -32,6 +34,9 @@ RAWtoJXL.Core/
 │   ├── PathResolverService.cs     # Path resolution implementation
 │   ├── FileLogger.cs              # ILogger implementation (file-based logger)
 │   ├── OutputPathResolver.cs      # Output directory/subfolder/extension/conflict resolution (GUI + CLI)
+│   ├── BatchConversionPlanner.cs  # Case-insensitive output reservation and preflight planning
+│   ├── BatchConversionService.cs  # Fixed worker pool, atomic promotion, cancellation, and progress aggregation
+│   ├── BatchParallelismPolicy.cs  # CPU/memory-aware jobs and per-file encoder-thread policy
 │   ├── ImageFileEnumerator.cs     # Deduped, sorted scan of files/folders for supported extensions
 │   └── ServiceCollectionExtensions.cs # IServiceCollection extension for AddCoreServices()
 └── docs/
@@ -52,6 +57,7 @@ RAWtoJXL.Core/
     IImageConverterService → ImageConverterService (depends on IExiftoolService, IFileService, ILogger)
     ICjxlEncoder → CjxlEncoderService (depends on IPathResolver, IExiftoolService, ILogger, IProcessRunner)
     IImageService → ImageProcessingService (depends on IImageConverterService, ICjxlEncoder, IFileService, IPathResolver, ILogger, IExiftoolService)
+    IBatchConversionService → BatchConversionService (depends on IImageService; used by GUI and CLI)
     ```
 
 ## Services & Responsibilities
@@ -67,7 +73,7 @@ Defines two async operations:
    - `outputFormat = OutputFormat.Avif`: Magick.NET conversion (`MagickFormat.Avif`, 16-bit sRGB) + exiftool metadata embedding. JXL inputs are decoded to a temp 16-bit PNG via `IJxlDecoder` first.
    - `skipMetadata`: When true, skips metadata embedding for faster conversion
     - `effort`: Optional cjxl encoding effort override (1-9)
-    - `threads`: Optional cjxl thread count override. Null uses `Environment.ProcessorCount`
+    - `threads`: Optional per-file encoder thread count override. The GUI resolves Auto as logical processors divided by effective jobs; direct callers may pass their own resolved budget.
     - All formats use single exiftool invocation for post-encoding metadata embedding via `-tagsFromFile`
 
 Also defines two enums in the same file:
@@ -79,6 +85,16 @@ Coordinates the conversion pipeline by delegating to specialized services. RAW i
 1. **JXL (default)**: Two-stage via `ImageConverterService.StreamPpmToAsync` (direct PPM stream to cjxl stdin) + `CjxlEncoderService.EncodeFromStreamAsync` with writer delegate — zero intermediate buffering, single file open
 2. **JPEG**: Magick.NET conversion; JXL sources decoded via `IJxlDecoder` to a temp 16-bit PNG first
 3. **AVIF**: Magick.NET conversion (16-bit sRGB); JXL sources decoded via `IJxlDecoder` to a temp 16-bit PNG first
+
+The raster converter calls receive the same per-file thread budget as the JXL encoder. The JXL stream writer also receives it, so selecting parallel files does not silently discard the resource policy on a format branch.
+
+### BatchConversionService / BatchConversionPlanner
+
+`BatchConversionPlanner` resolves every output before work starts, reserves append-number names with Windows case-insensitive comparison, rejects duplicate destinations, and records existing-output skips as initial results. `BatchConversionService` then runs a fixed worker pool rather than one task per input. Each worker owns the complete file pipeline through metadata and promotion.
+
+Conversions write to a unique temporary file in the destination directory and promote it only after the image service completes. Skip and append-number races are rechecked at promotion; failures and cancellation remove only the worker's owned temporary file. Results remain in input order while completion callbacks may arrive out of order.
+
+`BatchParallelismPolicy` exposes a conservative Auto default of two jobs, a hard initial cap of four, and `ResolveEncoderThreads()` for dividing Auto encoder capacity across active jobs. The GUI exposes Auto plus explicit jobs 1–4 and snapshots the resolved request settings before preflight. Progress reports terminal file count plus bounded active-file fractions and remains below 100% until the final file reaches promotion.
 
 **Constructor Injection:**
 ```csharp
@@ -225,11 +241,12 @@ When an ARW file is locked by another application (Adobe Bridge, Lightroom, etc.
 
 ## Concurrency Model
 
-- **Sequential file conversion** — files are converted one at a time in a `foreach` loop, eliminating UI dispatcher overload from multiple simultaneous progress callbacks
-- Each file uses all available cjxl threads (`CjxlThreads` setting) for maximum per-file encoding performance
-- Progress callback fires `OnUiAsync()` only once per tick (single file), avoiding N simultaneous dispatcher queues
-- `CancellationTokenSource` for graceful cancellation (checked before each file and passed to services)
-- `OperationCanceledException` caught to mark items as Pending with "Cancelled" error
+- **Bounded file conversion** — GUI and CLI parallel paths use a fixed worker pool; jobs are capped by the requested budget, file count, and the GUI's conservative Auto policy. `jobs=1` remains a sequential diagnostic path.
+- Each worker retains its slot through preparation, encoding, metadata embedding, and output promotion, so metadata does not form an unbounded queue after encoding.
+- Auto per-file encoder threads resolve to `max(1, logicalProcessors/jobs)`; explicit thread settings remain per job. Magick operations using a positive budget share a coordinated process-wide lease for the same budget instead of holding a whole-operation global lock that would serialize equal-budget workers.
+- Progress callbacks are aggregated by file and the Avalonia layer coalesces dispatcher notifications. Generation IDs reject callbacks from an earlier cancelled run.
+- `CancellationTokenSource` is linked into the worker pool; cancellation stops new work, propagates to active image/process operations, drains started workers, and cleans owned temporary outputs.
+- The CLI keeps its public sequential progress/report path for `--jobs 1` and adapts parallel execution to the Core planner/service without changing result status strings or exit-code handling.
 
 ## Key Dependencies
 

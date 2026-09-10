@@ -10,7 +10,7 @@ RAWtoJXL.Cli/
 ├── CliApplication.cs          # Parse → validate → invoke pipeline; exit code mapping
 ├── CliCommandFactory.cs       # RootCommand + subcommands (convert, list, presets)
 ├── CliHandlers.cs             # Command handlers: bind, merge, enumerate, run, report
-├── ConversionRunner.cs        # Sequential/parallel batch conversion loop
+├── ConversionRunner.cs        # Sequential path plus Core fixed-worker batch adapter
 ├── SettingsMerger.cs          # CLI flags > preset > settings.json > defaults
 ├── FileFilter.cs              # Include/exclude wildcards, date windows
 ├── ConsoleReporter.cs         # Progress (stderr), JSON (stdout), summaries
@@ -55,6 +55,10 @@ Note: paths must be given **before** multi-value options (`--ext`, `--include`,
   sequentially, so `--conflict rename` never collides between concurrent jobs.
   Duplicate output paths (e.g. `a.arw` + `a.cr3`) fail loudly instead of
   concurrent-writing one file.
+- **Safe output promotion** — parallel conversions encode into unique temporary
+  files beside the destination and promote only after the complete image and
+  metadata pipeline succeeds; an error or cancellation does not replace a prior
+  output file.
 - **Machine-readable output** — `--json` writes a single JSON document to stdout;
   all progress/diagnostics go to stderr, so stdout stays pipe-clean.
 

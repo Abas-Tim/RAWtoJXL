@@ -18,6 +18,7 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IImageConverterService, ImageConverterService>();
         services.AddTransient<ICjxlEncoder, CjxlEncoderService>();
         services.AddTransient<IImageService, ImageProcessingService>();
+        services.AddTransient<IBatchConversionService, BatchConversionService>();
         services.AddTransient<ICompareConversionService, CompareConversionService>();
 
         return services;

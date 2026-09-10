@@ -46,7 +46,7 @@ public class CompareConversionService : ICompareConversionService
         _rawRenderer = rawRenderer ?? throw new ArgumentNullException(nameof(rawRenderer));
         _fileService = fileService ?? throw new ArgumentNullException(nameof(fileService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        ResourceLimits.Thread = (ulong)CompareDefaults.JxlThreads;
+        ImageConverterService.SetDefaultThreadBudget(CompareDefaults.JxlThreads);
     }
 
     public Task<string> EnsureMasterPngAsync(string inputPath, CancellationToken cancellationToken = default)

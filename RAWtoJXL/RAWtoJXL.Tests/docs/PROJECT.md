@@ -16,6 +16,9 @@ RAWtoJXL.Tests/
 ├── SubfolderValidationTests.cs   # Unit tests for SettingsViewModel.ValidateSubfolderName() (no DI)
 ├── ImageItemViewModelTests.cs    # Unit tests for EffectiveQuality fallback logic (no DI)
 ├── CjxlEncoderArgumentsTests.cs  # Unit tests for BuildEncodingArguments() via protected internal test subclass (Moq)
+├── BatchConversionServiceTests.cs        # Fixed-worker overlap, sequential diagnostic, failure/cancellation isolation, conflict-safe promotion, and aggregate progress
+├── BatchConversionPlannerTests.cs        # Case-insensitive destination reservation and duplicate-output rejection
+├── ImageProcessingServiceThreadBudgetTests.cs # JXL and raster thread-budget propagation
 ├── test1.dng                     # Test fixture DNG file for integration tests
 ├── Cli/                          # CLI test suite (RAWtoJXL.Cli)
 │   ├── OutputPathResolverTests.cs       # Output dir/subfolder/extension/conflict resolution
@@ -31,6 +34,8 @@ RAWtoJXL.Tests/
 │   ├── MainWindowBehavioralTests.cs     # MainWindow functional behavior: SelectAll toggling, RemoveSelected removal, Settings toggle panel open/close, Convert pipeline with mock, StatusMessage→UI binding, Cancel visibility, gallery rendering, drag-drop infrastructure, CheckBox→selection binding, quality slider
 │   ├── SettingsPanelTests.cs          # SettingsPanel structure and behavior: tabs, buttons, Save/Cancel commands, quality slider, output format, subfolder validation, tab switching, cjxl effort, skip metadata
 │   ├── SettingsPersistenceTests.cs     # Settings persistence round-trip: quality, format, effort, metadata, subfolder, conflict, presets
+│   ├── BatchJobsSettingsTests.cs        # Parallel-file setting options, persistence, and migration default
+│   ├── MainViewModelBatchConversionTests.cs # GUI worker overlap and immutable batch settings snapshot
 │   └── ConfirmDialogTests.cs           # ConfirmDialog structure and behavior: Yes/No click closes dialog, message binding, data context, title binding
 └── Services/                     # Empty directory (reserved for future service tests)
 ```
@@ -40,6 +45,7 @@ RAWtoJXL.Tests/
 - **Startup**: Central DI configuration base class — calls `services.AddCoreServices()` from `RAWtoJXL.Core`. Tests inherit from `Startup` and resolve services from `Services` property. Provides `CreateScope()` for test isolation. Locates `test1.ARW` test fixture relative to assembly directory.
 - **TestAppBuilder**: Avalonia headless application builder registered via `[assembly: AvaloniaTestApplication(typeof(TestAppBuilder))]`. Configures `App` with `AvaloniaHeadlessPlatformOptions` for GUI tests.
 - **ConversionTestCollection**: `[CollectionDefinition("Conversion")]` ensures `ConversionTests`, `MetadataPreservationTests`, and `MetadataDebugTests` run sequentially, preventing multiple cjxl processes from competing for CPU cores.
+- **Batch scheduler coverage**: barrier-based tests use finite `WaitAsync` timeouts and atomic counters to prove jobs >1 overlap without exceeding the worker budget, while jobs=1 remains sequential. Temporary outputs are created inside per-test directories and removed during cleanup.
 
 ## Running Tests
 
