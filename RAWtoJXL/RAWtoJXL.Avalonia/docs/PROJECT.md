@@ -36,8 +36,8 @@ RAWtoJXL.Avalonia/
 │   └── IFilePickerService.cs                # File picker service interface
 ├── ViewModels/
 │   ├── ImageItemViewModel.cs                # View model for image items (ObservableProperty, Bitmap thumbnail, QualityOverride)
-│   ├── MainViewModel.cs                     # Main view model with IFilePickerService injection, auto-persists settings on change
-│   └── SettingsViewModel.cs                 # Settings view model with presets, validation, debounced auto-persist (500ms) via OnPropertyChanged
+│   ├── MainViewModel.cs                     # Main view model with bounded batch workers, immutable conversion snapshots, and IFilePickerService injection
+│   └── SettingsViewModel.cs                 # Settings view model with presets, validation, parallel-file options, debounced auto-persist (500ms) via OnPropertyChanged
 └── docs/
     └── PROJECT.md                           # This file
 ```
@@ -66,7 +66,7 @@ RAWtoJXL.Avalonia/
 ## Key Features
 
 - **Drag-Drop**: Single attached property `DragDropBehavior.EnableDragDrop` on root Grid. Internally wires `DragDrop.SetAllowDrop`, `AddDragEnterHandler`, `AddDragOverHandler`, `AddDropHandler`. Drop handler finds ancestor `MainViewModel` via `DataContext` chain, reads `SearchRecursive` for recursive folder enumeration. Supports both structured file data (`DataFormat.File`) and plain text paths (`DataFormat.Text`) for Windows Explorer compatibility.
-- **Recent Files**: Hover-activated popup in the File menu, positioned to the right of the Recent button (`Placement="RightEdgeAlignedTop"`). Stays open while hovering either the button or the popup via a 200ms `DispatcherTimer` delay. MenuItem is disabled when no recent files exist (`IsEnabled="{Binding HasRecentFiles}"`). Click-in-progress tracking (`PointerPressed`/`PointerReleased`) prevents popup from closing mid-click when pointer briefly exits bounds. Each file entry is a full-width clickable button (`Background="Transparent"`, `TextBlock.HorizontalAlignment="Stretch"`); click handler is wrapped in try-catch and does not forcibly close the popup. Load All and Clear Recent actions below the popup. `SettingsService.AddRecentFile()` maintains max 50 entries.
+- **Recent Files**: Hover-activated popup in the File menu, positioned to the right of the Recent button (`Placement="RightEdgeAlignedTop"`). Stays open while hovering either the button or the popup via a 200ms `DispatcherTimer` delay. MenuItem is disabled when no recent files exist (`IsEnabled="{Binding HasRecentFiles}"`). Click-in-progress tracking (`PointerPressed`/`PointerReleased`) prevents popup from closing mid-click when pointer briefly exits bounds. Each file entry is a full-width clickable button (`Background="Transparent"`, `TextBlock.HorizontalAlignment="Stretch"`); click handler is wrapped in try-catch and does not forcibly close the popup. Load All and Clear Recent actions below the popup. `SettingsService.AddRecentFile(s)` maintains max 50 entries, and a completed batch updates the history in one checkpoint.
 - **File Picker**: Avalonia storage APIs (`StorageProvider.OpenFilePickerAsync`, `OpenFolderPickerAsync`)
 - **Presets**: Named conversion presets with quality, effort, threads settings
 - **Confirmation Dialogs**: Custom `ConfirmDialog` window with `MessageText`/`TitleText` proxy properties delegating to a nested `ConfirmDialogViewModel` (`ObservableObject`). DataContext is the viewmodel. `TitleText` setter also updates `Window.Title` for immediate effect. Yes button (`IsDefault`) closes with `true`, No button (`IsCancel`) closes with `false`.
@@ -75,23 +75,24 @@ RAWtoJXL.Avalonia/
 - **HeadlessTestMode**: `MainViewModel.HeadlessTestMode` static flag skips thumbnail generation during GUI tests to avoid file I/O.
 - **Thumbnail generation**: `GenerateThumbnailsAsync` uses `SemaphoreSlim` with concurrency `Math.Max(4, ProcessorCount/2)` — scales with available cores while maintaining minimum parallelism. Thumbnails are generated on background threads; UI updates are dispatched via `OnUiAsync()`. Each thumbnail first tries embedded EXIF preview (zero decode), then falls back to fast decode with camera LUT disabled.
 - **UI Virtualization**: The image gallery uses `ItemsRepeater` with `UniformGridLayout` inside a `ScrollViewer` for efficient rendering of large file lists with wrapping grid layout. Only visible item controls are instantiated, reducing memory usage from O(n) to O(visible items).
+- **Bounded batch conversion**: `ConvertSelectedAsync` snapshots eligible files and all conversion settings, preflights output conflicts serially, then runs a fixed Core worker pool. Auto starts conservatively at two jobs and explicit settings expose 1–4 jobs; each job owns preparation, encoding, metadata, and final output promotion.
 
 ## ViewModels
 
 ### MainViewModel
 **Properties (all `[ObservableProperty]`):**
-- `Images` (ObservableCollection<ImageItemViewModel>), `IsCancelRequested` (bool), `StatusMessage` (string), `IsConverting` (bool), `OutputPath` (string), `SubfolderName` (string), `IsAllSelected` (bool), `OutputDirectory` (string), `UseSubfolder` (bool), `QualityPreset` (int), `SearchRecursive` (bool), `OutputFormat` (OutputFormat), `ConflictResolution` (ConflictResolution), `ConfirmOverwrite` (bool), `UseCustomOutputDirectory` (bool), `CustomOutputDirectory` (string), `RecentFiles` (ObservableCollection<string>), `IsRecentHovered` (bool), `SkipMetadata` (bool), `CjxlEffort` (int), `CjxlThreads` (int), `IsAnySelected` (bool), `CompletedCount` (int), `TotalCount` (int)
+- `Images` (ObservableCollection<ImageItemViewModel>), `IsCancelRequested` (bool), `StatusMessage` (string), `IsConverting` (bool), `OutputPath` (string), `SubfolderName` (string), `IsAllSelected` (bool), `OutputDirectory` (string), `UseSubfolder` (bool), `QualityPreset` (int), `SearchRecursive` (bool), `OutputFormat` (OutputFormat), `ConflictResolution` (ConflictResolution), `ConfirmOverwrite` (bool), `UseCustomOutputDirectory` (bool), `CustomOutputDirectory` (string), `RecentFiles` (ObservableCollection<string>), `IsRecentHovered` (bool), `SkipMetadata` (bool), `CjxlEffort` (int), `CjxlThreads` (int), `BatchJobs` (int, -1 for Auto), `IsAnySelected` (bool), `CompletedCount` (int), `TotalCount` (int)
 
 **Computed properties:** `HasRecentFiles` (bool) — `RecentFiles.Count > 0`, used to disable the Recent menu item when empty.
 
-**Private fields:** `_currentFileProgress` (double) — tracks per-file progress (0.0-1.0) from conversion pipeline for smooth overall progress display.
+**Private fields:** `_batchGeneration` rejects late callbacks from an older/cancelled run; coalesced progress stores only the newest worker snapshot pending for the UI dispatcher.
 
 **Commands (`[RelayCommand]`):**
 - `ConvertSelectedCommand`, `RemoveSelectedCommand`, `SelectAllCommand`, `CancelCommand`, `OpenSettingsCommand`, `OpenFileCommand`, `OpenFolderCommand`, `OpenOutputFolderCommand`, `LoadRecentFilesCommand`, `ClearRecentFilesCommand`
 - `CancelCommand.CanExecute` returns `IsConverting` — enabled throughout conversion for immediate cancellation.
-- `OpenOutputFolderCommand` becomes enabled as soon as the first file converts successfully (`OutputDirectory` is set incrementally on each successful conversion, not only after all complete).
+- `OpenOutputFolderCommand` becomes enabled after batch finalization when a converted result provides an output directory.
 
-**Progress tracking:** `UpdateProgressDisplay()` computes overall percentage from completed count + current file progress. `OnFileProgress()` receives per-file progress from `IImageService.ConvertToJxlAsync` callback and updates status message with live percentage. Files convert sequentially (one at a time) to avoid UI dispatcher overload from N parallel progress callbacks.
+**Progress tracking:** `IBatchConversionService` aggregates terminal files plus fractions of active files and clamps active estimates below complete until metadata and promotion succeed. `MainViewModel` coalesces progress notifications per dispatcher turn, applies item results on the UI thread, and uses a generation ID to discard late callbacks.
 
 **Public methods:** `RefreshSettings()` — reloads settings from disk (called when the settings panel closes).
 
@@ -101,12 +102,12 @@ RAWtoJXL.Avalonia/
 Implements `IDisposable` — `Dispose()` stops debounce timer, flushes pending persist, and disposes timer resources. Called from `MainWindow` when the settings panel closes.
 
 **Properties (all `[ObservableProperty]`):**
-- `UseSubfolder`, `SubfolderName`, `QualityPreset`, `SearchRecursive`, `OutputFormat`, `ConflictResolution`, `ConfirmOverwrite`, `UseCustomOutputDirectory`, `CustomOutputDirectory`, `IsSaving`, `SubfolderNameValidationResult`, `Presets` (ObservableCollection<ConversionPreset>), `SelectedPreset`, `HasSelectedPreset`, `NewPresetName`, `SkipMetadata`, `CjxlEffort`, `SelectedEffortOption`, `CjxlThreads`, `SelectedThreadsOption`
+- `UseSubfolder`, `SubfolderName`, `QualityPreset`, `SearchRecursive`, `OutputFormat`, `ConflictResolution`, `ConfirmOverwrite`, `UseCustomOutputDirectory`, `CustomOutputDirectory`, `IsSaving`, `SubfolderNameValidationResult`, `Presets` (ObservableCollection<ConversionPreset>), `SelectedPreset`, `HasSelectedPreset`, `NewPresetName`, `SkipMetadata`, `CjxlEffort`, `SelectedEffortOption`, `CjxlThreads`, `SelectedThreadsOption`, `BatchJobs`, `SelectedBatchJobsOption`
 
 **Public methods:** `Persist()` — forces immediate save (flushes debounce). Used in tests to verify persistence without waiting for timer.
 
 **Public members:**
-- `OutputFormatOptions` (Array), `ConflictResolutionOptions` (Array), `CjxlEffortOptions` (EffortOption[] with 10 options: Auto -1 through 9), `CjxlThreadsOptions` (ThreadOption[] dynamically generated: Auto -1 through ProcessorCount)
+- `OutputFormatOptions` (Array), `ConflictResolutionOptions` (Array), `CjxlEffortOptions` (EffortOption[] with 10 options: Auto -1 through 9), `CjxlThreadsOptions` (ThreadOption[] dynamically generated: Auto -1 through ProcessorCount), `BatchJobsOptions` (JobOption[]: Auto -1 and explicit 1–4)
 - `static ValidateSubfolderName(string)` — validates subfolder name against path characters, reserved names, length limits
 
 **Commands (`[RelayCommand]`):**
@@ -133,10 +134,10 @@ Implements `IDisposable` — `Dispose()` stops debounce timer, flushes pending p
 - `Overwrite`, `Skip`, `AppendNumber`
 
 ### AppSettings
-JSON-serializable settings container: `UseSubfolder`, `SubfolderName`, `QualityPreset`, `SearchRecursive`, `RecentFiles`, `OutputFormat`, `ConflictResolution`, `ConfirmOverwrite`, `UseCustomOutputDirectory`, `CustomOutputDirectory`, `Presets`, `SkipMetadata`, `CjxlEffort`, `CjxlThreads`
+JSON-serializable settings container: `UseSubfolder`, `SubfolderName`, `QualityPreset`, `SearchRecursive`, `RecentFiles`, `OutputFormat`, `ConflictResolution`, `ConfirmOverwrite`, `UseCustomOutputDirectory`, `CustomOutputDirectory`, `Presets`, `SkipMetadata`, `CjxlEffort`, `CjxlThreads`, `BatchJobs` (backward-compatible default `-1`)
 
 ### ConversionPreset
-Named preset: `Name`, `Quality`, `OutputFormat`, `ConflictResolution`, `UseSubfolder`, `SubfolderName`, `UseCustomOutputDirectory`, `CustomOutputDirectory`, `ConfirmOverwrite`, `SkipMetadata`, `CjxlEffort`, `CjxlThreads`
+Named preset: `Name`, `Quality`, `OutputFormat`, `ConflictResolution`, `UseSubfolder`, `SubfolderName`, `UseCustomOutputDirectory`, `CustomOutputDirectory`, `ConfirmOverwrite`, `SkipMetadata`, `CjxlEffort`, `CjxlThreads`, `BatchJobs`
 
 ## Key Dependencies
 

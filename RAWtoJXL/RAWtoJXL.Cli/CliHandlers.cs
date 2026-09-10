@@ -51,7 +51,7 @@ namespace RAWtoJXL.Cli
                     : string.Empty;
                 reporter.Warning(
                     $"{requestedJobs} parallel jobs exceed the stable limit of {ParallelismPolicy.SafeMaxJobs} " +
-                    $"for this machine ({Environment.ProcessorCount} logical processors, " +
+                    $"for this machine ({BatchParallelismPolicy.GetLogicalProcessorCount()} logical processors, " +
                     $"{GC.GetGCMemoryInfo().TotalAvailableMemoryBytes / (1024L * 1024 * 1024)} GB RAM)." + extra);
             }
 

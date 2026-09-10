@@ -19,6 +19,9 @@ namespace RAWtoJXL.Core.Services;
         private const uint MaxThumbnailDimension = 300;
 
         private static readonly object MagickThreadBudgetLock = new();
+        private static int _activeThreadBudgetUsers;
+        private static ulong _activeThreadBudget;
+        private static ulong _previousThreadBudget;
 
         public ImageConverterService(IExiftoolService exiftoolService, IFileService fileService, ILogger logger, IJxlDecoder jxlDecoder)
         {
@@ -398,17 +401,73 @@ namespace RAWtoJXL.Core.Services;
             return;
         }
 
+        using var lease = AcquireThreadBudget(threads.Value);
+        action();
+    }
+
+    internal static void SetDefaultThreadBudget(int threads)
+    {
+        if (threads <= 0)
+        {
+            return;
+        }
+
         lock (MagickThreadBudgetLock)
         {
-            ulong previous = ResourceLimits.Thread;
-            ResourceLimits.Thread = (ulong)threads.Value;
-            try
+            while (_activeThreadBudgetUsers > 0)
             {
-                action();
+                Monitor.Wait(MagickThreadBudgetLock);
             }
-            finally
+
+            ResourceLimits.Thread = (ulong)threads;
+        }
+    }
+
+    private static IDisposable AcquireThreadBudget(int threads)
+    {
+        var requested = (ulong)threads;
+        lock (MagickThreadBudgetLock)
+        {
+            while (_activeThreadBudgetUsers > 0 && _activeThreadBudget != requested)
             {
-                ResourceLimits.Thread = previous;
+                Monitor.Wait(MagickThreadBudgetLock);
+            }
+
+            if (_activeThreadBudgetUsers == 0)
+            {
+                _previousThreadBudget = ResourceLimits.Thread;
+                _activeThreadBudget = requested;
+                ResourceLimits.Thread = requested;
+            }
+
+            _activeThreadBudgetUsers++;
+            return new ThreadBudgetLease();
+        }
+    }
+
+    private static void ReleaseThreadBudget()
+    {
+        lock (MagickThreadBudgetLock)
+        {
+            _activeThreadBudgetUsers--;
+            if (_activeThreadBudgetUsers == 0)
+            {
+                ResourceLimits.Thread = _previousThreadBudget;
+                _activeThreadBudget = 0;
+                Monitor.PulseAll(MagickThreadBudgetLock);
+            }
+        }
+    }
+
+    private sealed class ThreadBudgetLease : IDisposable
+    {
+        private int _released;
+
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _released, 1) == 0)
+            {
+                ReleaseThreadBudget();
             }
         }
     }
@@ -463,7 +522,11 @@ namespace RAWtoJXL.Core.Services;
         return await _exiftoolService.ExtractMetadataProfilesAsync(filePath, cancellationToken);
     }
 
-    public async Task StreamPpmToAsync(string inputPath, Stream output, CancellationToken cancellationToken = default)
+    public async Task StreamPpmToAsync(
+        string inputPath,
+        Stream output,
+        CancellationToken cancellationToken = default,
+        int? threads = null)
     {
         if (string.IsNullOrWhiteSpace(inputPath))
         {
@@ -480,7 +543,7 @@ namespace RAWtoJXL.Core.Services;
             throw new FileNotFoundException($"Input file not found: {inputPath}");
         }
 
-        await Task.Run(() =>
+        await Task.Run(() => WithThreadBudget(threads, () =>
         {
             try
             {
@@ -500,7 +563,7 @@ namespace RAWtoJXL.Core.Services;
             {
                 throw new Exception($"Failed to stream PPM from {Path.GetFileName(inputPath)}: {ex.Message}", ex);
             }
-        }, cancellationToken);
+        }), cancellationToken);
     }
 
 }

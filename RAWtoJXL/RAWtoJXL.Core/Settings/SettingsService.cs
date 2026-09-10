@@ -51,6 +51,9 @@ namespace RAWtoJXL.Core.Settings
 
         [JsonPropertyName("cjxlThreads")]
         public int CjxlThreads { get; set; } = -1;
+
+        [JsonPropertyName("batchJobs")]
+        public int BatchJobs { get; set; } = -1;
     }
 
     public class AppSettings
@@ -97,6 +100,9 @@ namespace RAWtoJXL.Core.Settings
         [JsonPropertyName("cjxlThreads")]
         public int CjxlThreads { get; set; } = -1;
 
+        [JsonPropertyName("batchJobs")]
+        public int BatchJobs { get; set; } = -1;
+
         public AppSettings Clone()
         {
             return new AppSettings
@@ -124,11 +130,13 @@ namespace RAWtoJXL.Core.Settings
                     ConfirmOverwrite = p.ConfirmOverwrite,
                     SkipMetadata = p.SkipMetadata,
                     CjxlEffort = p.CjxlEffort,
-                    CjxlThreads = p.CjxlThreads
+                    CjxlThreads = p.CjxlThreads,
+                    BatchJobs = p.BatchJobs
                 }).ToList(),
                 SkipMetadata = SkipMetadata,
                 CjxlEffort = CjxlEffort,
-                CjxlThreads = CjxlThreads
+                CjxlThreads = CjxlThreads,
+                BatchJobs = BatchJobs
             };
         }
     }
@@ -226,11 +234,28 @@ namespace RAWtoJXL.Core.Settings
 
         public static void AddRecentFile(string filePath)
         {
+            AddRecentFiles(new[] { filePath });
+        }
+
+        public static void AddRecentFiles(IEnumerable<string> filePaths)
+        {
+            ArgumentNullException.ThrowIfNull(filePaths);
             var settings = Load();
             lock (Gate)
             {
-                settings.RecentFiles.RemoveAll(p => p == filePath);
-                settings.RecentFiles.Insert(0, Path.GetFullPath(filePath));
+                foreach (var filePath in filePaths)
+                {
+                    if (string.IsNullOrWhiteSpace(filePath))
+                    {
+                        continue;
+                    }
+
+                    var normalizedPath = Path.GetFullPath(filePath);
+                    settings.RecentFiles.RemoveAll(p =>
+                        string.Equals(p, normalizedPath, StringComparison.OrdinalIgnoreCase));
+                    settings.RecentFiles.Insert(0, normalizedPath);
+                }
+
                 while (settings.RecentFiles.Count > MaxRecentFiles)
                 {
                     settings.RecentFiles.RemoveAt(settings.RecentFiles.Count - 1);
@@ -268,7 +293,16 @@ namespace RAWtoJXL.Core.Settings
                 {
                     preset.OutputFormat = OutputFormat.Jxl;
                 }
+
+                preset.BatchJobs = NormalizeBatchJobs(preset.BatchJobs);
             }
+
+            settings.BatchJobs = NormalizeBatchJobs(settings.BatchJobs);
+        }
+
+        private static int NormalizeBatchJobs(int batchJobs)
+        {
+            return batchJobs == -1 || batchJobs is >= 1 and <= 4 ? batchJobs : -1;
         }
 
         private static void OnError(Exception ex)

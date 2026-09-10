@@ -179,137 +179,57 @@ namespace RAWtoJXL.Cli
             Action<FileResult, int>? fileCompleted,
             CancellationToken cancellationToken)
         {
-            var outputPaths = new string?[files.Count];
-            var reserved = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            var duplicateIndexes = new HashSet<int>();
-            for (var i = 0; i < files.Count; i++)
-            {
-                var output = OutputPathResolver.Resolve(
-                    files[i],
-                    options.Format,
-                    options.Conflict,
-                    options.UseCustomOutputDirectory,
-                    options.CustomOutputDirectory,
-                    options.UseSubfolder,
-                    options.SubfolderName,
-                    createDirectory: false);
-                if (output != null && options.Conflict == ConflictResolution.AppendNumber)
-                {
-                    var directory = Path.GetDirectoryName(output)!;
-                    var baseName = Path.GetFileNameWithoutExtension(output);
-                    var extension = Path.GetExtension(output);
-                    var counter = 1;
-                    while (File.Exists(output) || reserved.Contains(output))
+            var inputs = files.Select((file, index) => new BatchConversionInput(
+                index.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                file,
+                options.Quality)).ToList();
+            var requests = BatchConversionPlanner.CreateRequests(
+                inputs,
+                options.Format,
+                options.Conflict,
+                options.UseCustomOutputDirectory,
+                options.CustomOutputDirectory,
+                options.UseSubfolder,
+                options.SubfolderName,
+                options.SkipMetadata,
+                options.Effort,
+                effectiveThreads);
+
+            var batchService = new BatchConversionService(_imageService);
+            var batch = await batchService.RunAsync(
+                requests,
+                jobs,
+                progress: null,
+                fileCompleted: fileCompleted == null
+                    ? null
+                    : (result, completed) =>
                     {
-                        output = Path.Combine(directory, $"{baseName}_{counter}{extension}");
-                        counter++;
-                    }
-                }
-                if (output != null && !reserved.Add(output))
-                {
-                    duplicateIndexes.Add(i);
-                    outputPaths[i] = null;
-                }
-                else
-                {
-                    outputPaths[i] = output;
-                }
-            }
-
-            var results = new FileResult?[files.Count];
-            var converted = 0;
-            var skipped = 0;
-            var failed = 0;
-            var cancelled = false;
-            var completedCount = 0;
-            var completionLock = new object();
-
-            using var semaphore = new SemaphoreSlim(jobs);
-
-            async Task ProcessFileAsync(int index)
-            {
-                await semaphore.WaitAsync(cancellationToken);
-                try
-                {
-                    FileResult result;
-                    if (cancellationToken.IsCancellationRequested)
-                    {
-                        result = new FileResult { Input = files[index], Status = "cancelled" };
-                    }
-                    else
-                    {
-                        result = await ConvertOneAsync(files[index], outputPaths[index], options, effectiveThreads, cancellationToken);
-                    }
-
-                    results[index] = result;
-                    int completedNow;
-                    lock (completionLock)
-                    {
-                        completedCount++;
-                        completedNow = completedCount;
-                        switch (result.Status)
-                        {
-                            case "converted": converted++; break;
-                            case "skipped": skipped++; break;
-                            case "failed": failed++; break;
-                            case "cancelled": cancelled = true; break;
-                        }
-                    }
-                    fileCompleted?.Invoke(result, completedNow);
-                }
-                finally
-                {
-                    semaphore.Release();
-                }
-            }
-
-            var tasks = new List<Task>(files.Count);
-            for (var i = 0; i < files.Count; i++)
-            {
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    cancelled = true;
-                    break;
-                }
-                if (duplicateIndexes.Contains(i))
-                {
-                    var duplicateResult = new FileResult
-                    {
-                        Input = files[i],
-                        Status = "failed",
-                        Error = "output path already used by another input file"
-                    };
-                    results[i] = duplicateResult;
-                    int completedNow;
-                    lock (completionLock)
-                    {
-                        completedCount++;
-                        failed++;
-                        completedNow = completedCount;
-                    }
-                    fileCompleted?.Invoke(duplicateResult, completedNow);
-                    continue;
-                }
-                var index = i;
-                tasks.Add(ProcessFileAsync(index));
-            }
-
-            await Task.WhenAll(tasks);
-
-            var orderedResults = new List<FileResult>(files.Count);
-            foreach (var result in results)
-            {
-                if (result != null) orderedResults.Add(result);
-            }
+                        fileCompleted(ToFileResult(result), completed);
+                        return Task.CompletedTask;
+                    },
+                cancellationToken: cancellationToken);
 
             return new BatchResult
             {
-                Total = files.Count,
-                Converted = converted,
-                Skipped = skipped,
-                Failed = failed,
-                Cancelled = cancelled,
-                Files = orderedResults
+                Total = batch.Total,
+                Converted = batch.Converted,
+                Skipped = batch.Skipped,
+                Failed = batch.Failed,
+                Cancelled = batch.Cancelled,
+                Files = batch.Files.Select(ToFileResult).ToList()
+            };
+        }
+
+        private static FileResult ToFileResult(BatchConversionFileResult result)
+        {
+            return new FileResult
+            {
+                Input = result.InputPath,
+                Output = result.OutputPath,
+                Status = result.Status.ToString().ToLowerInvariant(),
+                Error = result.Error,
+                InputBytes = result.InputBytes,
+                OutputBytes = result.OutputBytes
             };
         }
 

@@ -7,6 +7,7 @@ using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using RAWtoJXL.Core.Interfaces;
+using RAWtoJXL.Core.Services;
 using RAWtoJXL.Core.Settings;
 using RAWtoJXL.Avalonia;
 using RAWtoJXL.Avalonia.Services;
@@ -45,11 +46,13 @@ namespace RAWtoJXL.Avalonia.ViewModels
             SkipMetadata = saved.SkipMetadata;
             CjxlEffort = saved.CjxlEffort;
             CjxlThreads = saved.CjxlThreads;
+            BatchJobs = saved.BatchJobs;
 
             // Initialize selected options after loading to handle the case where
             // the saved value equals the field default (which wouldn't trigger OnChanged)
             SelectedEffortOption = CjxlEffortOptions.FirstOrDefault(e => e.Value == CjxlEffort);
             SelectedThreadsOption = CjxlThreadsOptions.FirstOrDefault(e => e.Value == CjxlThreads);
+            SelectedBatchJobsOption = BatchJobsOptions.FirstOrDefault(e => e.Value == BatchJobs);
         }
 
         protected override void OnPropertyChanged(PropertyChangedEventArgs e)
@@ -95,6 +98,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
             settings.SkipMetadata = SkipMetadata;
             settings.CjxlEffort = CjxlEffort;
             settings.CjxlThreads = CjxlThreads;
+            settings.BatchJobs = BatchJobs;
         }
 
         [ObservableProperty]
@@ -228,7 +232,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
             {
                 if (_cachedThreadsOptions == null)
                 {
-                    int maxThreads = Environment.ProcessorCount;
+                    int maxThreads = BatchParallelismPolicy.GetLogicalProcessorCount();
                     _cachedThreadsOptions = new ThreadOption[maxThreads + 1];
                     _cachedThreadsOptions[0] = new ThreadOption("Auto", -1);
                     for (int i = 1; i <= maxThreads; i++)
@@ -238,6 +242,71 @@ namespace RAWtoJXL.Avalonia.ViewModels
                 }
                 return _cachedThreadsOptions;
             }
+        }
+
+        public class JobOption
+        {
+            public string Display { get; }
+            public int Value { get; }
+
+            public JobOption(string display, int value)
+            {
+                Display = display;
+                Value = value;
+            }
+
+            public override bool Equals(object? obj) => obj is JobOption other && Value == other.Value;
+
+            public override int GetHashCode() => Value.GetHashCode();
+        }
+
+        private static readonly JobOption[] DefaultBatchJobsOptions =
+        [
+            new JobOption("Auto", -1),
+            new JobOption("1", 1),
+            new JobOption("2", 2),
+            new JobOption("3", 3),
+            new JobOption("4", 4)
+        ];
+
+        public JobOption[] BatchJobsOptions => DefaultBatchJobsOptions;
+
+        [ObservableProperty]
+        private int _batchJobs = -1;
+
+        [ObservableProperty]
+        private JobOption? _selectedBatchJobsOption;
+
+        private bool _syncingBatchJobs;
+
+        partial void OnBatchJobsChanged(int value)
+        {
+            if (value == 0 || value < -1 || value > 4)
+            {
+                BatchJobs = -1;
+                return;
+            }
+
+            if (_syncingBatchJobs)
+            {
+                return;
+            }
+
+            _syncingBatchJobs = true;
+            SelectedBatchJobsOption = BatchJobsOptions.FirstOrDefault(option => option.Value == value);
+            _syncingBatchJobs = false;
+        }
+
+        partial void OnSelectedBatchJobsOptionChanged(JobOption? value)
+        {
+            if (value == null || _syncingBatchJobs)
+            {
+                return;
+            }
+
+            _syncingBatchJobs = true;
+            BatchJobs = value.Value;
+            _syncingBatchJobs = false;
         }
 
         partial void OnSelectedThreadsOptionChanged(ThreadOption? value)
@@ -250,7 +319,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
 
         partial void OnCjxlThreadsChanged(int value)
         {
-            if (value < -1 || value > Environment.ProcessorCount)
+            if (value < -1 || value > BatchParallelismPolicy.GetLogicalProcessorCount())
             {
                 CjxlThreads = -1;
             }
@@ -337,6 +406,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
                 SkipMetadata = SkipMetadata,
                 CjxlEffort = CjxlEffort,
                 CjxlThreads = CjxlThreads,
+                BatchJobs = BatchJobs,
             };
 
             if (Presets.Any(p => p.Name.Equals(preset.Name, StringComparison.OrdinalIgnoreCase)))
@@ -380,10 +450,12 @@ namespace RAWtoJXL.Avalonia.ViewModels
             SkipMetadata = SelectedPreset.SkipMetadata;
             CjxlEffort = SelectedPreset.CjxlEffort;
             CjxlThreads = SelectedPreset.CjxlThreads;
+            BatchJobs = SelectedPreset.BatchJobs;
 
             // Sync selected options in case values match current ones (which wouldn't trigger OnChanged)
             SelectedEffortOption = CjxlEffortOptions.FirstOrDefault(e => e.Value == CjxlEffort);
             SelectedThreadsOption = CjxlThreadsOptions.FirstOrDefault(e => e.Value == CjxlThreads);
+            SelectedBatchJobsOption = BatchJobsOptions.FirstOrDefault(e => e.Value == BatchJobs);
         }
 
         [RelayCommand]

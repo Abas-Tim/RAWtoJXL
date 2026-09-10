@@ -14,6 +14,6 @@ namespace RAWtoJXL.Core.Interfaces
         Task ConvertToJxlAsync(string inputPath, string outputPath, int quality, int? effort = null, CancellationToken cancellationToken = default, int? threads = null);
         Task ConvertToPngAsync(string inputPath, string outputPath, CancellationToken cancellationToken = default);
         Task<MetadataProfiles> ExtractMetadataProfilesAsync(string filePath, CancellationToken cancellationToken = default);
-        Task StreamPpmToAsync(string inputPath, Stream output, CancellationToken cancellationToken = default);
+        Task StreamPpmToAsync(string inputPath, Stream output, CancellationToken cancellationToken = default, int? threads = null);
     }
 }
