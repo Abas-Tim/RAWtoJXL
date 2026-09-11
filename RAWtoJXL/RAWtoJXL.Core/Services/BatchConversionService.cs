@@ -67,7 +67,7 @@ public sealed class BatchConversionService : IBatchConversionService
             {
                 var overall = total == 0
                     ? 1.0
-                    : (completedCount + fractionTotal) / total;
+                    : fractionTotal / total;
                 if (completedCount < total)
                 {
                     overall = Math.Min(0.999999, overall);

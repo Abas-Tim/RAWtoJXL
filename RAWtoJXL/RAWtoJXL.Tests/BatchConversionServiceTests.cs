@@ -209,6 +209,7 @@ public sealed class BatchConversionServiceTests : IDisposable
     {
         var requests = CreateRequests(2);
         var slowRelease = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var slowProgressReported = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var fastCompleted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var progress = new ConcurrentQueue<BatchConversionProgress>();
         var service = CreateService(async (input, output, report, _, _, _, _, _, _) =>
@@ -216,10 +217,12 @@ public sealed class BatchConversionServiceTests : IDisposable
             if (input.EndsWith("0.arw", StringComparison.OrdinalIgnoreCase))
             {
                 report(0.9);
+                slowProgressReported.TrySetResult();
                 await slowRelease.Task.WaitAsync(TimeSpan.FromSeconds(5));
             }
             else
             {
+                await slowProgressReported.Task.WaitAsync(TimeSpan.FromSeconds(5));
                 report(0.2);
             }
 
@@ -243,7 +246,11 @@ public sealed class BatchConversionServiceTests : IDisposable
         try
         {
             await fastCompleted.Task.WaitAsync(TimeSpan.FromSeconds(5));
-            Assert.Contains(progress, value => value.CompletedCount == 1 && value.OverallFraction < 1);
+            var afterFastCompletion = progress
+                .Where(value => value.CompletedCount == 1 && value.FileId == "1")
+                .ToArray();
+            Assert.NotEmpty(afterFastCompletion);
+            Assert.InRange(afterFastCompletion[^1].OverallFraction, 0.949999, 0.950001);
             Assert.All(progress.Where(value => value.CompletedCount < value.TotalCount), value =>
                 Assert.InRange(value.OverallFraction, 0, 0.999999));
         }
