@@ -12,7 +12,8 @@ namespace RAWtoJXL.Core.Interfaces
         Ready,
         Converting,
         Converted,
-        Failed
+        Failed,
+        Skipped
     }
 
     public enum OutputFormat

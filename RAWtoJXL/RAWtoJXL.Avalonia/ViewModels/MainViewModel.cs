@@ -28,16 +28,111 @@ namespace RAWtoJXL.Avalonia.ViewModels
         private readonly IFilePickerService _filePickerService;
         private readonly IBatchConversionService _batchConversionService;
         private readonly bool _generateThumbnails;
-        private readonly ObservableCollection<ImageItemViewModel> _selectedImages = new();
+        private readonly ObservableCollection<ImageItemViewModel> _visibleImages = new();
+        private readonly HashSet<ImageItemViewModel> _subscribedItems = new();
         private readonly HashSet<string> _addedFilePaths = new(StringComparer.OrdinalIgnoreCase);
         private CancellationTokenSource? _cancellationTokenSource;
         private long _batchGeneration;
         private readonly object _batchProgressGate = new();
         private (long Generation, BatchConversionProgress Progress)? _pendingBatchProgress;
         private bool _batchProgressUpdateScheduled;
+        private bool _suppressImageCollectionRefresh;
+        private ObservableCollection<ImageItemViewModel> _images = new();
+
+        public ObservableCollection<ImageItemViewModel> Images
+        {
+            get => _images;
+            set
+            {
+                ArgumentNullException.ThrowIfNull(value);
+                if (ReferenceEquals(_images, value))
+                {
+                    return;
+                }
+
+                UnsubscribeFromImagesCollection(_images);
+                SetProperty(ref _images, value);
+                SubscribeToImagesCollection(_images);
+                RebuildVisibleImages();
+                UpdateSelectionState();
+                RefreshViewCommands();
+            }
+        }
+
+        public ReadOnlyObservableCollection<ImageItemViewModel> VisibleImages { get; }
 
         [ObservableProperty]
-        private ObservableCollection<ImageItemViewModel> _images = new();
+        private bool _showFailedOnly;
+
+        public bool IsShowingAllImages
+        {
+            get => !ShowFailedOnly;
+            set
+            {
+                if (value)
+                {
+                    ShowFailedOnly = false;
+                }
+                else
+                {
+                    OnPropertyChanged(nameof(IsShowingAllImages));
+                }
+            }
+        }
+
+        public bool IsFailedOnlySelected
+        {
+            get => ShowFailedOnly;
+            set
+            {
+                if (value)
+                {
+                    ShowFailedOnly = true;
+                }
+                else
+                {
+                    OnPropertyChanged(nameof(IsFailedOnlySelected));
+                }
+            }
+        }
+
+        public int LoadedImageCount => Images.Count;
+
+        public int VisibleImageCount => VisibleImages.Count;
+
+        public int FailedImageCount => Images.Count(item => item.Status == ImageStatus.Failed);
+
+        public bool IsFilterEmpty => ShowFailedOnly && VisibleImages.Count == 0;
+
+        public string FailedFilterText => $"Failed only ({FailedImageCount})";
+
+        public string FilterSummaryText => ShowFailedOnly
+            ? string.Format(AppStrings.ShowingFailedImagesFormat, VisibleImageCount, LoadedImageCount)
+            : string.Format(AppStrings.ShowingImagesFormat, LoadedImageCount);
+
+        partial void OnShowFailedOnlyChanged(bool value)
+        {
+            RebuildVisibleImages();
+            UpdateSelectionState();
+            RefreshViewCommands();
+            OnPropertyChanged(nameof(IsShowingAllImages));
+            OnPropertyChanged(nameof(IsFailedOnlySelected));
+            OnPropertyChanged(nameof(IsFilterEmpty));
+            RequestRefreshLayout?.Invoke();
+            RequestScrollToTop?.Invoke();
+        }
+
+        [RelayCommand]
+        private void ShowAllImagesFilter()
+        {
+            ShowFailedOnly = false;
+        }
+
+        [RelayCommand]
+        private void ShowFailedOnlyFilter()
+        {
+            ShowFailedOnly = true;
+        }
 
         [ObservableProperty]
         private string _statusMessage = AppStrings.Ready;
@@ -228,6 +323,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
 
         public event Action<string>? RequestOpenCompare;
         public event Action? RequestRefreshLayout;
+        public event Action? RequestScrollToTop;
 
         public MainViewModel(
             IImageService imageService,
@@ -243,6 +339,9 @@ namespace RAWtoJXL.Avalonia.ViewModels
             _filePickerService = filePickerService ?? throw new ArgumentNullException(nameof(filePickerService));
             _batchConversionService = batchConversionService ?? new BatchConversionService(imageService);
             _generateThumbnails = generateThumbnails;
+            VisibleImages = new ReadOnlyObservableCollection<ImageItemViewModel>(_visibleImages);
+            SubscribeToImagesCollection(Images);
+            RebuildVisibleImages();
             SettingsService.ErrorOccurred += OnSettingsError;
             LoadRecentFilesFromSettings();
         }
@@ -275,7 +374,9 @@ namespace RAWtoJXL.Avalonia.ViewModels
         [RelayCommand(CanExecute = nameof(CanExecuteConvertSelected))]
         private async Task ConvertSelectedAsync()
         {
-            var readySelected = _selectedImages.Where(i => i.Status == ImageStatus.Ready || i.Status == ImageStatus.Converted || i.Status == ImageStatus.Failed).ToList();
+            var readySelected = GetVisibleSelectedImages()
+                .Where(IsConvertibleStatus)
+                .ToList();
             if (!readySelected.Any()) return;
 
             using var cancellationTokenSource = new CancellationTokenSource();
@@ -499,38 +600,47 @@ namespace RAWtoJXL.Avalonia.ViewModels
         }
 
         private bool CanExecuteConvertSelected() =>
-            !IsConverting && _selectedImages.Any(i => i.Status == ImageStatus.Ready || i.Status == ImageStatus.Converted || i.Status == ImageStatus.Failed);
+            !IsConverting && GetVisibleSelectedImages().Any(IsConvertibleStatus);
 
         [RelayCommand(CanExecute = nameof(CanExecuteRemoveSelected))]
         private void RemoveSelected()
         {
-            var itemsToRemove = _selectedImages.ToList();
-            foreach (var item in itemsToRemove)
+            var itemsToRemove = GetVisibleSelectedImages().ToList();
+            _suppressImageCollectionRefresh = true;
+            try
             {
-                item.Thumbnail?.Dispose();
-                item.IsRemoved = true;
-                item.PropertyChanged -= Item_PropertyChanged;
-                _addedFilePaths.Remove(item.FilePath);
-                Images.Remove(item);
+                foreach (var item in itemsToRemove)
+                {
+                    item.Thumbnail?.Dispose();
+                    item.IsRemoved = true;
+                    Images.Remove(item);
+                }
             }
-            _selectedImages.Clear();
+            finally
+            {
+                _suppressImageCollectionRefresh = false;
+            }
+
+            RebuildVisibleImages();
             UpdateSelectionState();
             StatusMessage = $"{AppStrings.ItemsRemoved}{itemsToRemove.Count}{AppStrings.ItemsSuffix}";
             RefreshViewCommands();
         }
 
-        private bool CanExecuteRemoveSelected() => !IsConverting && IsAnySelected;
+        private bool CanExecuteRemoveSelected() => !IsConverting && GetVisibleSelectedImages().Any();
 
         [RelayCommand(CanExecute = nameof(CanExecuteSelectAll))]
         private void SelectAll()
         {
-            foreach (var item in Images)
+            var visibleItems = VisibleImages.ToList();
+            var targetValue = !IsAllSelected;
+            foreach (var item in visibleItems)
             {
-                item.IsSelected = !IsAllSelected;
+                item.IsSelected = targetValue;
             }
         }
 
-        private bool CanExecuteSelectAll() => !IsConverting;
+        private bool CanExecuteSelectAll() => !IsConverting && VisibleImages.Count > 0;
 
         [RelayCommand(CanExecute = nameof(CanExecuteCancel))]
         private void Cancel()
@@ -555,17 +665,18 @@ namespace RAWtoJXL.Avalonia.ViewModels
         [RelayCommand(CanExecute = nameof(CanExecuteCompareSelected))]
         private void CompareSelected()
         {
-            if (_selectedImages.Count != 1)
+            var selected = GetVisibleSelectedImages().ToList();
+            if (selected.Count != 1)
             {
                 return;
             }
 
-            RequestOpenCompare?.Invoke(_selectedImages[0].FilePath);
+            RequestOpenCompare?.Invoke(selected[0].FilePath);
         }
 
-        private bool CanExecuteCompareSelected() => !IsConverting && _selectedImages.Count == 1;
+        private bool CanExecuteCompareSelected() => !IsConverting && GetVisibleSelectedImages().Count == 1;
 
-        [RelayCommand(CanExecute = nameof(CanExecuteSelectAll))]
+        [RelayCommand(CanExecute = nameof(CanExecuteOpenInput))]
         private async Task OpenFile()
         {
             var files = await _filePickerService.PickFilesAsync(
@@ -579,7 +690,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
             }
         }
 
-        [RelayCommand(CanExecute = nameof(CanExecuteSelectAll))]
+        [RelayCommand(CanExecute = nameof(CanExecuteOpenInput))]
         private async Task OpenFolder()
         {
             var folder = await _filePickerService.PickFolderAsync(string.Empty);
@@ -618,6 +729,8 @@ namespace RAWtoJXL.Avalonia.ViewModels
 
         private bool CanExecuteOpenOutputFolder() =>
             !IsConverting && !string.IsNullOrEmpty(OutputDirectory) && Directory.Exists(OutputDirectory);
+
+        private bool CanExecuteOpenInput() => !IsConverting;
 
         [RelayCommand]
         private async Task LoadRecentFiles()
@@ -733,7 +846,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
                     break;
 
                 case BatchConversionStatus.Skipped:
-                    item.Status = ImageStatus.Failed;
+                    item.Status = ImageStatus.Skipped;
                     item.ErrorMessage = result.Error ?? AppStrings.FileSkipped;
                     break;
 
@@ -746,27 +859,22 @@ namespace RAWtoJXL.Avalonia.ViewModels
 
         private void Item_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
+            if (sender is not ImageItemViewModel item)
+            {
+                return;
+            }
+
             if (e.PropertyName == nameof(ImageItemViewModel.Status))
             {
-                ConvertSelectedCommand.NotifyCanExecuteChanged();
+                UpdateVisibleItem(item);
+                NotifyImageProjectionProperties();
+                UpdateSelectionState();
+                RefreshViewCommands();
             }
             else if (e.PropertyName == nameof(ImageItemViewModel.IsSelected))
             {
-                if (sender is ImageItemViewModel item)
-                {
-                    if (item.IsSelected)
-                    {
-                        if (!_selectedImages.Contains(item))
-                            _selectedImages.Add(item);
-                    }
-                    else
-                    {
-                        _selectedImages.Remove(item);
-                    }
-
-                    UpdateSelectionState();
-                    RefreshViewCommands();
-                }
+                UpdateSelectionState();
+                RefreshViewCommands();
             }
         }
 
@@ -818,15 +926,175 @@ namespace RAWtoJXL.Avalonia.ViewModels
 
         private void UpdateSelectionState()
         {
-            bool allSelected = Images.Any() && Images.All(i => i.IsSelected);
-            bool anySelected = _selectedImages.Any();
+            var selected = GetVisibleSelectedImages();
+            bool allSelected = VisibleImages.Count > 0 && VisibleImages.All(i => i.IsSelected);
+            bool anySelected = selected.Any();
 
             if (IsAllSelected != allSelected)
                 IsAllSelected = allSelected;
             if (IsAnySelected != anySelected)
                 IsAnySelected = anySelected;
-            if (IsExactlyOneSelected != (_selectedImages.Count == 1))
-                IsExactlyOneSelected = _selectedImages.Count == 1;
+            if (IsExactlyOneSelected != (selected.Count == 1))
+                IsExactlyOneSelected = selected.Count == 1;
+        }
+
+        private static bool IsConvertibleStatus(ImageItemViewModel item)
+        {
+            return item.Status is ImageStatus.Ready
+                or ImageStatus.Converted
+                or ImageStatus.Failed
+                or ImageStatus.Skipped;
+        }
+
+        private List<ImageItemViewModel> GetVisibleSelectedImages()
+        {
+            return VisibleImages.Where(item => item.IsSelected).ToList();
+        }
+
+        private void SubscribeToImagesCollection(ObservableCollection<ImageItemViewModel> collection)
+        {
+            collection.CollectionChanged += Images_CollectionChanged;
+            foreach (var item in collection)
+            {
+                AttachItem(item);
+            }
+        }
+
+        private void UnsubscribeFromImagesCollection(ObservableCollection<ImageItemViewModel> collection)
+        {
+            collection.CollectionChanged -= Images_CollectionChanged;
+            foreach (var item in _subscribedItems.ToList())
+            {
+                item.PropertyChanged -= Item_PropertyChanged;
+                _addedFilePaths.Remove(item.FilePath);
+            }
+
+            _subscribedItems.Clear();
+        }
+
+        private void AttachItem(ImageItemViewModel item)
+        {
+            if (_subscribedItems.Add(item))
+            {
+                item.PropertyChanged += Item_PropertyChanged;
+                if (!string.IsNullOrEmpty(item.FilePath))
+                {
+                    _addedFilePaths.Add(item.FilePath);
+                }
+            }
+        }
+
+        private void DetachItem(ImageItemViewModel item)
+        {
+            if (_subscribedItems.Remove(item))
+            {
+                item.PropertyChanged -= Item_PropertyChanged;
+            }
+        }
+
+        private void Images_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            if (e.Action is System.Collections.Specialized.NotifyCollectionChangedAction.Remove
+                or System.Collections.Specialized.NotifyCollectionChangedAction.Replace)
+            {
+                foreach (var item in e.OldItems?.OfType<ImageItemViewModel>() ?? Enumerable.Empty<ImageItemViewModel>())
+                {
+                    DetachItem(item);
+                    _addedFilePaths.Remove(item.FilePath);
+                }
+            }
+
+            if (e.Action is System.Collections.Specialized.NotifyCollectionChangedAction.Add
+                or System.Collections.Specialized.NotifyCollectionChangedAction.Replace)
+            {
+                foreach (var item in e.NewItems?.OfType<ImageItemViewModel>() ?? Enumerable.Empty<ImageItemViewModel>())
+                {
+                    AttachItem(item);
+                }
+            }
+
+            if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Reset)
+            {
+                foreach (var item in _subscribedItems.ToList())
+                {
+                    DetachItem(item);
+                }
+
+                _addedFilePaths.Clear();
+
+                foreach (var item in Images)
+                {
+                    AttachItem(item);
+                }
+            }
+
+            if (_suppressImageCollectionRefresh)
+            {
+                return;
+            }
+
+            RebuildVisibleImages();
+            UpdateSelectionState();
+            RefreshViewCommands();
+        }
+
+        private void RebuildVisibleImages()
+        {
+            _visibleImages.Clear();
+            foreach (var item in Images)
+            {
+                if (IsVisibleInCurrentFilter(item))
+                {
+                    _visibleImages.Add(item);
+                }
+            }
+
+            NotifyImageProjectionProperties();
+        }
+
+        private bool IsVisibleInCurrentFilter(ImageItemViewModel item)
+        {
+            return !ShowFailedOnly || item.Status == ImageStatus.Failed;
+        }
+
+        private void UpdateVisibleItem(ImageItemViewModel item)
+        {
+            if (!ShowFailedOnly)
+            {
+                return;
+            }
+
+            var shouldBeVisible = item.Status == ImageStatus.Failed;
+            var isVisible = _visibleImages.Contains(item);
+            if (shouldBeVisible == isVisible)
+            {
+                return;
+            }
+
+            if (!shouldBeVisible)
+            {
+                _visibleImages.Remove(item);
+                return;
+            }
+
+            var sourceIndex = Images.IndexOf(item);
+            if (sourceIndex < 0)
+            {
+                return;
+            }
+
+            var visibleIndex = Images.Take(sourceIndex).Count(IsVisibleInCurrentFilter);
+            _visibleImages.Insert(Math.Min(visibleIndex, _visibleImages.Count), item);
+        }
+
+        private void NotifyImageProjectionProperties()
+        {
+            OnPropertyChanged(nameof(LoadedImageCount));
+            OnPropertyChanged(nameof(VisibleImageCount));
+            OnPropertyChanged(nameof(FailedImageCount));
+            OnPropertyChanged(nameof(FailedFilterText));
+            OnPropertyChanged(nameof(FilterSummaryText));
+            OnPropertyChanged(nameof(IsFilterEmpty));
         }
 
         private void RefreshRecentFiles()
@@ -867,14 +1135,23 @@ namespace RAWtoJXL.Avalonia.ViewModels
                 });
             }
 
-            await OnUiAsync(() =>
+            _suppressImageCollectionRefresh = true;
+            try
             {
-                foreach (var item in newItems)
+                await OnUiAsync(() =>
                 {
-                    Images.Add(item);
-                    item.PropertyChanged += Item_PropertyChanged;
-                }
-            });
+                    foreach (var item in newItems)
+                    {
+                        Images.Add(item);
+                    }
+                });
+            }
+            finally
+            {
+                _suppressImageCollectionRefresh = false;
+            }
+
+            RebuildVisibleImages();
 
             if (_generateThumbnails)
             {

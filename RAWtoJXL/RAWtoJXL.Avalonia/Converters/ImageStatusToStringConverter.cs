@@ -23,6 +23,7 @@ namespace RAWtoJXL.Avalonia.Converters
                     ImageStatus.Converting => "Converting...",
                     ImageStatus.Converted => "Converted",
                     ImageStatus.Failed => "Failed",
+                    ImageStatus.Skipped => AppStrings.Skipped,
                     _ => status.ToString()
                 };
             }

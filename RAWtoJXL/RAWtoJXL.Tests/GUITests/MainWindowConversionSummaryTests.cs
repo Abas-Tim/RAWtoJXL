@@ -91,6 +91,7 @@ public class MainWindowConversionSummaryTests
 
             Assert.Contains("0 converted", vm.StatusMessage);
             Assert.Contains("1 skipped", vm.StatusMessage);
+            Assert.Equal(ImageStatus.Skipped, vm.Images[0].Status);
         }
         finally
         {

@@ -52,6 +52,7 @@ namespace RAWtoJXL.Avalonia
             {
                 _wiredViewModel.RequestOpenCompare -= OpenCompareWindow;
                 _wiredViewModel.RequestRefreshLayout -= RefreshImagesLayout;
+                _wiredViewModel.RequestScrollToTop -= ResetImagesScroll;
                 _wiredViewModel.PropertyChanged -= OnViewModelPropertyChanged;
             }
 
@@ -63,6 +64,7 @@ namespace RAWtoJXL.Avalonia
 
             vm.RequestOpenCompare += OpenCompareWindow;
             vm.RequestRefreshLayout += RefreshImagesLayout;
+            vm.RequestScrollToTop += ResetImagesScroll;
             vm.PropertyChanged += OnViewModelPropertyChanged;
         }
 
@@ -123,6 +125,15 @@ namespace RAWtoJXL.Avalonia
                 };
                 repeater.UpdateLayout();
             });
+        }
+
+        private void ResetImagesScroll()
+        {
+            var scrollViewer = this.FindControl<ScrollViewer>("ImagesScrollViewer");
+            if (scrollViewer != null)
+            {
+                scrollViewer.Offset = new Vector(0, 0);
+            }
         }
 
         private void RecentPointerEntered(object? sender, PointerEventArgs e)

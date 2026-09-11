@@ -129,7 +129,7 @@ public class MainWindowStructuralTests
         var window = GUITestHelpers.CreateWindow();
         var overlay = window.FindControl<Grid>("SettingsOverlay");
         Assert.NotNull(overlay);
-        Assert.Equal(3, Grid.GetRowSpan(overlay!));
+        Assert.Equal(4, Grid.GetRowSpan(overlay!));
     }
 
     [AvaloniaFact]
