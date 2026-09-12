@@ -10,7 +10,7 @@ namespace RAWtoJXL.Tests.GUITests;
 public sealed class MainWindowImageFilterTests
 {
     [AvaloniaFact]
-    public void MainWindow_FailedFilterButton_UpdatesGalleryProjection()
+    public void MainWindow_FailedFilterMenuItem_UpdatesGalleryProjection()
     {
         var converted = CreateItem("converted.arw", ImageStatus.Converted);
         var failed = CreateItem("failed.arw", ImageStatus.Failed);
@@ -20,31 +20,29 @@ public sealed class MainWindowImageFilterTests
 
         var window = GUITestHelpers.CreateWindow(vm);
         var repeater = window.FindControl<ItemsRepeater>("ImagesRepeater");
-        var failedButton = window.FindControl<RadioButton>("FailedOnlyFilterButton");
-        var allButton = window.FindControl<RadioButton>("AllImagesFilterButton");
+        var failedMenuItem = window.FindControl<MenuItem>("FailedOnlyFilterMenuItem");
         Assert.NotNull(repeater);
-        Assert.NotNull(failedButton);
-        Assert.NotNull(allButton);
+        Assert.NotNull(failedMenuItem);
         Assert.Same(vm.VisibleImages, repeater!.ItemsSource);
         Assert.Equal(2, vm.VisibleImageCount);
+        Assert.Equal(MenuItemToggleType.CheckBox, failedMenuItem!.ToggleType);
+        Assert.False(failedMenuItem.IsChecked);
 
-        failedButton!.Command!.Execute(null);
+        vm.ShowFailedOnlyFilterCommand.Execute(null);
         window.UpdateLayout();
 
         Assert.True(vm.ShowFailedOnly);
-        Assert.Equal("Failed only (1)", failedButton.Content?.ToString());
+        Assert.Equal("Failed only (1)", failedMenuItem.Header?.ToString());
         Assert.Equal(1, vm.VisibleImageCount);
         Assert.Same(failed, repeater.TryGetElement(0)!.DataContext);
-        Assert.True(failedButton.IsChecked == true);
-        Assert.False(allButton!.IsChecked == true);
+        Assert.True(failedMenuItem.IsChecked);
 
-        allButton.Command!.Execute(null);
+        failedMenuItem.IsChecked = false;
         window.UpdateLayout();
 
         Assert.False(vm.ShowFailedOnly);
         Assert.Equal(2, vm.VisibleImageCount);
-        Assert.True(allButton.IsChecked == true);
-        Assert.False(failedButton.IsChecked == true);
+        Assert.False(failedMenuItem.IsChecked);
 
         Assert.Same(converted, repeater.TryGetElement(0)!.DataContext);
     }
@@ -61,12 +59,13 @@ public sealed class MainWindowImageFilterTests
 
         var emptyPanel = window.FindControl<StackPanel>("EmptyFilterPanel");
         var summary = window.FindControl<TextBlock>("FilterSummaryText");
-        var failedButton = window.FindControl<RadioButton>("FailedOnlyFilterButton");
+        var failedMenuItem = window.FindControl<MenuItem>("FailedOnlyFilterMenuItem");
         Assert.NotNull(emptyPanel);
         Assert.True(emptyPanel!.IsVisible);
         Assert.NotNull(summary);
         Assert.Contains("Showing 0 failed of 1 images", summary!.Text);
-        Assert.Equal("Failed only (0)", failedButton!.Content?.ToString());
+        Assert.Equal("Failed only (0)", failedMenuItem!.Header?.ToString());
+        Assert.True(failedMenuItem.IsChecked);
     }
 
     private static ImageItemViewModel CreateItem(string fileName, ImageStatus status)

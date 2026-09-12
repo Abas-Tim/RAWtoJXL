@@ -38,7 +38,7 @@ public class MainWindowStructuralTests
     {
         var window = GUITestHelpers.CreateWindow();
         var menuHeaders = GUITestHelpers.GetMenuItemHeaders(window)?.Select(h => h?.Replace("_", "")).Where(h => h != null && !h.Contains("Controls")).Cast<string>().ToList() ?? new();
-        var expectedMenuItems = new[] { "File", "Open File", "Open Folder", "Load All", "Clear Recent", "List", "Remove" };
+        var expectedMenuItems = new[] { "File", "Open File", "Open Folder", "Load All", "Clear Recent", "List", "Remove", "Failed only (0)" };
         foreach (var expected in expectedMenuItems)
         {
             Assert.Contains(expected, menuHeaders, StringComparer.OrdinalIgnoreCase);
@@ -183,5 +183,22 @@ public class MainWindowStructuralTests
         var menuItems = GUITestHelpers.GetAllControls<MenuItem>(window);
         var selectAllItem = menuItems.FirstOrDefault(m => m.Command == vm.SelectAllCommand);
         Assert.NotNull(selectAllItem);
+    }
+
+    [AvaloniaFact]
+    public void MainWindow_FailedFilter_IsThirdListOptionAndCheckable()
+    {
+        var window = GUITestHelpers.CreateWindow();
+        var listMenu = GUITestHelpers.GetAllControls<MenuItem>(window)
+            .FirstOrDefault(m => m.Header?.ToString()?.Replace("_", "") == "List");
+
+        Assert.NotNull(listMenu);
+        var listItems = listMenu!.Items.OfType<MenuItem>().ToList();
+        Assert.Equal(3, listItems.Count);
+
+        var failedFilterItem = listItems[2];
+        Assert.Same(window.FindControl<MenuItem>("FailedOnlyFilterMenuItem"), failedFilterItem);
+        Assert.Equal(MenuItemToggleType.CheckBox, failedFilterItem.ToggleType);
+        Assert.False(failedFilterItem.IsChecked);
     }
 }

@@ -103,6 +103,11 @@
                                 </MenuItem.Header>
                             </MenuItem>
                             <MenuItem Header="_Remove" Command="{Binding RemoveSelectedCommand}"/>
+                            <MenuItem x:Name="FailedOnlyFilterMenuItem"
+                                      Header="{Binding FailedFilterText}"
+                                      ToggleType="CheckBox"
+                                      IsChecked="{Binding ShowFailedOnly, Mode=TwoWay}"
+                                      ToolTip.Tip="Show only images whose conversion failed"/>
                         </MenuItem>
                     </Menu>
                     <Button Content="Convert"
@@ -131,43 +136,18 @@
         <Border Grid.Row="1"
                 Background="Transparent"
                 Padding="15,8,15,0">
-            <Grid ColumnDefinitions="Auto,Auto,*,Auto"
-                  RowDefinitions="Auto,Auto">
-                <TextBlock Grid.Column="0"
-                           Text="{x:Static local:AppStrings.ShowImagesLabel}"
-                           VerticalAlignment="Center"
-                           Margin="0,0,8,0"/>
-                <RadioButton Grid.Column="1"
-                              x:Name="AllImagesFilterButton"
-                              GroupName="ImageFilter"
-                              Content="{x:Static local:AppStrings.AllImages}"
-                              IsChecked="{Binding IsShowingAllImages, Mode=TwoWay}"
-                              Command="{Binding ShowAllImagesFilterCommand}"
-                              Margin="0,0,6,0"
-                              ToolTip.Tip="Show every loaded image"/>
-                <RadioButton Grid.Column="2"
-                              x:Name="FailedOnlyFilterButton"
-                              GroupName="ImageFilter"
-                              Content="{Binding FailedFilterText}"
-                              IsChecked="{Binding IsFailedOnlySelected, Mode=TwoWay}"
-                              Command="{Binding ShowFailedOnlyFilterCommand}"
-                              HorizontalAlignment="Left"
-                              ToolTip.Tip="Show only images whose conversion failed"/>
-                <TextBlock Grid.Column="3"
-                           x:Name="FilterSummaryText"
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <TextBlock x:Name="FilterSummaryText"
                            Text="{Binding FilterSummaryText}"
                            VerticalAlignment="Center"
-                           HorizontalAlignment="Right"
                            Foreground="Gray"/>
-                <TextBlock Grid.Row="1"
-                           Grid.Column="1"
-                           Grid.ColumnSpan="3"
-                           Text="{x:Static local:AppStrings.VisibleSelectionHint}"
+                <TextBlock Text="{x:Static local:AppStrings.VisibleSelectionHint}"
                            FontSize="10"
                            Foreground="Gray"
                            IsVisible="{Binding ShowFailedOnly}"
-                           Margin="0,3,0,0"/>
-            </Grid>
+                           VerticalAlignment="Center"
+                           Margin="12,0,0,0"/>
+            </StackPanel>
         </Border>
 
         <ScrollViewer Grid.Row="2" Margin="15" x:Name="ImagesScrollViewer">
