@@ -27,6 +27,7 @@
     <Grid behaviors:DragDropBehavior.EnableDragDrop="True" DragDrop.AllowDrop="True">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
@@ -102,6 +103,11 @@
                                 </MenuItem.Header>
                             </MenuItem>
                             <MenuItem Header="_Remove" Command="{Binding RemoveSelectedCommand}"/>
+                            <MenuItem x:Name="FailedOnlyFilterMenuItem"
+                                      Header="{Binding FailedFilterText}"
+                                      ToggleType="CheckBox"
+                                      IsChecked="{Binding ShowFailedOnly, Mode=TwoWay}"
+                                      ToolTip.Tip="Show only images whose conversion failed"/>
                         </MenuItem>
                     </Menu>
                     <Button Content="Convert"
@@ -127,8 +133,26 @@
             </Grid>
         </Border>
 
-        <ScrollViewer Grid.Row="1" Margin="15">
-            <ir:ItemsRepeater ItemsSource="{Binding Images}" x:Name="ImagesRepeater">
+        <Border Grid.Row="1"
+                Background="Transparent"
+                Padding="15,8,15,0">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <TextBlock x:Name="FilterSummaryText"
+                           Text="{Binding FilterSummaryText}"
+                           VerticalAlignment="Center"
+                           Foreground="Gray"/>
+                <TextBlock Text="{x:Static local:AppStrings.VisibleSelectionHint}"
+                           FontSize="10"
+                           Foreground="Gray"
+                           IsVisible="{Binding ShowFailedOnly}"
+                           VerticalAlignment="Center"
+                           Margin="12,0,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <ScrollViewer Grid.Row="2" Margin="15" x:Name="ImagesScrollViewer">
+            <Grid>
+            <ir:ItemsRepeater ItemsSource="{Binding VisibleImages}" x:Name="ImagesRepeater">
                 <ir:ItemsRepeater.Layout>
                     <layout:UniformGridLayout MinItemWidth="200"
                                               MinColumnSpacing="8"
@@ -208,9 +232,27 @@
                     </DataTemplate>
                 </ir:ItemsRepeater.ItemTemplate>
             </ir:ItemsRepeater>
+                <StackPanel x:Name="EmptyFilterPanel"
+                            IsVisible="{Binding IsFilterEmpty}"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Top"
+                            Margin="20">
+                    <TextBlock Text="{x:Static local:AppStrings.NoFailedImages}"
+                               FontSize="16"
+                               HorizontalAlignment="Center"
+                               Margin="0,20,0,8"/>
+                    <TextBlock Text="{x:Static local:AppStrings.NoFailedImagesDescription}"
+                               Foreground="Gray"
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,12"/>
+                    <Button Content="{x:Static local:AppStrings.ShowAllImages}"
+                            Command="{Binding ShowAllImagesFilterCommand}"
+                            HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
         </ScrollViewer>
 
-        <Border Grid.Row="2"
+        <Border Grid.Row="3"
                 Background="Transparent"
                 BorderBrush="Gray"
                 BorderThickness="0,1,0,0"
@@ -228,7 +270,7 @@
             </StackPanel>
         </Border>
 
-        <Grid x:Name="SettingsOverlay" Grid.RowSpan="3" IsVisible="{Binding IsSettingsOpen}">
+        <Grid x:Name="SettingsOverlay" Grid.RowSpan="4" IsVisible="{Binding IsSettingsOpen}">
             <Border x:Name="SettingsBackdrop"
                     Background="#66000000"
                     PointerPressed="OnSettingsBackdropPressed"

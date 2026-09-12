@@ -144,6 +144,44 @@ public sealed class MainViewModelBatchConversionTests
         }
     }
 
+    [AvaloniaFact]
+    public async Task ConvertSelectedAsync_WhenFailedFilterIsActive_ConvertsOnlyVisibleFailures()
+    {
+        var directory = CreateFiles(2, out var files);
+        var convertedInputs = new ConcurrentBag<string>();
+        var imageService = CreateImageService((input, output, _, _, _, _, _, _, _) =>
+        {
+            convertedInputs.Add(input);
+            File.WriteAllText(output, "converted");
+            return Task.CompletedTask;
+        });
+
+        try
+        {
+            var vm = GUITestHelpers.CreateViewModel(imageService: imageService);
+            vm.UseSubfolder = false;
+            await vm.AddFilesAsync(files);
+            vm.Images[0].Status = ImageStatus.Converted;
+            vm.Images[1].Status = ImageStatus.Failed;
+            vm.Images[0].IsSelected = true;
+            vm.Images[1].IsSelected = true;
+
+            vm.ShowFailedOnlyFilterCommand.Execute(null);
+            vm.ConvertSelectedCommand.Execute(null);
+            await WaitUntilAsync(() => !vm.IsConverting, "filtered conversion did not finish");
+
+            Assert.Single(convertedInputs);
+            Assert.Equal(files[1], convertedInputs.Single());
+            Assert.Equal(ImageStatus.Converted, vm.Images[1].Status);
+            Assert.Empty(vm.VisibleImages);
+            Assert.True(vm.Images[0].IsSelected, "A hidden selection must survive the filtered retry.");
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
     private static Mock<IImageService> CreateImageService(
         Func<string, string, Action<double>, int, OutputFormat, CancellationToken, bool, int?, int?, Task> conversion)
     {

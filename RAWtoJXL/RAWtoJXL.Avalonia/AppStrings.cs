@@ -12,6 +12,7 @@ namespace RAWtoJXL.Avalonia
         public const string Converting = "Converting";
         public const string Converted = "Converted";
         public const string Failed = "Failed";
+        public const string Skipped = "Skipped";
         public const string Pending = "Pending";
         public const string Cancelled = "Cancelled";
         public const string ConversionComplete = "Conversion complete.";
@@ -48,5 +49,13 @@ namespace RAWtoJXL.Avalonia
         public const string CompareQualityLabel = "Q:";
         public const string CompareEffortLabel = "Effort:";
         public const string CompareMirrorLabel = "Mirror";
+        public const string ShowImagesLabel = "Show:";
+        public const string AllImages = "All images";
+        public const string VisibleSelectionHint = "Actions apply to visible selections";
+        public const string NoFailedImages = "No failed images";
+        public const string NoFailedImagesDescription = "There are no failed conversions in the current list.";
+        public const string ShowAllImages = "Show all images";
+        public const string ShowingImagesFormat = "Showing {0} images";
+        public const string ShowingFailedImagesFormat = "Showing {0} failed of {1} images";
     }
 }
