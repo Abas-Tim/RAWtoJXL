@@ -28,13 +28,66 @@ jobs:
         with:
           dotnet-version: "8.0.x"
 
-      - name: Build and package portable zip
+      - name: Build and package GUI portable zip
         shell: pwsh
         working-directory: RAWtoJXL
         run: |
           $version = "nightly"
           ./build-release.ps1 -Version $version -OutputDir artifacts
           $zip = "artifacts/RAWtoJXL-$version-win-x64.zip"
+          (Get-FileHash $zip -Algorithm SHA256).Hash | Out-File "$zip.sha256" -Encoding ASCII
+
+      - name: Build and package CLI portable zip
+        shell: pwsh
+        working-directory: RAWtoJXL
+        run: |
+          $version = "nightly"
+          $publishDir = Join-Path (Get-Location) "publish-cli"
+          if (Test-Path $publishDir) {
+            Remove-Item $publishDir -Recurse -Force
+          }
+
+          dotnet publish "RAWtoJXL.Cli/RAWtoJXL.Cli.csproj" `
+            -c Release `
+            -r win-x64 `
+            --self-contained true `
+            -p:DebugType=None `
+            -p:DebugSymbols=false `
+            -p:PublishSingleFile=false `
+            -p:EnableReadyToRun=false `
+            -o $publishDir
+          if ($LASTEXITCODE -ne 0) {
+            throw "CLI publish failed."
+          }
+
+          foreach ($file in @("cjxl.exe", "djxl.exe", "exiftool.exe")) {
+            $source = Join-Path (Get-Location) $file
+            if (-not (Test-Path $source)) {
+              throw "$file was not found after dependency setup."
+            }
+            Copy-Item $source -Destination (Join-Path $publishDir $file) -Force
+          }
+
+          foreach ($directory in @("exiftool_files", "RawSpeedTools")) {
+            $source = Join-Path (Get-Location) $directory
+            if (Test-Path $source) {
+              Copy-Item $source -Destination (Join-Path $publishDir $directory) -Recurse -Force
+            }
+          }
+
+          $packageName = "RAWtoJXL-cli-$version-win-x64"
+          $zip = Join-Path (Get-Location) "artifacts/$packageName.zip"
+          $stagingDir = Join-Path $env:TEMP "$packageName-staging"
+          if (Test-Path $stagingDir) {
+            Remove-Item $stagingDir -Recurse -Force
+          }
+          New-Item -ItemType Directory -Path $stagingDir -Force | Out-Null
+          Copy-Item (Join-Path $publishDir "*") -Destination $stagingDir -Recurse -Force
+          if (Test-Path $zip) {
+            Remove-Item $zip -Force
+          }
+          Compress-Archive -Path (Join-Path $stagingDir "*") -DestinationPath $zip -CompressionLevel Optimal
+          Remove-Item $stagingDir -Recurse -Force
           (Get-FileHash $zip -Algorithm SHA256).Hash | Out-File "$zip.sha256" -Encoding ASCII
 
       - name: Tag and publish nightly prerelease
@@ -51,7 +104,7 @@ jobs:
           COMMIT=$(git rev-parse --short HEAD)
           git tag "$TAG"
           git push origin "$TAG"
-          printf '**Nightly build** (%s, commit `%s`).\n\nAutomated build of the latest master. Not a stable release.\n\nAssets: `RAWtoJXL-nightly-win-x64.zip` (+ .sha256).' "$DATE" "$COMMIT" > notes.md
+          printf '**Nightly build** (%s, commit `%s`).\n\nAutomated build of the latest master. Not a stable release.\n\nAssets: `RAWtoJXL-nightly-win-x64.zip`, `RAWtoJXL-cli-nightly-win-x64.zip` (+ .sha256).' "$DATE" "$COMMIT" > notes.md
           gh release create "$TAG" RAWtoJXL/artifacts/* --title "Nightly Build $DATE" --prerelease --notes-file notes.md
 
       - name: Clean up previous nightly tag and release
