@@ -122,14 +122,12 @@ Licensed under the BSD 3-Clause License — same terms as above.
 
 ---
 
-## GPL-3.0 (Bundled)
+## Perl License
 
 ### exiftool (ExifTool by Phil Harvey)
 Copyright 2000-2026, Phil Harvey, https://exiftool.org/
 
-Licensed under the GNU General Public License version 3.
-
-This binary is bundled in the repository. See the full GPL-3.0 license text in the exiftool source repository at https://github.com/exiftool/exiftool/blob/master/LICENSE.
+Licensed under the Perl license https://dev.perl.org/licenses/.
 
 ## GPL-3.0 (External)
 
