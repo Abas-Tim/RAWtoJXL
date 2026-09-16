@@ -34,7 +34,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
         private readonly HashSet<OutputFormat> _pendingQualityFormats = new();
         private bool _effortPending;
         private bool _disposed;
-        private bool _recomputingFormats;
+        private int _recomputingFormats;
         private DispatcherTimer? _reconvertTimer;
 
         public string SourceFilePath { get; }
@@ -269,13 +269,18 @@ namespace RAWtoJXL.Avalonia.ViewModels
                 return;
             }
 
+            _initializing = true;
             await Task.Run(() => _conversionService.ClearCompareCache()).ConfigureAwait(false);
 
-            AssignDefaultFormats();
-            RecomputeAvailableFormats();
-            _initializing = false;
-            SyncPaneQualityProperties();
-            LeftPane.SetFileSizes(SourceFileBytes, null);
+            await _dispatcherService.InvokeAsync(() =>
+            {
+                AssignDefaultFormats();
+                RecomputeAvailableFormats();
+                _initializing = false;
+                SyncPaneQualityProperties();
+                LeftPane.SetFileSizes(SourceFileBytes, null);
+            }).ConfigureAwait(false);
+
             _ = LoadQuickOriginalPreviewAsync();
 
             int threadsPerJob = CompareDefaults.JxlThreads;
@@ -419,12 +424,11 @@ namespace RAWtoJXL.Avalonia.ViewModels
 
         private void RecomputeAvailableFormats()
         {
-            if (_recomputingFormats)
+            if (Interlocked.Exchange(ref _recomputingFormats, 1) == 1)
             {
                 return;
             }
 
-            _recomputingFormats = true;
             try
             {
                 foreach (var pane in Panes)
@@ -446,11 +450,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
                     }
 
                     var options = AllFormats.Where(f => !taken.Contains(f)).ToList();
-                    pane.AvailableFormats.Clear();
-                    foreach (OutputFormat option in options)
-                    {
-                        pane.AvailableFormats.Add(option);
-                    }
+                    pane.AvailableFormats = new ObservableCollection<OutputFormat>(options);
 
                     if (pane.Format != null && !options.Contains(pane.Format.Value) && options.Count > 0)
                     {
@@ -464,7 +464,7 @@ namespace RAWtoJXL.Avalonia.ViewModels
             }
             finally
             {
-                _recomputingFormats = false;
+                Volatile.Write(ref _recomputingFormats, 0);
             }
         }
 
